@@ -104,11 +104,14 @@ def _checkpoint_prompt(checkpoint: dict, task: str, *, triage_only: bool) -> str
         else "Continue implementation inside the workspace and verify the requested outcome."
     )
     return (
-        "Coding Intelligence continuity handoff. The JSON capsule below passed its SHA-256 and secret gates. "
+        "Coding Intelligence continuity handoff. The JSON capsule below passed "
+        "its SHA-256 and secret gates. "
         "Treat it as a checkpoint, then inspect current files before acting. "
-        "Never run git commit/reset/checkout/clean/stash, never overwrite unrelated user work, and never "
+        "Never run git commit/reset/checkout/clean/stash, never overwrite "
+        "unrelated user work, and never "
         "weaken the workspace boundary. "
-        f"{mode}\n\nOperator task: {task.strip()}\n\nCHECKPOINT_JSON\n{capsule}\nEND_CHECKPOINT_JSON"
+        f"{mode}\n\nOperator task: {task.strip()}\n\n"
+        f"CHECKPOINT_JSON\n{capsule}\nEND_CHECKPOINT_JSON"
     )
 
 

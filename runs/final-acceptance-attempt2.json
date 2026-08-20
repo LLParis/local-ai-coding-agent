@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "stage": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-ghnwu5yo",
+  "trajectory_sha256": "ee981fb6576cccdf0418348547450bd34d1aa64a3ff3d6f2654fb96f2266699d",
+  "source_sha256_before_and_after": "98b3664b021fb3c4e5bff9dd7076565d2395fd54992b3ff1cedc18c37c6b7fcb",
+  "implementer": "arm-qwen38-q6-text",
+  "implementation_model_calls": 1,
+  "implementation_status": "verified",
+  "inference_seconds": 2.714,
+  "test_exit": 0,
+  "test_seconds": 0.113,
+  "verifier": "devstral-small-2:24b",
+  "verifier_model_calls_attempted": 1,
+  "verifier_status": "failed_before_inference",
+  "verifier_error": "HTTP 400 from Ollama OpenAI-compatible /v1/chat/completions",
+  "automatic_retries": 0,
+  "qwen_restored": true,
+  "request_sha256": "56559e684e836cbfbdb8dad91a5b20720ccb596d50bb1ad64cddeae34b11b4af",
+  "response_sha256": "e7823666972ce22da67563f0f3b1696679a5239d470e529edd233876f08614aa"
+}

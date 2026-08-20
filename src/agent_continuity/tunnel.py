@@ -47,7 +47,9 @@ def _runtime_dir() -> Path:
     override = os.environ.get("CODING_INTELLIGENCE_RUNTIME_DIR") or os.environ.get(
         "ANIME_FRONTIER_CONTINUITY_RUNTIME_DIR"
     )
-    path = Path(override) if override else Path(f"/tmp/coding-intelligence-continuity-{os.getuid()}")
+    path = (
+        Path(override) if override else Path(f"/tmp/coding-intelligence-continuity-{os.getuid()}")
+    )
     path.mkdir(mode=0o700, parents=True, exist_ok=True)
     info = path.lstat()
     if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
@@ -62,8 +64,7 @@ def _run(command: list[str], *, timeout: float = 15.0) -> subprocess.CompletedPr
         return subprocess.run(
             command,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=timeout,
             check=False,
             env={**os.environ, "LC_ALL": "C"},
@@ -116,7 +117,9 @@ def ensure_tunnel(
     timeout: float = 90.0,
 ) -> TunnelReport:
     if sys.platform != "darwin" or fcntl is None:
-        raise TunnelError("tunnel-ensure is a macOS edge command; use local-edit directly on Windows")
+        raise TunnelError(
+            "tunnel-ensure is a macOS edge command; use local-edit directly on Windows"
+        )
     _validate_spec(spec)
     runtime = _runtime_dir()
     control = runtime / f"{spec.host}.sock"
@@ -128,11 +131,14 @@ def ensure_tunnel(
             master = _run([_SSH, "-S", str(control), "-O", "check", spec.host])
             if master.returncode != 0:
                 raise TunnelError(
-                    f"port {spec.local_port} is in use but the ControlMaster for {spec.host} is not alive; "
+                    f"port {spec.local_port} is in use but the ControlMaster for "
+                    f"{spec.host} is not alive; "
                     "refusing to probe or modify an unrelated listener"
                 )
             listener = require_loopback_listener(spec.local_port)
-            endpoint = check_endpoint(f"http://127.0.0.1:{spec.local_port}/v1", model, timeout=timeout)
+            endpoint = check_endpoint(
+                f"http://127.0.0.1:{spec.local_port}/v1", model, timeout=timeout
+            )
             return TunnelReport("reused", endpoint, listener)
 
         forward = f"127.0.0.1:{spec.local_port}:{spec.remote_host}:{spec.remote_port}"

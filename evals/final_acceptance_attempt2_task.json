@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "backend": "Qwen38",
+  "workspace": "D:\\11_CS\\00_REPOS\\coding-intelligence-command-center\\evals\\cross_language\\typescript",
+  "objective": "Make backend readiness require the live listener PID to equal the recorded owner PID while preserving the existing Running, IPv4 loopback, and health requirements. Make the smallest complete change and do not edit tests.",
+  "mutable": [
+    "src/backend_state.ts"
+  ],
+  "context": [
+    "src/backend_state.ts",
+    "package.json"
+  ],
+  "verify_context": [
+    "verify"
+  ],
+  "test_command": [
+    "node",
+    "--test",
+    "verify/test_hidden.ts"
+  ],
+  "timeout": 180
+}

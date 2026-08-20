@@ -109,7 +109,9 @@ class CheckpointTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             subprocess.run(["git", "init", "-q", str(root)], check=True)
-            subprocess.run(["git", "-C", str(root), "config", "user.email", "test@example.com"], check=True)
+            subprocess.run(
+                ["git", "-C", str(root), "config", "user.email", "test@example.com"], check=True
+            )
             subprocess.run(["git", "-C", str(root), "config", "user.name", "Test"], check=True)
             (root / "src").mkdir()
             target = root / "src" / "a.txt"
@@ -196,7 +198,9 @@ class TunnelTests(unittest.TestCase):
     @mock.patch("agent_continuity.tunnel.check_endpoint")
     @mock.patch("agent_continuity.tunnel.listener_names", return_value=["127.0.0.1:12434"])
     @unittest.skipUnless(sys.platform == "darwin", "SSH tunnel ownership is a macOS edge contract")
-    def test_reuses_existing_healthy_tunnel(self, _listeners: mock.Mock, endpoint: mock.Mock) -> None:
+    def test_reuses_existing_healthy_tunnel(
+        self, _listeners: mock.Mock, endpoint: mock.Mock
+    ) -> None:
         endpoint.return_value = mock.Mock(model="gpt-oss:20b")
         with tempfile.TemporaryDirectory() as temporary:
             with mock.patch.dict(os.environ, {"CODING_INTELLIGENCE_RUNTIME_DIR": temporary}):

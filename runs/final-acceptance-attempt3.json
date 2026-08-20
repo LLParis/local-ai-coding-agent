@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "stage": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-71nws320",
+  "trajectory_sha256": "eb591e8e4adb935533377828cff91373d502a1346ee0bdcc0e405e38e00ab725",
+  "source_sha256_before_and_after": "98b3664b021fb3c4e5bff9dd7076565d2395fd54992b3ff1cedc18c37c6b7fcb",
+  "implementer": "arm-qwen38-q6-text",
+  "implementation_model_calls": 1,
+  "implementation_status": "verified",
+  "inference_seconds": 2.539,
+  "test_exit": 0,
+  "test_seconds": 0.114,
+  "verifier": "devstral-small-2:24b",
+  "verifier_model_calls_attempted": 1,
+  "verifier_status": "failed_before_inference",
+  "verifier_error": "HTTP 400 repeated after schema simplification on Ollama OpenAI-compatible /v1/chat/completions",
+  "automatic_retries": 0,
+  "qwen_restored": true,
+  "decision": "Remove the failing compatibility route. Use Ollama native /api/chat with explicit UTF-8 and the same runtime validation.",
+  "request_sha256": "56559e684e836cbfbdb8dad91a5b20720ccb596d50bb1ad64cddeae34b11b4af",
+  "response_sha256": "95e0d7e8b4085b63b77c3609df261147af8a53355b01dddef64ca08a900306d1"
+}

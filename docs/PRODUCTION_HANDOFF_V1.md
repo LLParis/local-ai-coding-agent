@@ -10,15 +10,37 @@ Status date: 2026-08-20
   context, Q8 KV cache, medium reasoning capped at 2,048, and MTP draft 3.
 - Automatic Qwen/Ollama swap with no UAC: 8.12 seconds to Ollama and 14.69
   seconds back to Qwen in the captured round trip.
-- Windows thin edit lane: one model call, zero automatic retries, explicit
-  mutable/context/verifier paths, isolated stage, real project command, and
-  source workspace unchanged.
+- Windows thin edit lane: one implementation call, zero automatic retries,
+  explicit mutable/context/verifier paths, isolated stage, real project
+  command, and source workspace unchanged.
+- Live everyday two-model command: Qwen diagnosed and fixed the frozen
+  PowerShell process-ownership defect in 4.249 seconds, the hidden test passed,
+  Devstral accepted the staged diff in 8.44 seconds through Ollama's native
+  structured endpoint, and Qwen was restored. The source fixture SHA-256 stayed
+  identical, the final process exit was zero, and no UAC or hosted model call
+  occurred. Exact evidence is in `runs/final-end-to-end.json`.
 - Immutable SHA-256 task capsule created in one process and recovered by a
   second fresh process with the same workspace identity.
 - One everyday entry point: `bin\coding-task.cmd <task.json>`.
 - Trajectory record retained inside every isolated stage.
-- Fourteen focused platform tests pass; one Mac-only tunnel test is skipped on
+- Twenty focused platform tests pass; one Mac-only tunnel test is skipped on
   Windows by design. Frozen qualification cases pass after promoted fixes.
+
+## Independent verifier path
+
+- The everyday command now requires two independent results after a successful
+  staged edit: the authoritative project test and one strict Devstral Small 2
+  accept/reject verdict over only the objective, scoped diff, and test result.
+- Every non-PlanOnly path restores Qwen as the idle backend. Accepted, rejected,
+  malformed, and restore outcomes remain separate telemetry; no retry or
+  promotion is added.
+- Twenty focused tests pass with one Mac-only skip, including fake-endpoint
+  proofs of one verifier call, Unicode-safe transport, strict runtime
+  rejection, restore, and PlanOnly zero-call behavior.
+- The initial OpenAI-compatible verifier route returned HTTP 400 twice before
+  Devstral inference. It was removed, not retried again. The production command
+  now uses Ollama's native `/api/chat` structured-output route. Both failed
+  attempts and the subsequent accepted path remain under `runs/`.
 
 ## Evidence-based model roles
 
@@ -44,10 +66,13 @@ were not converted into successes.
    bin\coding-task.cmd D:\path\to\task.json
    ```
 
-3. The command switches the selected owned backend, makes one model request,
-   stages the patch, runs the verifier command, and returns one JSON report.
-4. Promote a staged diff only after tests pass and the configured verifier
-   accepts it. There is no automatic retry or direct mutation of source work.
+3. The command makes one implementation request, stages the patch, and runs the
+   hidden project test. On test success it switches to Ollama and makes exactly
+   one Devstral verifier request. Every non-PlanOnly outcome restores Qwen as the
+   idle default.
+4. A successful report requires both the test and strict verifier acceptance.
+   Rejection or malformed verifier output fails truthfully. There is no retry,
+   automatic promotion, or direct mutation of source work.
 
 ## Current configured state
 
@@ -59,6 +84,16 @@ were not converted into successes.
 - Model artifacts installed: Qwen3.8 Q6/Q8, gpt-oss-20b, Gemma 4 31B QAT,
   Devstral Small 2, and prior Qwen3.6.
 - Raw endpoints remain loopback-only.
+
+## Architecture decisions, not yet runtime claims
+
+- DeepSeek Harness is the pinned future rich-session adapter substrate; Pi is
+  the lightweight interactive adapter candidate. Neither is installed in the
+  production path. See `docs/HARNESS_FUSION_DECISION.md`.
+- Memory v1 is specified as hash-chained local events plus rebuildable SQLite
+  FTS5 projections, typed state, temporal supersession, provenance, and
+  loss-checked compaction. That memory plane is designed but not implemented or
+  production-proven. See `docs/MEMORY_ARCHITECTURE_DECISION.md`.
 
 ## Not yet production-proven
 

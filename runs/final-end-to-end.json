@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "status": "verified",
+  "task": "evals/final_end_to_end_task.json",
+  "objective": "Require exact process ownership across ProcessId, ParentProcessId, StartTimeUtc, ExecutablePath, and CommandLine.",
+  "source_sha256_before_and_after": "a5435fedbe1156caf48cf209943ab2b4a87f0c2af8e2cc9a2c7af02b36b5424d",
+  "implementer": {
+    "model": "arm-qwen38-q6-text",
+    "stage": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-z_d5rjuh",
+    "trajectory": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-z_d5rjuh\\continuity-trajectory.json",
+    "trajectory_sha256": "82e26c511a24913a042f4f363683d999d1a0a621b277feaa081f25b0b54d0953",
+    "diagnosis": "The function omitted ProcessId, ParentProcessId, and StartTimeUtc from its exact ownership comparison.",
+    "inference_seconds": 4.249,
+    "test_exit": 0,
+    "test_output": "PASS exact process ownership",
+    "test_seconds": 0.159,
+    "model_calls": 1
+  },
+  "verifier": {
+    "model": "devstral-small-2:24b",
+    "transport": "Ollama native /api/chat with explicit UTF-8 and structured format",
+    "verdict": "accept",
+    "reason": "The scoped diff adds exact comparisons for ProcessId, ParentProcessId, and StartTimeUtc while preserving the existing interface and unrelated behavior; the authoritative test passes.",
+    "risks": [],
+    "inference_seconds": 8.44,
+    "model_calls": 1
+  },
+  "backend_swaps": {
+    "qwen_ready_seconds": 3.243,
+    "ollama_ready_seconds": 7.752,
+    "qwen_restore_seconds": 13.905,
+    "uac_prompt": false
+  },
+  "model_calls": 2,
+  "automatic_retries": 0,
+  "process_exit": 0,
+  "source_workspace_mutated": false,
+  "qwen_restored": true,
+  "hosted_model_calls": 0,
+  "captured_at_utc": "2026-08-20T12:06:16.2723665Z"
+}

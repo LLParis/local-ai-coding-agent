@@ -83,7 +83,11 @@ def _output_text(response: Any) -> str:
             if not isinstance(content, list):
                 continue
             for part in content:
-                if isinstance(part, dict) and part.get("type") == "output_text" and isinstance(part.get("text"), str):
+                if (
+                    isinstance(part, dict)
+                    and part.get("type") == "output_text"
+                    and isinstance(part.get("text"), str)
+                ):
                     texts.append(part["text"])
     return "".join(texts).strip()
 
@@ -104,7 +108,9 @@ def check_endpoint(
     if not isinstance(models, dict) or not isinstance(models.get("data"), list):
         raise EndpointError("/v1/models did not return an OpenAI-compatible data list")
     identifiers = {
-        item.get("id") for item in models["data"] if isinstance(item, dict) and isinstance(item.get("id"), str)
+        item.get("id")
+        for item in models["data"]
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
     }
     if model not in identifiers and f"{model}:latest" not in identifiers:
         raise EndpointError(f"required model is not loaded: {model}")

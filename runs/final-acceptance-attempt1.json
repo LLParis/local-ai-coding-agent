@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "stage": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-0brlt03o",
+  "trajectory": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-0brlt03o\\continuity-trajectory.json",
+  "trajectory_sha256": "b237c0939653375a41e37d7ac874a890e4cd2f7dbff8cb8edfb241c92737f170",
+  "source_sha256_before_and_after": "8f389a2a68f1711110dedfa09d3fb0345254fde681fc8165ffd75ee0116b43c9",
+  "implementer": "arm-qwen38-q6-text",
+  "implementation_model_calls": 1,
+  "verifier_model_calls": 0,
+  "automatic_retries": 0,
+  "inference_seconds": 21.764,
+  "test_exit": 1,
+  "test_seconds": 0.166,
+  "failure": "The proposed patch rejected every backslash, including the required safe Windows-style relative path. The hidden test disproved it, so Devstral was not called and the source fixture remained unchanged.",
+  "request_sha256": "110db6a97f0f5b5d4a2fde22788a9e292b3e88e85bd26ff165c302f4ba0be4a7",
+  "response_sha256": "dbd7ec9c2d0e388c1c3c8f57b81d3e94070ac561bf3a553df4ac726b660f06fa"
+}

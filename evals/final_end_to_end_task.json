@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "backend": "Qwen38",
+  "workspace": "D:\\11_CS\\00_REPOS\\coding-intelligence-command-center\\evals\\cross_language\\powershell",
+  "objective": "Require exact process ownership by comparing ProcessId, ParentProcessId, StartTimeUtc, ExecutablePath, and CommandLine between Expected and Observed. Preserve the existing function interface, make the smallest complete change, and do not edit tests.",
+  "mutable": [
+    "src/Test-OwnedProcess.ps1"
+  ],
+  "context": [
+    "src/Test-OwnedProcess.ps1"
+  ],
+  "verify_context": [
+    "verify"
+  ],
+  "test_command": [
+    "powershell.exe",
+    "-NoLogo",
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "verify/test_hidden.ps1"
+  ],
+  "timeout": 180
+}

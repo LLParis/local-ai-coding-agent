@@ -7,8 +7,9 @@ import re
 import stat
 import subprocess
 import tempfile
+from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable
+from typing import Any
 
 from . import SCHEMA
 
@@ -70,7 +71,9 @@ class CheckpointError(RuntimeError):
 
 
 def _canonical(value: Any) -> bytes:
-    return (json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    return (
+        json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":")) + "\n"
+    ).encode()
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -150,7 +153,9 @@ def _normalize_task(data: Any) -> dict[str, Any]:
 
     scope_value = data.get("scope")
     if not isinstance(scope_value, list) or not scope_value:
-        raise CheckpointError("task.scope must contain at least one bounded workspace-relative path")
+        raise CheckpointError(
+            "task.scope must contain at least one bounded workspace-relative path"
+        )
     if len(scope_value) > 64:
         raise CheckpointError("task.scope exceeds 64 paths")
     task["scope"] = sorted(set(_relative_path(item) for item in scope_value))
@@ -216,7 +221,9 @@ def _iter_scope_files(workspace: Path, scope: Iterable[str]) -> tuple[list[tuple
             try:
                 candidate.resolve(strict=True).relative_to(workspace)
             except (OSError, ValueError) as exc:
-                raise CheckpointError(f"task.scope resolves outside the workspace: {relative}") from exc
+                raise CheckpointError(
+                    f"task.scope resolves outside the workspace: {relative}"
+                ) from exc
         if candidate.is_symlink() or candidate.is_file():
             found[relative] = candidate
             continue
@@ -242,7 +249,9 @@ def _iter_scope_files(workspace: Path, scope: Iterable[str]) -> tuple[list[tuple
                     raise CheckpointError(f"scoped tree contains a sensitive path: {child_rel}")
                 found[child_rel] = child
                 if len(found) > MAX_FILES:
-                    raise CheckpointError(f"scoped tree exceeds {MAX_FILES} files; narrow task.scope")
+                    raise CheckpointError(
+                        f"scoped tree exceeds {MAX_FILES} files; narrow task.scope"
+                    )
     return sorted(found.items()), ignored_count
 
 
@@ -350,7 +359,9 @@ def git_context(workspace: Path) -> dict[str, Any]:
         "kind": "git",
         "redacted_sensitive_path_count": redacted,
         "root": str(Path(root).resolve()),
-        "upstream": upstream_result.stdout.decode().strip() if upstream_result.returncode == 0 else None,
+        "upstream": upstream_result.stdout.decode().strip()
+        if upstream_result.returncode == 0
+        else None,
     }
 
 
@@ -428,7 +439,10 @@ def load_checkpoint(path: Path) -> dict[str, Any]:
         raise CheckpointError("checkpoint workspace context is malformed")
     if not isinstance(workspace["root"], str) or not isinstance(workspace["manifest"], dict):
         raise CheckpointError("checkpoint workspace context is malformed")
-    if not isinstance(workspace["vcs"], dict) or workspace["vcs"].get("kind") not in {"git", "none"}:
+    if not isinstance(workspace["vcs"], dict) or workspace["vcs"].get("kind") not in {
+        "git",
+        "none",
+    }:
         raise CheckpointError("checkpoint VCS context is malformed")
     expected = "sha256:" + hashlib.sha256(_canonical(payload)).hexdigest()
     if value["digest"] != expected:
@@ -437,7 +451,9 @@ def load_checkpoint(path: Path) -> dict[str, Any]:
     return value
 
 
-def validate_checkpoint(path: Path, workspace: Path | None = None, require_current: bool = False) -> dict[str, Any]:
+def validate_checkpoint(
+    path: Path, workspace: Path | None = None, require_current: bool = False
+) -> dict[str, Any]:
     value = load_checkpoint(path)
     if require_current:
         if workspace is None:

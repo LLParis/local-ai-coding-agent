@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "status": "verified",
+  "evidence_mode": "retained Qwen stage plus native Ollama verifier after removing the failed compatibility route",
+  "accepted_path": {
+    "objective": "Make backend readiness require the live listener PID to equal the recorded owner PID while preserving Running, IPv4 loopback, and health requirements.",
+    "source_sha256_before_and_after": "98b3664b021fb3c4e5bff9dd7076565d2395fd54992b3ff1cedc18c37c6b7fcb",
+    "implementer": {
+      "model": "arm-qwen38-q6-text",
+      "stage": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-71nws320",
+      "trajectory": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-71nws320\\continuity-trajectory.json",
+      "trajectory_sha256": "eb591e8e4adb935533377828cff91373d502a1346ee0bdcc0e405e38e00ab725",
+      "inference_seconds": 2.539,
+      "test_exit": 0,
+      "test_seconds": 0.114,
+      "model_calls": 1
+    },
+    "verifier": {
+      "model": "devstral-small-2:24b",
+      "transport": "Ollama native /api/chat with explicit UTF-8 and structured format",
+      "verdict": "accept",
+      "reason": "The scoped diff correctly adds the listener/owner PID equality requirement while preserving the existing Running, IPv4 loopback, and health checks; the passing test is consistent with that change.",
+      "risks": [],
+      "inference_seconds": 8.487,
+      "model_calls": 1
+    },
+    "accepted_path_model_calls": 2,
+    "automatic_retries": 0,
+    "source_workspace_mutated": false,
+    "qwen_restored": true,
+    "uac_prompt": false
+  },
+  "campaign_truth": {
+    "attempts": 4,
+    "model_request_attempts": 6,
+    "successful_inference_calls": 4,
+    "hosted_model_calls": 0,
+    "attempt_1": "Qwen patch failed the hidden path test; Devstral was not called.",
+    "attempt_2": "Qwen patch and test passed; Ollama OpenAI-compatible verifier route returned HTTP 400 before inference.",
+    "attempt_3": "The same compatibility route returned HTTP 400 after schema simplification; the route was removed.",
+    "attempt_4": "The retained passing Qwen stage was accepted once by Devstral through Ollama native /api/chat; Qwen was restored."
+  },
+  "captured_at_utc": "2026-08-20T12:04:37.8118848Z"
+}

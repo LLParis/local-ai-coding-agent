@@ -221,7 +221,9 @@ def run_local_edit(
     }
     started = time.monotonic()
     connection = http.client.HTTPConnection(parsed_url.hostname, port, timeout=timeout)
-    connection.request("POST", f"{prefix}/chat/completions", body, {"Content-Type": "application/json"})
+    connection.request(
+        "POST", f"{prefix}/chat/completions", body, {"Content-Type": "application/json"}
+    )
     response = connection.getresponse()
     raw = response.read(8 * 1024 * 1024)
     connection.close()

@@ -22,20 +22,28 @@ def _require_macos(command: str) -> None:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="continuity", description="General local coding-agent continuity")
+    parser = argparse.ArgumentParser(
+        prog="continuity", description="General local coding-agent continuity"
+    )
     commands = parser.add_subparsers(dest="command", required=True)
 
-    create = commands.add_parser("checkpoint-create", help="create a deterministic secret-free checkpoint")
+    create = commands.add_parser(
+        "checkpoint-create", help="create a deterministic secret-free checkpoint"
+    )
     create.add_argument("--workspace", required=True, type=Path)
     create.add_argument("--task", required=True, type=Path)
     create.add_argument("--output", required=True, type=Path)
 
-    validate = commands.add_parser("checkpoint-validate", help="verify checkpoint integrity and freshness")
+    validate = commands.add_parser(
+        "checkpoint-validate", help="verify checkpoint integrity and freshness"
+    )
     validate.add_argument("--checkpoint", required=True, type=Path)
     validate.add_argument("--workspace", type=Path)
     validate.add_argument("--require-current", action="store_true")
 
-    endpoint = commands.add_parser("endpoint-check", help="probe OpenAI-compatible models and Responses APIs")
+    endpoint = commands.add_parser(
+        "endpoint-check", help="probe OpenAI-compatible models and Responses APIs"
+    )
     endpoint.add_argument("--base-url", default="http://127.0.0.1:12434/v1")
     endpoint.add_argument("--model", default="gpt-oss:20b")
     endpoint.add_argument("--timeout", type=float, default=90.0)
@@ -71,7 +79,9 @@ def _parser() -> argparse.ArgumentParser:
     emergency.add_argument("--timeout", type=float, default=120.0)
     emergency.add_argument("--dry-run", action="store_true")
 
-    local_edit = commands.add_parser("local-edit", help="run one thin local-model edit in an isolated working copy")
+    local_edit = commands.add_parser(
+        "local-edit", help="run one thin local-model edit in an isolated working copy"
+    )
     local_edit.add_argument("--workspace", required=True, type=Path)
     local_edit.add_argument("--objective", required=True)
     local_edit.add_argument("--mutable", required=True, type=Path, action="append")
@@ -81,7 +91,9 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         action="append",
         default=[],
-        help="copy a path into the isolated stage for tests without including it in the model prompt",
+        help=(
+            "copy a path into the isolated stage for tests without including it in the model prompt"
+        ),
     )
     local_edit.add_argument("--base-url", default="http://127.0.0.1:12434/v1")
     local_edit.add_argument("--model", default="gpt-oss-20b:latest")
@@ -99,12 +111,18 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "checkpoint-create":
             value = create_checkpoint(args.workspace, args.task, args.output)
-            _report(checkpoint=str(args.output.expanduser().resolve()), digest=value["digest"], status="created")
+            _report(
+                checkpoint=str(args.output.expanduser().resolve()),
+                digest=value["digest"],
+                status="created",
+            )
         elif args.command == "checkpoint-validate":
             value = validate_checkpoint(args.checkpoint, args.workspace, args.require_current)
             _report(digest=value["digest"], status="valid")
         elif args.command == "endpoint-check":
-            report = check_endpoint(args.base_url, args.model, timeout=args.timeout, models_only=args.models_only)
+            report = check_endpoint(
+                args.base_url, args.model, timeout=args.timeout, models_only=args.models_only
+            )
             _report(status="ready", **report.__dict__)
         elif args.command == "tunnel-ensure":
             _require_macos(args.command)
@@ -112,13 +130,20 @@ def main(argv: list[str] | None = None) -> int:
 
             try:
                 report = ensure_tunnel(
-                    TunnelSpec(host=args.host, local_port=args.local_port, remote_port=args.remote_port),
+                    TunnelSpec(
+                        host=args.host, local_port=args.local_port, remote_port=args.remote_port
+                    ),
                     model=args.model,
                     timeout=args.timeout,
                 )
             except TunnelError as exc:
                 raise CommandError(str(exc)) from exc
-            _report(status="ready", action=report.action, listener=report.listener, **report.endpoint.__dict__)
+            _report(
+                status="ready",
+                action=report.action,
+                listener=report.listener,
+                **report.endpoint.__dict__,
+            )
         elif args.command == "launch":
             _require_macos(args.command)
             from .launcher import LaunchError, execute, primary_plan

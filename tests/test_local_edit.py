@@ -77,9 +77,7 @@ def _workspace_fixture(root: Path) -> tuple[Path, str]:
         "if __name__ == '__main__':\n"
         "    unittest.main()\n"
     )
-    (workspace / "src" / "tests" / "test_calculator.py").write_text(
-        verifier, encoding="utf-8"
-    )
+    (workspace / "src" / "tests" / "test_calculator.py").write_text(verifier, encoding="utf-8")
     return workspace, source
 
 
@@ -139,8 +137,7 @@ class LocalEditContractTests(unittest.TestCase):
                     cwd=PACKAGE,
                     env=environment,
                     stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    capture_output=True,
                     text=True,
                     timeout=20,
                     check=False,
@@ -178,8 +175,9 @@ class LocalEditContractTests(unittest.TestCase):
             base = Path(temporary)
             workspace, original_source = _workspace_fixture(base)
             stage = base / "stage"
-            with edit_server(document) as server, mock.patch(
-                "agent_continuity.local_edit.tempfile.mkdtemp", return_value=str(stage)
+            with (
+                edit_server(document) as server,
+                mock.patch("agent_continuity.local_edit.tempfile.mkdtemp", return_value=str(stage)),
             ):
                 with self.assertRaisesRegex(LocalEditError, "diagnosis must be"):
                     run_local_edit(
@@ -207,8 +205,11 @@ class LocalEditContractTests(unittest.TestCase):
                 document = _valid_model_document()
                 document["edits"] = document["edits"] * edit_count  # type: ignore[operator]
                 stage = base / "stage"
-                with edit_server(document) as server, mock.patch(
-                    "agent_continuity.local_edit.tempfile.mkdtemp", return_value=str(stage)
+                with (
+                    edit_server(document) as server,
+                    mock.patch(
+                        "agent_continuity.local_edit.tempfile.mkdtemp", return_value=str(stage)
+                    ),
                 ):
                     with self.assertRaisesRegex(LocalEditError, "between 1 and 4 edits"):
                         run_local_edit(

@@ -6,9 +6,10 @@ media-tool execution edge. Product work from Anime Frontier or any other
 project stays outside this repository unless it is supplied as a frozen
 qualification fixture or explicitly delegated.
 
-The working baseline is deliberately thin: one model response proposes one to
-four exact replacements in an isolated copy, then one real project command
-verifies that staged result. The source workspace is never changed.
+The working baseline is deliberately thin: one implementation response proposes
+one to four exact replacements in an isolated copy, one real project command
+tests that staged result, and Devstral independently reviews a passing diff. The
+source workspace is never changed.
 
 See [`docs/OUTCOME_FIRST_CONTRACT.md`](docs/OUTCOME_FIRST_CONTRACT.md) for the
 trial stopping rules.
@@ -16,8 +17,24 @@ trial stopping rules.
 Current evidence and research:
 
 - [`v1 production handoff`](docs/PRODUCTION_HANDOFF_V1.md)
+- [`zero-to-operator guide`](docs/USER_GUIDE_ZERO_TO_OPERATOR.md)
 - [`research-to-architecture synthesis`](docs/RESEARCH_SYNTHESIS.md)
+- [`harness fusion decision`](docs/HARNESS_FUSION_DECISION.md)
+- [`memory architecture decision`](docs/MEMORY_ARCHITECTURE_DECISION.md)
+- [`DeepSeek Harness audit`](docs/DEEPSEEK_HARNESS_AUDIT.md)
 - [`bounded model tournament`](docs/TOURNAMENT_V1.md)
+
+## One-command status
+
+Before a task, inspect the live system without starting or stopping anything:
+
+```powershell
+bin\doctor.cmd
+```
+
+Use `bin\doctor.cmd -Json` for the same report as structured JSON. The doctor
+distinguishes installed configuration, recorded test evidence, and current
+live readiness; it performs no model call and requires no elevation.
 
 ## Everyday command
 
@@ -28,10 +45,14 @@ bin\coding-task.cmd D:\path\to\coding-task.json
 ```
 
 That one command switches to the selected owned backend without UAC, sends one
-structured edit request, runs verifier-only project tests in the retained stage,
-and returns one JSON report. `Qwen38` is the current default implementation
-backend based on the bounded local tournament; `Ollama` remains available for
-explicit fallback trials.
+structured edit request, and runs verifier-only project tests in the retained
+stage. After a passing edit it switches to Ollama, sends the objective, scoped
+diff, and test result to `devstral-small-2:24b` exactly once, enforces a strict
+accept/reject verdict, and reports that result. Every non-PlanOnly outcome then
+restores Qwen as the idle default. The JSON report separates implementer,
+verifier, backend-swap, implementation-exit, final-process-exit, and restore
+telemetry. There are no automatic retries or automatic patch promotion;
+`-PlanOnly` makes zero model or backend calls.
 
 ## Windows: run one local edit
 
@@ -124,13 +145,13 @@ rejection, bounded scope, and file/VCS fingerprints without diff contents.
 
 ## Focused verification
 
-These tests use only local fake HTTP servers; they do not call an inference
-service:
+The focused suite uses only local fake HTTP servers; it does not call an
+inference service:
 
 ```powershell
-py -3 -m unittest tests.test_local_edit -v
+py -3 -m unittest -v
 ```
 
 ```sh
-python3 -m unittest tests.test_local_edit -v
+python3 -m unittest -v
 ```
