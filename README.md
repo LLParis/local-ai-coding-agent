@@ -24,6 +24,8 @@ Current evidence and research:
 - [`long-context and knowledge decision`](docs/LONG_CONTEXT_DECISION.md)
 - [`August 2026 community research`](docs/AUGUST_2026_COMMUNITY_RESEARCH.md)
 - [`Research Radar and governed autoresearch decision`](docs/RESEARCH_RADAR_DECISION.md)
+- [`Research Radar ingestion v1 operator contract`](docs/RESEARCH_RADAR_V1.md)
+- [`evidence-driven routing v1`](docs/ROUTING_V1.md)
 - [`DeepSeek Harness audit`](docs/DEEPSEEK_HARNESS_AUDIT.md)
 - [`bounded model tournament`](docs/TOURNAMENT_V1.md)
 
@@ -91,6 +93,15 @@ bin\continuity.cmd memory-rebuild --root "$env:LOCALAPPDATA\CodingIntelligence\M
 `memory-search`, `memory-get`, `memory-pack`, `compaction-validate`, and
 `compaction-commit` expose the same exact-scope retrieval and loss-checked state
 boundaries. Run `bin\continuity.cmd --help` for their full arguments.
+
+## Research Radar metadata intake
+
+`radar-ingest` converts a bounded exact-ID arXiv Atom response into immutable
+paper/version, source-observation, and lifecycle records. `radar-transition`
+advances one explicit evidence-backed lifecycle event. Both commands are
+read-only dry runs unless `--apply` is supplied; neither downloads or executes
+paper code and neither can implement a candidate. See
+[`docs/RESEARCH_RADAR_V1.md`](docs/RESEARCH_RADAR_V1.md).
 
 ## Windows: run one local edit
 

@@ -1,0 +1,39 @@
+{
+  "schema": "coding-intelligence.research-radar.sync-config/v1",
+  "categories": ["cs.AI", "cs.SE"],
+  "discovery_terms": ["agent memory", "coding agent", "expert routing", "tool calling"],
+  "triage": {
+    "profile_id": "coding-intelligence-active-v1",
+    "active_questions": {
+      "durable_memory": ["persistent memory", "compaction"],
+      "expert_routing": ["expert routing", "sparse expert"]
+    },
+    "observed_failures": {
+      "tool_loop": ["tool-loop", "tool loop"],
+      "crash_recovery": ["crash-resilient", "crash recovery"]
+    },
+    "mutable_layers": {
+      "memory": ["memory", "compaction"],
+      "router": ["routing", "router"]
+    },
+    "supported_categories": ["cs.AI", "cs.CL", "cs.SE"]
+  },
+  "budgets": {
+    "max_requests": 12,
+    "max_response_bytes": 4194304,
+    "max_items": 8,
+    "max_discovery_items": 4,
+    "max_frontier_items": 2,
+    "max_backlog_items": 2,
+    "max_recheck_items": 4,
+    "max_artifacts": 2,
+    "timeout_seconds": 5,
+    "max_wall_seconds": 60,
+    "retry_count": 0
+  },
+  "cadence": {
+    "discovery_lookback_hours": 48,
+    "version_recheck_days": 7
+  },
+  "verify_artifacts": true
+}

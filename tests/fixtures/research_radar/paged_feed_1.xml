@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:arxiv="http://arxiv.org/schemas/atom"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <title>Paged discovery fixture one</title>
+  <id>https://export.arxiv.org/api/query?fixture=paged-1</id>
+  <updated>2026-08-20T10:00:00Z</updated>
+  <opensearch:totalResults>2</opensearch:totalResults>
+  <opensearch:startIndex>1</opensearch:startIndex>
+  <opensearch:itemsPerPage>1</opensearch:itemsPerPage>
+  <entry>
+    <id>https://arxiv.org/abs/2608.00012v1</id>
+    <updated>2026-08-20T09:01:00Z</updated>
+    <published>2026-08-20T09:01:00Z</published>
+    <title>Second bounded research page</title>
+    <summary>Sparse expert routing evaluation under a bounded second page.</summary>
+    <author><name>Lin Page</name></author>
+    <arxiv:primary_category term="cs.AI"/>
+    <category term="cs.AI"/>
+    <link href="https://arxiv.org/abs/2608.00012v1" rel="alternate" type="text/html"/>
+    <arxiv:license>http://creativecommons.org/licenses/by/4.0/</arxiv:license>
+  </entry>
+</feed>

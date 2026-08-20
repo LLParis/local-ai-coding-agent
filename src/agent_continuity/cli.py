@@ -6,6 +6,7 @@ import re
 import sys
 import uuid
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,22 @@ from .compaction import (
 from .endpoint import EndpointError, check_endpoint
 from .local_edit import LocalEditError, run_local_edit
 from .memory_store import MemoryStore, MemoryStoreError
+from .research_radar import (
+    DEFAULT_MAX_IDS,
+    DEFAULT_MAX_RESPONSE_BYTES,
+    DEFAULT_PAGE_SIZE,
+    DEFAULT_TIMEOUT_SECONDS,
+    RadarConflictError,
+    ResearchRadarError,
+    apply_plan,
+    apply_transition,
+    fetch_arxiv_batches,
+    load_sync_config,
+    plan_ingestion,
+    plan_transition,
+    read_atom_file,
+    sync_research_radar,
+)
 from .run_memory import (
     RUN_FINALIZATION_SCHEMA,
     RunIdentity,
@@ -165,9 +182,10 @@ def _semantic_verifier_id(path: Path, candidate_sha256: str) -> str:
         raise CommandError(
             f"semantic verifier report schema must be {SEMANTIC_VERIFICATION_SCHEMA}"
         )
-    if _sha256(
-        value["candidate_state_sha256"], "semantic verifier candidate_state_sha256"
-    ) != candidate_sha256:
+    if (
+        _sha256(value["candidate_state_sha256"], "semantic verifier candidate_state_sha256")
+        != candidate_sha256
+    ):
         raise CommandError("semantic verifier report is for a different candidate")
     if value["verdict"] != "accepted":
         raise CommandError("semantic verifier did not accept the candidate")
@@ -338,9 +356,7 @@ def _parser() -> argparse.ArgumentParser:
     memory_pack.add_argument("--tool", action="append")
     memory_pack.add_argument("--blocker", action="append")
     counter = memory_pack.add_mutually_exclusive_group(required=True)
-    counter.add_argument(
-        "--tokenize-url", help="exact loopback llama.cpp URL ending in /tokenize"
-    )
+    counter.add_argument("--tokenize-url", help="exact loopback llama.cpp URL ending in /tokenize")
     counter.add_argument(
         "--offline-counter",
         choices=("whitespace-v1",),
@@ -367,6 +383,58 @@ def _parser() -> argparse.ArgumentParser:
     add_compaction_inputs(compaction_commit)
     compaction_commit.add_argument("--semantic-verifier", required=True, type=Path)
     compaction_commit.add_argument("--output", required=True, type=Path)
+
+    radar_ingest = commands.add_parser(
+        "radar-ingest",
+        help="dry-run bounded primary-arXiv metadata intake; --apply writes immutable records",
+    )
+    radar_ingest.add_argument("--root", required=True, type=Path)
+    radar_source = radar_ingest.add_mutually_exclusive_group(required=True)
+    radar_source.add_argument("--arxiv-id", action="append")
+    radar_source.add_argument("--atom-file", type=Path, action="append")
+    radar_ingest.add_argument("--max-ids", type=int, default=DEFAULT_MAX_IDS)
+    radar_ingest.add_argument("--page-size", type=int, default=DEFAULT_PAGE_SIZE)
+    radar_ingest.add_argument("--max-response-bytes", type=int, default=DEFAULT_MAX_RESPONSE_BYTES)
+    radar_ingest.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_SECONDS)
+    radar_ingest.add_argument("--apply", action="store_true")
+
+    radar_transition = commands.add_parser(
+        "radar-transition",
+        help="dry-run one immutable Research Radar lifecycle transition",
+    )
+    radar_transition.add_argument("--root", required=True, type=Path)
+    radar_transition.add_argument("--arxiv-id", required=True)
+    radar_transition.add_argument("--from-status", required=True)
+    radar_transition.add_argument("--to-status", required=True)
+    radar_transition.add_argument("--owner", required=True)
+    radar_transition.add_argument("--reason", required=True)
+    radar_transition.add_argument("--evidence", action="append", default=[])
+    radar_transition.add_argument("--revisit-trigger")
+    radar_transition.add_argument("--occurred-at", required=True)
+    radar_transition.add_argument("--apply", action="store_true")
+
+    radar_sync = commands.add_parser(
+        "radar-sync",
+        help="run one bounded daily discovery / weekly version-recheck cycle",
+    )
+    radar_sync.add_argument("--root", required=True, type=Path)
+    radar_sync.add_argument("--config", required=True, type=Path)
+    radar_sync.add_argument(
+        "--as-of",
+        help="ISO-8601 evaluation time; defaults to the current UTC time",
+    )
+    radar_sync.add_argument(
+        "--offline",
+        action="store_true",
+        help="read only the persistent daily cache; a cache miss is runtime_blocked",
+    )
+    radar_sync.add_argument("--apply", action="store_true")
+
+    radar_config_validate = commands.add_parser(
+        "radar-config-validate",
+        help="validate one strict Research Radar sync configuration without network or writes",
+    )
+    radar_config_validate.add_argument("--config", required=True, type=Path)
     return parser
 
 
@@ -643,6 +711,105 @@ def main(argv: list[str] | None = None) -> int:
                 candidate_state_sha256=result.candidate_state_sha256,
                 semantic_verifier_id=verifier_id,
             )
+        elif args.command == "radar-ingest":
+            if (
+                not 1 <= args.max_ids <= DEFAULT_MAX_IDS
+                or not 1 <= args.page_size <= DEFAULT_PAGE_SIZE
+                or not 1 <= args.max_response_bytes <= DEFAULT_MAX_RESPONSE_BYTES
+                or not 0 < args.timeout <= DEFAULT_TIMEOUT_SECONDS
+            ):
+                raise CommandError(
+                    "Research Radar bounds must be positive and no larger than v1 defaults"
+                )
+            if args.atom_file:
+                if len(args.atom_file) > args.max_ids:
+                    raise CommandError("Atom file count exceeds the aggregate v1 limit")
+                batches = []
+                remaining_bytes = args.max_response_bytes
+                for path in args.atom_file:
+                    batch = read_atom_file(path, max_response_bytes=remaining_bytes)
+                    batches.append(batch)
+                    remaining_bytes -= len(batch.content)
+            else:
+                batches = fetch_arxiv_batches(
+                    args.arxiv_id,
+                    max_ids=args.max_ids,
+                    page_size=args.page_size,
+                    max_response_bytes=args.max_response_bytes,
+                    timeout_seconds=args.timeout,
+                )
+            plan = plan_ingestion(args.root, batches, max_entries_total=args.max_ids)
+            counts = {
+                state: sum(item.state == state for item in plan)
+                for state in ("create", "unchanged")
+            }
+            if args.apply:
+                result = apply_plan(args.root, plan)
+                _report(
+                    status="applied",
+                    mode="explicit_apply",
+                    root=str(args.root.expanduser().resolve()),
+                    source_batches=len(batches),
+                    **result,
+                )
+            else:
+                _report(
+                    status="planned",
+                    mode="dry_run_no_writes",
+                    root=str(args.root.expanduser().resolve()),
+                    source_batches=len(batches),
+                    counts=counts,
+                    actions=[item.report() for item in plan],
+                )
+        elif args.command == "radar-transition":
+            transition = plan_transition(
+                args.root,
+                args.arxiv_id,
+                expected_from=args.from_status,
+                to_status=args.to_status,
+                owner=args.owner,
+                reason=args.reason,
+                evidence=args.evidence,
+                revisit_trigger=args.revisit_trigger,
+                occurred_at=args.occurred_at,
+            )
+            if args.apply:
+                state = apply_transition(args.root, transition, expected_from=args.from_status)
+                _report(
+                    status=state,
+                    mode="explicit_apply",
+                    path=transition.relative_path,
+                    sha256=transition.sha256,
+                )
+            else:
+                _report(
+                    status="planned",
+                    mode="dry_run_no_writes",
+                    action=transition.report(),
+                )
+        elif args.command == "radar-sync":
+            config = load_sync_config(args.config)
+            as_of = args.as_of
+            if as_of is None:
+                as_of = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+            result = sync_research_radar(
+                args.root,
+                config,
+                as_of=as_of,
+                apply=args.apply,
+                offline=args.offline,
+            )
+            _report(**result)
+            if result.get("status") == "runtime_blocked":
+                return 1
+        elif args.command == "radar-config-validate":
+            config = load_sync_config(args.config)
+            _report(
+                status="valid",
+                mode="read_only_no_network_no_writes",
+                config=str(args.config.expanduser().resolve()),
+                config_sha256=config.sha256,
+            )
         return 0
     except (
         CheckpointError,
@@ -652,6 +819,8 @@ def main(argv: list[str] | None = None) -> int:
         TaskStateError,
         WorkingSetError,
         RunMemoryError,
+        ResearchRadarError,
+        RadarConflictError,
         CommandError,
         OSError,
     ) as exc:

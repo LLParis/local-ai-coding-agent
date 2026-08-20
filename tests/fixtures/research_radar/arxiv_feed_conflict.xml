@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <updated>2026-08-20T08:00:00Z</updated>
+  <entry>
+    <id>https://arxiv.org/abs/2601.00001v2</id>
+    <updated>2026-02-03T04:05:06Z</updated>
+    <published>2026-01-01T01:02:03Z</published>
+    <title>Conflicting title for an immutable version</title>
+    <summary>Conflicting normalized metadata.</summary>
+    <author><name>Ada Example</name></author>
+    <arxiv:primary_category term="cs.AI"/>
+    <category term="cs.AI"/>
+  </entry>
+</feed>
