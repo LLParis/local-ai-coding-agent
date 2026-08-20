@@ -336,7 +336,7 @@ def _model_response_schema() -> dict[str, Any]:
                     },
                 ]
             },
-            "verification": {"type": ["object", "null"]},
+            "verification": {"type": "null"},
             "tool_trace": {"type": "array", "items": tool_call},
             "resume_state": {"anyOf": [{"type": "null"}, resume_state]},
             "duplicate_effect_ids": {

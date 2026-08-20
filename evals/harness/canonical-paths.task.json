@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "backend": "Qwen38",
+  "workspace": "evals/tournament_baseline",
+  "objective": "Canonicalize safe Windows-style relative scope paths and reject drive, UNC, rooted, and traversal forms before filesystem access. Make the smallest complete correction and do not edit verifier files.",
+  "mutable": [
+    "src/agent_continuity/checkpoint.py"
+  ],
+  "context": [
+    "src/agent_continuity/checkpoint.py"
+  ],
+  "verify_context": [
+    "evals/qualification/case_02"
+  ],
+  "test_command": [
+    "py",
+    "-3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "evals/qualification/case_02",
+    "-p",
+    "test_hidden.py",
+    "-v"
+  ],
+  "timeout": 180
+}

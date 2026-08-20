@@ -37,6 +37,37 @@ redesigning completed foundations.
   of expanding the slice.
 - Report configured, tested, and production-proven states separately.
 
+## Research-verdict integrity
+
+The default research verdict is neither yes nor no. A candidate remains
+unresolved until an applicable, current, falsifiable experiment distinguishes
+it. Caution is not evidence against a candidate, and a failed evaluator is not
+evidence that the candidate failed.
+
+- Before rejecting or demoting anything, prove that the model-visible request
+  actually asks every question scored by the oracle.
+- Test required behavior, not one preferred implementation, wording, diagnosis
+  label, source hash, or serialization unless exact identity is the contract.
+- Treat a different implementation that passes the authoritative behavioral
+  test as a candidate success, then evaluate its real risks separately.
+- Pin the candidate, runtime, harness, prompt/template, tools, context, and
+  evaluator. A stale or incompatible component invalidates the trial rather
+  than the candidate.
+- Classify terminal outcomes explicitly as `accepted`, `rejected`,
+  `inconclusive`, `evaluator_invalid`, or `runtime_blocked`. Never collapse the
+  last three into rejection.
+- Audit an unexpected failure once for prompt omission, hidden-answer leakage,
+  stale fixtures, scorer overconstraint, runtime mismatch, and verifier bugs
+  before issuing a negative verdict. Audit an unexpected success for leakage
+  and weak tests with equal rigor.
+- Give evaluators positive controls, negative controls, semantically equivalent
+  implementations, malformed outputs, and mutation tests. Validate the judge
+  before trusting its judgment.
+- Preserve invalid trials and corrections in the evidence ledger, but exclude
+  evaluator-invalid trials from candidate win/loss denominators.
+- Do not accumulate gates as a substitute for discernment. Every test must map
+  to an observed failure, required capability, or explicit research question.
+
 ## Edit and promotion boundary
 
 Unqualified local models work on an isolated copy of real code. Isolation is a

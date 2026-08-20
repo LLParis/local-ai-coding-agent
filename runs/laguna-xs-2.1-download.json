@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "artifact_verified_runtime_unproven",
+  "captured_at_utc": "2026-08-20T15:54:00Z",
+  "repository": "poolside/Laguna-XS-2.1-GGUF",
+  "revision": "1a37c0a5fb8c7a18e6106decb6be6327d1b63fa6",
+  "file": "Laguna-XS-2.1-Q4_K_M.gguf",
+  "path": "D:\\11_CS\\00_REPOS\\AI Research Mastery\\models\\Laguna-XS-2.1-GGUF\\Laguna-XS-2.1-Q4_K_M.gguf",
+  "bytes": 20274300032,
+  "sha256": "1ac7079101fca5a6df8c5a7523a3c30ea7d1c0e4b1258090e7d6d4039287f6cb",
+  "remote_lfs_bytes": 20274300032,
+  "remote_lfs_sha256": "1ac7079101fca5a6df8c5a7523a3c30ea7d1c0e4b1258090e7d6d4039287f6cb",
+  "artifact_verified": true,
+  "hf_cli_version": "1.27.0",
+  "download_authenticated": false,
+  "model_calls": 0,
+  "automatic_retries": 0,
+  "runtime_compatibility_proven": false,
+  "coding_qualification_proven": false,
+  "promotion": "not_promoted"
+}

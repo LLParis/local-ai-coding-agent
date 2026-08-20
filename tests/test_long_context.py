@@ -539,6 +539,10 @@ class ScoringTests(unittest.TestCase):
 
 
 class LiveRunnerTests(unittest.TestCase):
+    def test_model_cannot_claim_runner_owned_verification(self) -> None:
+        schema = live_runner._model_response_schema()
+        self.assertEqual(schema["properties"]["verification"], {"type": "null"})
+
     def _execute(self, server: FakeLlamaServer, **overrides: object) -> dict:
         options = {
             "base_url": server.base_url,
