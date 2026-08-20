@@ -1,0 +1,138 @@
+{
+  "schema": "coding-intelligence-long-context-qualification-evidence/v1",
+  "verdict": "accepted",
+  "profile": {
+    "suite_id": "qwen38-q6-native-262144-v1",
+    "model": "arm-qwen38-q6-native-262k",
+    "model_family": "qwen3.8-27b",
+    "weight_quantization": "Q6_K",
+    "backend": "llama.cpp",
+    "backend_build": "b10435-9e40df63b",
+    "context_tokens": 262144,
+    "kv_cache": "q4_0",
+    "mtp": false,
+    "slots": 1,
+    "reserved_completion_tokens": 24576
+  },
+  "frozen_inputs": {
+    "campaign_commit": "7b4d3e2",
+    "suite_manifest_sha256": "sha256:d147686c42f1aefa4866937accf90ee3eb8b4c1c382347d5e9e492e17f82f0b2",
+    "runtime_props_sha256": "sha256:c5ce14311a0eb1928850a4c9fb1e5cb5dda68ef35ed2ea466b0fbcbb4b728e22",
+    "chat_template_sha256": "sha256:12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce",
+    "source_changed_during_campaign": false
+  },
+  "campaign": {
+    "first_captured_at_utc": "2026-08-20T16:30:13.268465+00:00",
+    "last_captured_at_utc": "2026-08-20T19:50:55.940338+00:00",
+    "raw_artifact_root": "runs/long-context/matrix-final-7b4d3e2",
+    "raw_artifact_count": 60,
+    "raw_artifact_bytes": 753992,
+    "warmup_runs": 15,
+    "measured_runs": 45,
+    "model_calls": 60,
+    "automatic_retries": 0,
+    "timeouts": 0,
+    "backend_restarts": 0,
+    "backend_warnings": 0,
+    "unique_configuration_trial_keys": 60,
+    "unique_request_hashes": 60,
+    "unique_raw_response_hashes": 60,
+    "unique_isolation_markers": 60,
+    "total_scorer_checks": 1128,
+    "failed_scorer_checks": 0,
+    "invalid_artifacts": 0,
+    "missing_runs": [],
+    "duplicate_runs": []
+  },
+  "aggregate": {
+    "schema": "coding-intelligence-long-context-qualification/v1",
+    "qualification_sha256": "sha256:633cb662211247f3178fcee7734ece54b6429e0f494b78b6926f74bbe3ab8638",
+    "qualified": true,
+    "expected_runs": 60,
+    "observed_runs": 60,
+    "fill_scores": {
+      "fill-50": 1.0,
+      "fill-75": 1.0,
+      "fill-90": 1.0
+    },
+    "fill_50_to_90_degradation": 0.0,
+    "gates": {
+      "all_critical_checks_passed": true,
+      "max_five_point_degradation": true,
+      "one_warmup_per_case": true,
+      "three_measured_trials_per_case": true
+    }
+  },
+  "families": {
+    "depth_retrieval": {"runs": 12, "passed": 12},
+    "repository_diagnosis": {"runs": 12, "passed": 12},
+    "resume_compaction": {"runs": 12, "passed": 12},
+    "temporal_decision": {"runs": 12, "passed": 12},
+    "tool_contract": {"runs": 12, "passed": 12}
+  },
+  "measured_performance": {
+    "131072": {
+      "runs": 15,
+      "score": 1.0,
+      "average_prompt_tokens_per_second": 1588.5,
+      "minimum_prompt_tokens_per_second": 1569.9,
+      "average_decode_tokens_per_second": 40.2,
+      "average_ttft_seconds": 82.5,
+      "average_wall_seconds": 113.0,
+      "runner_observed_max_vram_mib": 30019,
+      "runner_observed_max_ram_mib": 36165
+    },
+    "196608": {
+      "runs": 15,
+      "score": 1.0,
+      "average_prompt_tokens_per_second": 1226.4,
+      "minimum_prompt_tokens_per_second": 1205.7,
+      "average_decode_tokens_per_second": 35.2,
+      "average_ttft_seconds": 160.3,
+      "average_wall_seconds": 191.7,
+      "runner_observed_max_vram_mib": 30245,
+      "runner_observed_max_ram_mib": 36139
+    },
+    "235930": {
+      "runs": 15,
+      "score": 1.0,
+      "average_prompt_tokens_per_second": 1077.5,
+      "minimum_prompt_tokens_per_second": 1069.4,
+      "average_decode_tokens_per_second": 32.7,
+      "average_ttft_seconds": 219.0,
+      "average_wall_seconds": 249.1,
+      "runner_observed_max_vram_mib": 30104,
+      "runner_observed_max_ram_mib": 36075
+    }
+  },
+  "repository_diagnosis_evidence": {
+    "runs": 12,
+    "hidden_test_passes": 12,
+    "hidden_test_output_sha256": "sha256:262b1edea5ef0034df6499b086e25797b47abb4595986bfc2fa4bcd2c0fa7411",
+    "source_fixture_sha256": "sha256:a35e19db890f28b0789c591004cdfebcb39e2bb1b2deddf39d3ec9737f6c17a0",
+    "before_hash_matches_source_runs": 12,
+    "accepted_semantic_patch_hashes": [
+      "sha256:6fc9cc4d895da428a4f7c95cfcac4a99bfae72428d287ca43e28c4fb09cef0d6",
+      "sha256:8060c00da693ef7d0908c17dcc1910370be360ab502284da73e6bd781fc7ad31"
+    ],
+    "source_fixture_mutated": false
+  },
+  "process_cleanup": {
+    "matrix_orchestrator_exited": true,
+    "live_python_processes_after_campaign": 0
+  },
+  "scope": {
+    "proves": [
+      "repeatable long-context retrieval across 50, 75, and 90 percent prompt fills",
+      "temporal truth and contradiction handling",
+      "runner-owned hidden verification of scoped repository diagnosis and edits",
+      "exact tool-contract reconstruction without duplicated side effects",
+      "resume and compaction-state reconstruction with unknown outcomes preserved"
+    ],
+    "does_not_prove": [
+      "that every coding task will succeed",
+      "that other models, quants, templates, runtimes, or harnesses inherit this qualification",
+      "that runner-observed memory samples are continuous hardware peak measurements"
+    ]
+  }
+}
