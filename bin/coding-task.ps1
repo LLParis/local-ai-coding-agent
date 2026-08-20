@@ -15,6 +15,8 @@ param(
     [Parameter(DontShow = $true)]
     [string]$RunSessionId,
     [Parameter(DontShow = $true)]
+    [string]$MacVerifierPath,
+    [Parameter(DontShow = $true)]
     [string]$VerifierUri = "http://127.0.0.1:11434/api/chat"
 )
 
@@ -36,6 +38,11 @@ $memoryContinuity = if ([string]::IsNullOrWhiteSpace($MemoryContinuityPath)) {
     Join-Path $PSScriptRoot "continuity.cmd"
 } else {
     $MemoryContinuityPath
+}
+$macVerifier = if ([string]::IsNullOrWhiteSpace($MacVerifierPath)) {
+    Join-Path $PSScriptRoot "mac-swift-verifier.py"
+} else {
+    $MacVerifierPath
 }
 $taskPath = (Resolve-Path -LiteralPath $Task -ErrorAction Stop).Path
 $plan = Get-Content -LiteralPath $taskPath -Raw | ConvertFrom-Json
@@ -62,7 +69,16 @@ function Get-TextSha256([AllowNull()][string]$Text) {
 
 function Get-FileSha256OrEmpty([AllowNull()][string]$Path) {
     if (-not [string]::IsNullOrWhiteSpace($Path) -and (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        return "sha256:" + (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+        $stream = [IO.File]::OpenRead($Path)
+        $hasher = [Security.Cryptography.SHA256]::Create()
+        try {
+            return "sha256:" + ([BitConverter]::ToString(
+                $hasher.ComputeHash($stream)
+            )).Replace("-", "").ToLowerInvariant()
+        } finally {
+            $hasher.Dispose()
+            $stream.Dispose()
+        }
     }
     return Get-TextSha256 -Text ""
 }
@@ -216,7 +232,7 @@ Judge only whether this scoped diff satisfies the objective, preserves unrelated
 
 $allowed = @(
     "schema_version", "backend", "workspace", "objective", "mutable",
-    "context", "verify_context", "test_command", "timeout"
+    "context", "verify_context", "test_command", "timeout", "execution_verifier"
 )
 $unknown = @($plan.PSObject.Properties.Name | Where-Object { $_ -notin $allowed })
 if ($unknown.Count) {
@@ -245,6 +261,74 @@ if (-not $mutable.Count -or -not $context.Count -or -not $verifyContext.Count -o
 $timeout = if ($null -eq $plan.timeout) { 180 } else { [int]$plan.timeout }
 if ($timeout -lt 10 -or $timeout -gt 1800) {
     throw "timeout must be between 10 and 1800 seconds."
+}
+$executionVerifier = [string](Get-PropertyOrDefault `
+    -Value $plan -Name "execution_verifier" -Default "")
+if ($executionVerifier -notin @("", "mac-swift")) {
+    throw "execution_verifier must be omitted or mac-swift."
+}
+$taskSha256 = Get-FileSha256OrEmpty -Path $taskPath
+$macSourceSnapshot = $null
+$macVerifierCommandPrefix = @()
+$macRemoteTimeout = $null
+if ($executionVerifier -eq "mac-swift") {
+    if ($timeout -lt 60) {
+        throw "mac-swift timeout must be at least 60 seconds."
+    }
+    if (
+        $testCommand.Count -lt 2 -or
+        [string]$testCommand[0] -ne "swift" -or
+        [string]$testCommand[1] -ne "test"
+    ) {
+        throw "mac-swift test_command must begin with separate swift and test argv."
+    }
+    $macVerifier = (Resolve-Path -LiteralPath $macVerifier -ErrorAction Stop).Path
+    if (-not (Test-Path -LiteralPath $macVerifier -PathType Leaf)) {
+        throw "mac-swift verifier helper is unavailable."
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:CODING_INTELLIGENCE_PYTHON)) {
+        $pythonExecutable = (Resolve-Path -LiteralPath $env:CODING_INTELLIGENCE_PYTHON `
+            -ErrorAction Stop).Path
+        $macVerifierCommandPrefix = @($pythonExecutable)
+    } elseif ($null -ne (Get-Command "py" -ErrorAction SilentlyContinue)) {
+        $macVerifierCommandPrefix = @("py", "-3")
+    } elseif ($null -ne (Get-Command "python" -ErrorAction SilentlyContinue)) {
+        $macVerifierCommandPrefix = @("python")
+    } else {
+        throw "mac-swift verifier requires the configured Python runtime."
+    }
+    $pythonExecutable = $macVerifierCommandPrefix[0]
+    $pythonArguments = @($macVerifierCommandPrefix | Select-Object -Skip 1)
+    $priorErrorAction = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $macSnapshotOutput = @(& $pythonExecutable @pythonArguments `
+            $macVerifier "snapshot" `
+            "--task" $taskPath `
+            "--expected-task-sha256" $taskSha256 `
+            "--root" $workspace 2>&1)
+        $macSnapshotExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $priorErrorAction
+    }
+    if ($macSnapshotExit -ne 0 -or -not $macSnapshotOutput.Count) {
+        throw "mac-swift source checkpoint failed: $($macSnapshotOutput -join "`n")"
+    }
+    try {
+        $macSourceSnapshot = $macSnapshotOutput[-1] | ConvertFrom-Json
+    } catch {
+        throw "mac-swift source checkpoint returned invalid JSON."
+    }
+    if (
+        [string]$macSourceSnapshot.schema -ne `
+            "coding-intelligence.mac-swift-source-snapshot/v1" -or
+        [string]$macSourceSnapshot.status -ne "verified" -or
+        [string]$macSourceSnapshot.task_sha256 -ne $taskSha256 -or
+        [string]$macSourceSnapshot.manifest_sha256 -notmatch '^sha256:[0-9a-f]{64}$'
+    ) {
+        throw "mac-swift source checkpoint failed its schema or hash contract."
+    }
+    $macRemoteTimeout = $timeout - 30
 }
 
 if ([string]$plan.backend -eq "Qwen38") {
@@ -277,6 +361,8 @@ if ($PlanOnly) {
         backend = [string]$plan.backend
         model = $model
         verifierModel = "devstral-small-2:24b"
+        executionVerifier = if ($executionVerifier) { $executionVerifier } else { $null }
+        sourceSnapshot = $macSourceSnapshot
         workspace = $workspace
         modelCalls = 0
         automaticRetries = 0
@@ -351,8 +437,24 @@ $arguments += @(
     "--task-id", $runTask,
     "--session-id", $runSession
 )
+$effectiveTestCommand = @($testCommand | ForEach-Object { [string]$_ })
+if ($executionVerifier -eq "mac-swift") {
+    $effectiveTestCommand = @(
+        $macVerifierCommandPrefix +
+        @(
+            $macVerifier,
+            "verify",
+            "--task", $taskPath,
+            "--expected-task-sha256", $taskSha256,
+            "--stage", ".",
+            "--expected-source-snapshot-sha256", `
+                [string]$macSourceSnapshot.manifest_sha256,
+            "--timeout", [string]$macRemoteTimeout
+        )
+    )
+}
 $arguments += "--"
-$arguments += @($testCommand | ForEach-Object { [string]$_ })
+$arguments += $effectiveTestCommand
 
 $swap = $null
 $verifierSwap = $null
@@ -374,6 +476,7 @@ $resultExit = 1
 $failure = $null
 $implementationCalls = 0
 $verifierCalls = 0
+$macExecutionVerifierReport = $null
 try {
     $swap = & $switcher -Backend ([string]$plan.backend) | ConvertFrom-Json
     $output = @(& $continuity @arguments 2>&1)
@@ -383,10 +486,59 @@ try {
     }
     $edit = $output[-1] | ConvertFrom-Json
     $implementationCalls = [int](Get-PropertyOrDefault -Value $edit -Name "model_calls" -Default 0)
+    $macExecutionVerifierPassed = $true
+    if ($executionVerifier -eq "mac-swift") {
+        $macExecutionVerifierPassed = $false
+        try {
+            $macExecutionVerifierReport = ([string]$edit.test_output).Trim() | ConvertFrom-Json
+            $macCheckpoint = $macExecutionVerifierReport.checkpoint
+            $macTransport = $macExecutionVerifierReport.transport
+            $macRemote = $macExecutionVerifierReport.result
+            if (
+                [string]$macExecutionVerifierReport.schema -ne `
+                    "coding-intelligence.mac-swift-verifier-result/v1" -or
+                [string]$macExecutionVerifierReport.status -ne "verified" -or
+                [int]$macExecutionVerifierReport.model_calls -ne 0 -or
+                [int]$macExecutionVerifierReport.automatic_retries -ne 0 -or
+                [string]$macCheckpoint.task_sha256 -ne $taskSha256 -or
+                [string]$macCheckpoint.source_snapshot_before_sha256 -ne `
+                    [string]$macSourceSnapshot.manifest_sha256 -or
+                [string]$macCheckpoint.source_snapshot_after_sha256 -ne `
+                    [string]$macSourceSnapshot.manifest_sha256 -or
+                [string]$macCheckpoint.stage_snapshot_after_sha256 -ne `
+                    [string]$macCheckpoint.stage_manifest_sha256 -or
+                [bool]$macCheckpoint.source_workspace_mutated -or
+                [int]$macTransport.ssh_sessions -ne 1 -or
+                [int]$macTransport.connection_attempts -ne 1 -or
+                [int]$macTransport.automatic_retries -ne 0 -or
+                [int]$macTransport.exit_code -ne 0 -or
+                [string]$macRemote.status -ne "verified" -or
+                -not [bool]$macRemote.identity.matched -or
+                [int]$macRemote.test.exit_code -ne 0 -or
+                [bool]$macRemote.test.timed_out -or
+                [bool]$macRemote.test.output_limit_exceeded -or
+                [bool]$macRemote.test.owned_process_group_residual -or
+                -not [bool]$macRemote.cleanup.succeeded -or
+                [bool]$macRemote.cleanup.post_exists
+            ) {
+                throw "mac-swift verifier report failed its identity, lifecycle, or evidence contract"
+            }
+            $macExecutionVerifierPassed = $true
+            $edit | Add-Member -NotePropertyName "mac_verifier" `
+                -NotePropertyValue $macExecutionVerifierReport -Force
+        } catch {
+            $macExecutionVerifierPassed = $false
+            $failure = "mac-swift verifier failed closed: $($_.Exception.Message)"
+            if ($null -ne $edit) {
+                $edit.status = "failed"
+            }
+        }
+    }
     $editPassed = (
         $exitCode -eq 0 -and
         [string]$edit.status -eq "verified" -and
-        [int]$edit.test_exit -eq 0
+        [int]$edit.test_exit -eq 0 -and
+        $macExecutionVerifierPassed
     )
     if (-not $editPassed) {
         $resultStatus = "failed"
@@ -461,7 +613,7 @@ $stageLocator = [string](Get-PropertyOrDefault -Value $edit -Name "stage" -Defau
 $trajectoryLocator = [string](Get-PropertyOrDefault -Value $edit -Name "trajectory" -Default "unavailable")
 $diffText = [string](Get-PropertyOrDefault -Value $edit -Name "diff" -Default "")
 $testOutputText = [string](Get-PropertyOrDefault -Value $edit -Name "test_output" -Default "")
-$testCommandJson = @($testCommand | ForEach-Object { [string]$_ }) | ConvertTo-Json -Compress
+$testCommandJson = $effectiveTestCommand | ConvertTo-Json -Compress
 $editFailure = [string](Get-PropertyOrDefault -Value $edit -Name "memory_failure" -Default "")
 $failureText = if (-not [string]::IsNullOrWhiteSpace($failure)) {
     [string]$failure
@@ -583,6 +735,9 @@ try {
     edit = $edit
     verifierSwitch = $verifierSwap
     verifier = $verifier
+    executionVerifier = if ($executionVerifier) { $executionVerifier } else { $null }
+    macVerifier = $macExecutionVerifierReport
+    sourceSnapshot = $macSourceSnapshot
     restore = $restore
     commandExit = $exitCode
     processExit = $resultExit
