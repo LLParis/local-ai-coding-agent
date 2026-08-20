@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "status": "verified",
+  "captured_at_utc": "2026-08-20T12:39:11.2892152Z",
+  "root_cause": "Proton VPN 5.1.7 WFP/WireGuard filtering blocked all Windows-originated traffic to Tailscale CGNAT addresses before traffic reached the Tailscale adapter.",
+  "before": {
+    "public_tcp_443": "connected",
+    "mac_tcp_22": "WSAEACCES",
+    "mac_peerapi": "WSAEACCES",
+    "iphone_peerapi": "WSAEACCES",
+    "tailscale_tsmp": "reachable via DERP",
+    "tailnet_packet_filter": "allow all",
+    "taildrop": "502 Bad Gateway"
+  },
+  "repair": {
+    "proton_split_tunnel_enabled": true,
+    "proton_split_tunnel_mode": "Standard exclude",
+    "excluded_ranges": [
+      "100.64.0.0/10",
+      "fd7a:115c:a1e0::/48"
+    ],
+    "rollback_copy": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\NetworkRecovery\\Proton-UserSettings-before-tailnet-split-20260820.json",
+    "rollback_sha256": "57c6514cb696352f761406fc7753cec3a33419e7275e62befe8911512013af23",
+    "repaired_settings_sha256": "126597131ba4c5cded1e021fd6966aa71561f5339914b4c811ca0245854cc0b1",
+    "proton_reconnected": true,
+    "uac_prompt": false
+  },
+  "after": {
+    "proton_adapter": "Up",
+    "public_tcp_443": "connected",
+    "mac_peerapi": "connected in 36 ms",
+    "iphone_peerapi": "connected in 212 ms",
+    "qwen_health": "ok",
+    "taildrop": "sent",
+    "taildrop_destination": "macOS ~/Downloads",
+    "taildrop_archive_bytes": 1101,
+    "taildrop_archive_sha256": "b41938a140d4371c83e4766b1362d87083a012e2ced54478d339813fcd35ee47",
+    "mac_tcp_22": "timeout; local WSAEACCES removed, native macOS Remote Login/firewall remains"
+  },
+  "remaining_independent_causes": [
+    "macOS Remote Login is not reachable on port 22 and must be enabled for user pro on the Mac.",
+    "This PC has zero enrolled Codex Remote hosts; Mac and PC require one-time host pairing and PC auto-connect."
+  ]
+}

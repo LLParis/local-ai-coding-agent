@@ -97,13 +97,15 @@ were not converted into successes.
 
 ## Not yet production-proven
 
-- The final Mac/Swift execution-edge task. The Mac is online and active in
-  Tailscale and answered a relay ping, but inbound SSH is denied and its Codex
-  AppServer is unavailable from this PC. Taildrop returned HTTP 502 on both
-  bounded attempts and was stopped. The complete frozen Swift package is
-  committed under `evals/cross_language/swift/`; no claim of Apple-edge
-  completion is made. Exact current evidence is in
-  `runs/mac-edge-blocker.json`.
+- The final Mac/Swift execution-edge task. Proton VPN was proven to have blocked
+  all PC-originated Tailscale sockets; the two official Tailscale address ranges
+  are now excluded from Proton while public VPN traffic remains protected.
+  PeerAPI and Taildrop pass, and the frozen Swift archive was delivered to the
+  Mac's Downloads folder. Native port 22 now times out, so macOS Remote Login or
+  its firewall remains a one-time Mac-side bootstrap. Codex Remote is a separate
+  cause: this PC has zero enrolled/auto-connected Mac hosts. Exact evidence is
+  in `runs/network-edge-repair.json` and `runs/mac-edge-blocker.json`; no claim
+  of Apple-edge execution completion is made.
 - A 90% or 95% frontier-equivalence rate. The current sample is deliberately
   small and contains failures.
 - Automatic patch promotion into real user work.
@@ -112,6 +114,8 @@ were not converted into successes.
 
 ## Exact next step when the Mac reconnects
 
-Run one frozen Swift package defect through PC Qwen, execute `swift test` on the
-Mac stage, return the diff/test/trajectory, and have Devstral verify the patch.
-Do not reopen the completed Windows lifecycle or model-selection work.
+Enable native Remote Login for user `pro` once, then use SSH to run the already
+delivered frozen Swift package through PC Qwen and `swift test`. Separately pair
+Codex Remote once, persist PC auto-connect, and lifecycle-prove the Mac remote
+control daemon. Do not reopen the completed Windows lifecycle/model-selection
+or Proton/Tailscale work.
