@@ -6,10 +6,12 @@ media-tool execution edge. Product work from Anime Frontier or any other
 project stays outside this repository unless it is supplied as a frozen
 qualification fixture or explicitly delegated.
 
-The working baseline is deliberately thin: one implementation response proposes
-one to four exact replacements in an isolated copy, one real project command
-tests that staged result, and Devstral independently reviews a passing diff. The
-source workspace is never changed.
+The everyday production loop is focused and truthful: DeepSeek Harness drives
+the local Qwen3.8-27B Q6 Native 262K model through an inspect/edit/test loop in
+an isolated stage, the repository's real command verifies the staged
+result, and Devstral reviews a passing diff once as an advisory second opinion
+while deterministic execution remains final authority. A verified result is
+applied to the source by default; `--stage-only` keeps it in the retained stage.
 
 See [`docs/OUTCOME_FIRST_CONTRACT.md`](docs/OUTCOME_FIRST_CONTRACT.md) for the
 trial stopping rules.
@@ -43,30 +45,49 @@ live readiness; it performs no model call and requires no elevation.
 
 ## Everyday command
 
-Create a schema-v1 task file from `task.example.json`, then run:
+The everyday command takes a repository and a plain objective:
 
 ```powershell
-bin\coding-task.cmd D:\path\to\coding-task.json
+bin\coding.cmd D:\path\to\project "Fix the described defect without changing tests."
 ```
 
-That one command switches to the selected owned backend without UAC, sends one
-structured edit request, and runs verifier-only project tests in the retained
-stage. After a passing edit it switches to Ollama, sends the objective, scoped
-diff, and test result to `devstral-small-2:24b` exactly once, enforces a strict
-accept/reject verdict, and reports that result. Every non-PlanOnly outcome then
-restores Qwen as the idle default. The JSON report separates implementer,
-verifier, backend-swap, implementation-exit, final-process-exit, and restore
-telemetry. There are no automatic retries or automatic patch promotion;
-`-PlanOnly` makes zero model or backend calls.
+DeepSeek Harness is the default loop. It switches to the owned `Qwen38Native`
+backend (Qwen3.8-27B Q6, native 262K) without UAC and drives the model through
+an inspect/edit/test loop in an isolated stage. The repository's real
+command verifies the staged result; materially new failure evidence allows at
+most two targeted repairs, and an identical failure stops the run. A verified
+result is applied to the source by default and its stage is cleaned;
+`--stage-only` retains the stage without touching the workspace. After a passing run the
+worker switches to Ollama and sends the objective and diff to
+`devstral-small-2:24b` exactly once as an advisory reviewer; deterministic
+execution remains final authority. The backend is restored afterward.
+
+Repeat `--scope` to focus a job on named repository-relative paths; without it
+the job covers the full repository:
+
+```powershell
+bin\coding.cmd D:\path\to\project "Finish the focused production job" `
+  --scope src\agent_continuity\production_worker.py --scope docs --stage-only
+```
+
+The effective requested scope is recorded in the durable model request and the
+final JSON result, so operators can see whether a job was focused or
+full-repository. `--harness qwen-code` selects the model-aligned Qwen Code
+alternate; DeepSeek Harness remains the production default. There are no
+automatic retries.
 
 The same command records a durable task intent before model dispatch and a
 terminal evidence-backed state afterward. Active memory keeps hashes and
 locators rather than duplicating prompts, model output, diffs, or test logs.
+The task-file lane `bin\coding-task.cmd` remains available for one-response
+scoped edits; it is no longer the everyday entrypoint.
 
 ## Native context and harness candidates
 
-The bounded everyday Qwen profile remains 32K. A separate managed task provides
-the frozen Q6/native-262K/Q4-KV/MTP-off evaluation lane:
+The everyday production loop runs on the frozen Q6/native-262K/Q4-KV/MTP-off
+profile: DeepSeek Harness switches to `Qwen38Native` for the job and restores
+the idle default afterward. The bounded task-file lane keeps the 32K `Qwen38`
+profile. Operators can also switch backends manually:
 
 ```powershell
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
@@ -76,9 +97,9 @@ powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
 Restore normal operation with `-Backend Qwen38`. Both paths are current-user,
 loopback-only, exact-owner Scheduled Tasks and do not display UAC.
 
-Pi 0.84.2 is the qualification-ready lightweight interactive adapter. DeepSeek
-Harness rc.8 is installed but blocked until a reviewed plugin exposes the same
-four scoped live tools and event contract. See `runs/adapter-install-state.json`.
+Pi 0.84.2 remains the qualification-ready lightweight interactive adapter.
+DeepSeek Harness is the default everyday loop for the Qwen3.8-27B Q6 Native
+262K backend. See `runs/adapter-install-state.json` for recorded adapter state.
 
 ## Memory commands
 

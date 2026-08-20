@@ -13,10 +13,9 @@ if defined CODING_INTELLIGENCE_PYTHON (
 )
 
 where py >nul 2>nul
-if not errorlevel 1 (
-  py -3 -m agent_continuity.production_worker %*
-  exit /b %ERRORLEVEL%
-)
-
-python -m agent_continuity.production_worker %*
+if errorlevel 1 goto python_fallback
+py -3 -m agent_continuity.production_worker %*
 exit /b %ERRORLEVEL%
+
+:python_fallback
+python -m agent_continuity.production_worker %*

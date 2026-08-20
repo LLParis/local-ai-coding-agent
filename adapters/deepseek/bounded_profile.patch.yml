@@ -13,6 +13,7 @@
         api: openai-completions
         baseURL: !!js process.env.CI_ADAPTER_ENDPOINT
         apiKeyEnv: CI_ADAPTER_API_KEY
+        reasoning: low
         retryPolicy:
           mode: normal
           maxRetries: 0
@@ -25,9 +26,11 @@
         models:
           - id: !!js process.env.CI_ADAPTER_MODEL
             name: Local qualified candidate
-            contextWindow: 32768
+            contextWindow: 262144
             maxTokens: !!js Number(process.env.CI_ADAPTER_MAX_OUTPUT_TOKENS)
-            reasoningEfforts: false
+            reasoningEfforts:
+              low: low
+              medium: medium
 
 # Disable secondary model calls, retry/repetition machinery, dynamic settings,
 # outbound telemetry, implicit context loaders, and every shipped broad tool.
@@ -48,11 +51,19 @@
 - id: shell-env
   disabled: true
 - id: compaction-basic
-  disabled: true
+  config:
+    auto: true
+    thresholdRatio: 0.8
+    retainRatio: 0.25
+    maxTokens: 16384
+    compactionRetries: 0
 - id: command-compact
   disabled: true
 - id: tool-result-pruner
-  disabled: true
+  config:
+    thresholdChars: 8192
+    headChars: 4096
+    tailChars: 1024
 - id: tool-ralph
   disabled: true
 - id: repeat-tool-reminder

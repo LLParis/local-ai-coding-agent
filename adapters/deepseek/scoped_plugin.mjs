@@ -2,7 +2,7 @@
  * Coding Intelligence's bounded DeepSeek Harness plugin.
  *
  * This replaces the shipped final-text-only headless runner. Configuration
- * comes only from a validated parent; the model gets read/search/edit/test.
+ * comes only from a validated parent; the model gets list/read/search/edit/test.
  */
 
 import { createHash, randomUUID } from "node:crypto";
@@ -23,14 +23,14 @@ import { createUserMessage } from "@deepseek-ai/dsh-llm";
 import { SessionId } from "@deepseek-ai/dsh-session";
 import { defineTool } from "@deepseek-ai/dsh-tools";
 
-export const name = "ci-deepseek-bounded-runner";
+export const name = "ci-deepseek-production-runner";
 export const inject = ["agentDefaultModel", "agents", "sessions", "systemPrompt", "tools"];
 
-const ALLOWED_TOOLS = Object.freeze(["read", "search", "edit", "test"]);
-const MAX_FILE_BYTES = 262_144;
+const ALLOWED_TOOLS = Object.freeze(["list", "read", "search", "edit", "test"]);
+const MAX_FILE_BYTES = 1_048_576;
 const MAX_EDIT_BYTES = 524_288;
-const MAX_MATCHES = 200;
-const MAX_TOOL_OUTPUT = 32_768;
+const MAX_MATCHES = 500;
+const MAX_TOOL_OUTPUT = 131_072;
 const WINDOWS_RESERVED_NAMES = new Set([
   "CON", "PRN", "AUX", "NUL",
   "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
@@ -329,23 +329,57 @@ function runCommand(command, cwd, timeoutMs, signal) {
 
 function prompt(objective, readable, mutable) {
   return [
-    "Complete this frozen coding task in the disposable stage.",
+    "Complete this coding objective in the isolated live-production stage.",
     `Objective: ${objective}`,
     `Readable paths: ${JSON.stringify(readable)}`,
     `Mutable paths: ${JSON.stringify(mutable)}`,
-    "Use only read, search, edit, and test.",
-    "Make one scoped exact-text edit before test. Never guess that a tool succeeded.",
-    "Finish with a concise diagnosis and verified result.",
+    "Start with list path '.' to see the repository root, then use list, read, and search to understand it before editing.",
+    "Make every coordinated scoped edit needed to finish the objective.",
+    "You may run test once before editing to establish the real baseline. After diagnosis, act; do not keep rereading files whose relevant behavior is already known.",
+    "After meaningful changes, run test again. If it fails, repair only from the new failure evidence; do not repeat an identical failed test without an intervening edit.",
+    "Finish only after the latest edit has a passing test, then report the completed result concisely.",
   ].join("\n");
 }
 
 function installTools(ctx, state) {
   const string = { type: "string" };
   ctx.systemPrompt.section({
-    name: "ci:bounded-contract",
+    name: "ci:production-contract",
     order: 1,
-    text: "You are a bounded local coding agent. Use only read, search, edit, and test. Read/search are scoped, edit permits one exact replacement, and test runs one frozen argv command. Do not access undeclared paths or claim unobserved success.",
+    text: "You are the primary local coding agent. Inspect the repository, make all coordinated scoped edits required by the objective, and use the real build or compiler result to finish. List/read/search/edit are stage-scoped; test runs the repository's selected real command. Never claim an unobserved result or repeat an identical failed action.",
   });
+
+  ctx.tools.register(defineTool({
+    name: "list",
+    description: "List files and directories at one declared model-readable staged path.",
+    parameters: { path: { ...string, required: true } },
+    output: textOutput({
+      type: "object", additionalProperties: false, properties: {
+        path: { type: "string", required: true },
+        entries: { type: "array", required: true, items: { type: "string" } },
+        truncated: { type: "boolean", required: true },
+      },
+    }),
+    isConcurrencySafe: () => true,
+    async execute(args) {
+      const target = args.path === "."
+        ? state.stage
+        : await scopedPath(state.stage, args.path, state.readable);
+      const info = await stat(target);
+      if (!info.isDirectory()) throw new Error(`list target is not a directory: ${args.path}`);
+      const entries = [];
+      for (const item of await readdir(target, { withFileTypes: true })) {
+        entries.push(`${item.isDirectory() ? "dir" : "file"}\t${item.name}`);
+        if (entries.length >= 500) break;
+      }
+      entries.sort((left, right) => left.localeCompare(right));
+      return {
+        path: args.path === "." ? "." : normalizeRelative(args.path),
+        entries,
+        truncated: entries.length >= 500,
+      };
+    },
+  }));
 
   ctx.tools.register(defineTool({
     name: "read",
@@ -411,7 +445,7 @@ function installTools(ctx, state) {
 
   ctx.tools.register(defineTool({
     name: "edit",
-    description: "Perform one exact-text replacement in one declared mutable staged file.",
+    description: "Perform one exact-text replacement in one declared mutable staged file. Call again for additional coordinated edits.",
     parameters: {
       path: { ...string, required: true },
       old_text: { ...string, required: true },
@@ -453,6 +487,8 @@ function installTools(ctx, state) {
         await writeFile(target, updated, "utf8");
       }
       state.editSucceeded = true;
+      state.testSucceeded = false;
+      state.editGeneration += 1;
       return {
         path: normalized,
         created,
@@ -464,7 +500,7 @@ function installTools(ctx, state) {
 
   ctx.tools.register(defineTool({
     name: "test",
-    description: "Run the frozen task command after the scoped edit. The command and verifier files are hidden.",
+    description: "Run the selected real repository command for a baseline or after edits. A failed result should drive a targeted repair before retesting.",
     parameters: {},
     output: textOutput({
       type: "object", additionalProperties: false, properties: {
@@ -477,12 +513,14 @@ function installTools(ctx, state) {
     async execute(_args, exec) {
       const result = await runCommand(state.testCommand, state.stage, state.testTimeoutMs, exec.signal);
       state.testSucceeded = result.code === 0;
-      return {
+      const outcome = {
         exit_code: result.code ?? -1,
         passed: result.code === 0,
         stdout_tail: result.stdout,
         stderr_tail: result.stderr,
       };
+      state.toolOutcomes.set(String(exec.callId), outcome);
+      return outcome;
     },
   }));
 }
@@ -566,13 +604,14 @@ function installGuards(ctx, state) {
 
     if (exec.name === "edit") {
       state.editCalls += 1;
-      if (state.editCalls > 1) denial ??= "bounded run allows at most one edit call";
+      if (state.editCalls > state.maxEditCalls) denial ??= "production edit-call budget exceeded";
       if (typeof exec.arguments?.path !== "string" || !safelyAllowed(exec.arguments.path, state.mutable)) {
         denial ??= "edit path is outside mutable scope";
       }
-    } else if (exec.name === "read") {
-      if (typeof exec.arguments?.path !== "string" || !safelyAllowed(exec.arguments.path, state.readable)) {
-        denial ??= "read path is outside readable scope";
+    } else if (exec.name === "list" || exec.name === "read") {
+      const rootList = exec.name === "list" && exec.arguments?.path === ".";
+      if (typeof exec.arguments?.path !== "string" || (!rootList && !safelyAllowed(exec.arguments.path, state.readable))) {
+        denial ??= `${exec.name} path is outside readable scope`;
       }
     } else if (exec.name === "search") {
       if (exec.arguments?.path !== undefined && (typeof exec.arguments.path !== "string" || !safelyAllowed(exec.arguments.path, state.readable))) {
@@ -580,13 +619,12 @@ function installGuards(ctx, state) {
       }
     } else if (exec.name === "test") {
       state.testCalls += 1;
-      if (state.testCalls > 1) denial ??= "bounded run allows at most one test call";
-      if (!state.editSucceeded) denial ??= "test requires one successful edit first";
+      if (state.testCalls > state.maxTestCalls) denial ??= "production test-call budget exceeded";
     }
 
     const sideEffect = exec.name === "edit" || exec.name === "test";
     const effectId = sideEffect
-      ? `effect-${digest({ run: state.runId, name: exec.name, arguments: exec.arguments }).slice(0, 32)}`
+      ? `effect-${digest({ run: state.runId, name: exec.name, arguments: exec.arguments, editGeneration: state.editGeneration }).slice(0, 32)}`
       : null;
     if (effectId !== null && state.effectIds.has(effectId)) denial = "duplicate side-effect identity";
     if (effectId !== null) state.effectIds.add(effectId);
@@ -605,14 +643,20 @@ function installGuards(ctx, state) {
   });
 
   ctx.on("tools/result", (exec, result) => {
+    const outcome = state.toolOutcomes.get(String(exec.callId));
+    const testFailed = exec.name === "test" && outcome?.passed === false;
     emit({
       type: "tool_execution_end",
       toolCallId: String(exec.callId),
       toolName: exec.name,
-      isError: Boolean(result.isError),
+      isError: Boolean(result.isError) || testFailed,
       result: {
         content: result.content,
-        details: { path: typeof exec.arguments?.path === "string" ? exec.arguments.path : null },
+        details: {
+          path: typeof exec.arguments?.path === "string" ? exec.arguments.path : null,
+          exitCode: outcome?.exit_code ?? null,
+          passed: outcome?.passed ?? null,
+        },
       },
     });
   });
@@ -667,7 +711,7 @@ async function run(ctx, state) {
             error: {
               code: reason?.kind === "completed" ? "BOUNDED_TASK_INCOMPLETE" : "AGENT_TURN_FAILED",
               message: reason?.kind === "completed"
-                ? "agent ended without one successful edit followed by one successful test"
+                ? "agent ended without a successful edit followed by a passing test"
                 : "agent turn did not complete",
             },
           },
@@ -705,8 +749,10 @@ export function apply(ctx) {
     mutable: stringArray("CI_ADAPTER_MUTABLE_JSON"),
     testCommand: commandArray("CI_ADAPTER_TEST_COMMAND_JSON"),
     testTimeoutMs: positiveInteger("CI_ADAPTER_TEST_TIMEOUT_MS", 300_000, 300_000),
-    maxTurns: positiveInteger("CI_ADAPTER_MAX_TURNS", 8, 32),
-    maxToolCalls: positiveInteger("CI_ADAPTER_MAX_TOOL_CALLS", 12, 64),
+    maxTurns: positiveInteger("CI_ADAPTER_MAX_TURNS", 32, 64),
+    maxToolCalls: positiveInteger("CI_ADAPTER_MAX_TOOL_CALLS", 96, 256),
+    maxEditCalls: positiveInteger("CI_ADAPTER_MAX_EDIT_CALLS", 48, 256),
+    maxTestCalls: positiveInteger("CI_ADAPTER_MAX_TEST_CALLS", 8, 256),
     maxOutputTokens: positiveInteger("CI_ADAPTER_MAX_OUTPUT_TOKENS", 8192, 65_536),
     modelCalls: 0,
     toolCalls: 0,
@@ -714,6 +760,8 @@ export function apply(ctx) {
     testCalls: 0,
     editSucceeded: false,
     testSucceeded: false,
+    editGeneration: 0,
+    toolOutcomes: new Map(),
     requestAttempts: new Map(),
     callIds: new Set(),
     effectIds: new Set(),

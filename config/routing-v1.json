@@ -5,7 +5,7 @@
     {
       "id": "operating-contract",
       "path": "AGENTS.md",
-      "sha256": "sha256:c579c19aaf88a4cefdf4adcdd578d456a8eaa249172b28eafc7d027529b9f8aa"
+      "sha256": "sha256:e3edd54c490653bb26ee54460582e84005ffee707141acb4d6206735a3777441"
     },
     {
       "id": "tournament-v1",
@@ -51,6 +51,16 @@
       "id": "bounded-end-to-end-proof",
       "path": "runs/final-end-to-end.json",
       "sha256": "sha256:0db5db7d3b32f2fa59a7010eb48985de924a7fa6507e85e1c24a9678130e72f0"
+    },
+    {
+      "id": "qwen-native-long-context-proof",
+      "path": "runs/qwen38-q6-native-long-context-qualification.json",
+      "sha256": "sha256:d74f67ef6d1cfea15de383009bec06ff438f13cbb0dd17803d64855d422490dd"
+    },
+    {
+      "id": "deepseek-live-production",
+      "path": "runs/deepseek-four-tool-production.json",
+      "sha256": "sha256:787df9284ee70b971c69aca7f4d1b65b3fe1079fc5c13d7eb79dd333ad5bd918"
     }
   ],
   "components": {
@@ -73,7 +83,7 @@
         "roles": ["implement", "inspect"],
         "languages": ["powershell", "python", "swift", "typescript"],
         "max_context_tokens": 262144,
-        "evidence_ids": ["tournament-v1", "production-handoff-v1", "swift-mac-edge-proof"]
+        "evidence_ids": ["tournament-v1", "production-handoff-v1", "swift-mac-edge-proof", "qwen-native-long-context-proof", "deepseek-live-production"]
       },
       {
         "id": "qwen3.8-27b-q8",
@@ -171,11 +181,11 @@
       },
       {
         "id": "deepseek-four-tool-adapter",
-        "name": "DeepSeek four-tool adapter candidate",
+        "name": "DeepSeek full-strength production coding harness",
         "locality": "local",
         "mode": "interactive",
-        "tools": ["edit", "read", "search", "test"],
-        "evidence_ids": ["adapter-install-proof", "harness-fusion-decision"]
+        "tools": ["edit", "list", "read", "search", "test"],
+        "evidence_ids": ["adapter-install-proof", "harness-fusion-decision", "deepseek-live-production"]
       }
     ],
     "verifiers": [
@@ -347,8 +357,8 @@
     },
     {
       "id": "candidate-qwen38-q6-native",
-      "name": "Qwen native-context qualification route",
-      "qualification_status": "inconclusive",
+      "name": "Qwen native-context accepted route",
+      "qualification_status": "accepted",
       "composition": "single",
       "model_ids": ["qwen3.8-27b-q6"],
       "harness_id": "thin-structured-edit",
@@ -360,9 +370,9 @@
       "languages": ["powershell", "python", "typescript"],
       "tool_needs": ["project_test", "repo_inspection", "structured_edit"],
       "max_context_tokens": 262144,
-      "priority": 100,
-      "required_runtime_tags": ["qwen-native-final-matrix-pass"],
-      "evidence_ids": ["qwen-native-lifecycle-proof", "production-handoff-v1"],
+      "priority": 23,
+      "required_runtime_tags": [],
+      "evidence_ids": ["qwen-native-lifecycle-proof", "qwen-native-long-context-proof", "production-handoff-v1"],
       "baseline_route_id": null,
       "team_gain_basis_points": null,
       "comparison_evidence_ids": []
@@ -391,8 +401,8 @@
     },
     {
       "id": "candidate-qwen38-deepseek",
-      "name": "Qwen through DeepSeek Harness qualification route",
-      "qualification_status": "runtime_blocked",
+      "name": "Qwen3.8 Q6 Native through DeepSeek production route",
+      "qualification_status": "accepted",
       "composition": "single",
       "model_ids": ["qwen3.8-27b-q6"],
       "harness_id": "deepseek-four-tool-adapter",
@@ -400,13 +410,13 @@
       "inference_edge_id": "excalibur",
       "execution_edge_id": "excalibur",
       "roles": ["implement", "inspect"],
-      "capabilities": ["interactive_agent", "scoped_edit"],
+      "capabilities": ["interactive_agent", "long_context", "scoped_edit"],
       "languages": ["powershell", "python", "typescript"],
-      "tool_needs": ["edit", "read", "search", "test"],
-      "max_context_tokens": 32768,
-      "priority": 111,
-      "required_runtime_tags": ["deepseek-reviewed-four-tool-plugin"],
-      "evidence_ids": ["adapter-install-proof", "harness-fusion-decision"],
+      "tool_needs": ["edit", "list", "read", "search", "test"],
+      "max_context_tokens": 262144,
+      "priority": 19,
+      "required_runtime_tags": [],
+      "evidence_ids": ["adapter-install-proof", "harness-fusion-decision", "qwen-native-long-context-proof", "deepseek-live-production"],
       "baseline_route_id": null,
       "team_gain_basis_points": null,
       "comparison_evidence_ids": []
@@ -547,9 +557,11 @@
   "policy": {
     "cloud_primary_route_id": "cloud-codex-primary",
     "sovereign_route_ids": [
+      "candidate-qwen38-deepseek",
       "local-qwen38-q6-bounded",
       "local-qwen38-q6-apple",
-      "local-devstral-verification"
+      "local-devstral-verification",
+      "candidate-qwen38-q6-native"
     ],
     "apple_execution_edge_id": "mac-apple",
     "production_eligible_statuses": ["accepted"],

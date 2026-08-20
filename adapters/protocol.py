@@ -13,7 +13,23 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 ADAPTER_SCHEMA_VERSION = 1
-ALLOWED_TOOLS = ("read", "search", "edit", "test")
+ALLOWED_TOOLS = ("list", "read", "search", "edit", "test")
+GENERATED_DIRECTORIES = frozenset(
+    {
+        "__pycache__",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".mypy_cache",
+        ".build",
+        ".gradle",
+        ".swiftpm",
+        "build",
+        "dist",
+        "node_modules",
+        "target",
+    }
+)
+GENERATED_SUFFIXES = frozenset({".pyc", ".pyo"})
 
 
 class AdapterContractError(ValueError):
@@ -232,11 +248,13 @@ def _walk_files(root: Path) -> Iterable[Path]:
     while pending:
         directory = pending.pop()
         for child in sorted(directory.iterdir(), key=lambda value: value.name.casefold()):
+            if child.name in GENERATED_DIRECTORIES:
+                continue
             if _is_reparse_point(child):
                 raise AdapterContractError(f"reparse points are forbidden in a stage: {child}")
             if child.is_dir():
                 pending.append(child)
-            elif child.is_file():
+            elif child.is_file() and child.suffix.casefold() not in GENERATED_SUFFIXES:
                 yield child
 
 

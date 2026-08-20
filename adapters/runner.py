@@ -194,6 +194,8 @@ class HarnessProcessSpec:
     cwd: Path
     max_turns: int = 8
     max_tool_calls: int = 12
+    max_edit_calls: int = 1
+    max_test_calls: int = 1
     timeout_seconds: float = 300.0
 
 
@@ -252,14 +254,16 @@ def _tool_call_id(event: dict[str, Any]) -> str:
 
 def _validate_tool_call(capsule: TaskCapsule, name: str, args: dict[str, Any]) -> str | None:
     if name not in ALLOWED_TOOLS:
-        return f"tool {name!r} is outside the four-tool allowlist"
+        return f"tool {name!r} is outside the production allowlist"
     path = args.get("path")
     if name == "edit":
         if not isinstance(path, str) or not path_allowed(path, capsule.mutable):
             return f"edit path is outside mutable scope: {path!r}"
-    elif name == "read":
+    elif name == "list" and path == ".":
+        return None
+    elif name in ("list", "read"):
         if not isinstance(path, str) or not path_allowed(path, capsule.readable):
-            return f"read path is outside readable scope: {path!r}"
+            return f"{name} path is outside readable scope: {path!r}"
     elif name == "search" and path is not None:
         if not isinstance(path, str) or not path_allowed(path, capsule.readable):
             return f"search path is outside readable scope: {path!r}"
@@ -345,8 +349,12 @@ def run_harness_process(
 ) -> dict[str, Any]:
     output = emit or stdout_emitter()
     stage = capsule.validate_stage(stage)
-    if not 1 <= spec.max_turns <= 32 or not 1 <= spec.max_tool_calls <= 64:
-        raise AdapterContractError("turn and tool budgets are outside qualification bounds")
+    if not 1 <= spec.max_turns <= 64 or not 1 <= spec.max_tool_calls <= 256:
+        raise AdapterContractError("turn and tool budgets are outside production bounds")
+    if not 1 <= spec.max_edit_calls <= spec.max_tool_calls:
+        raise AdapterContractError("edit-call budget is outside production bounds")
+    if not 1 <= spec.max_test_calls <= spec.max_tool_calls:
+        raise AdapterContractError("test-call budget is outside production bounds")
     start = time.monotonic()
     run_id = str(uuid.uuid4())
     source_before = snapshot_selected(capsule.workspace, capsule.scoped_source_paths)
@@ -411,8 +419,8 @@ def run_harness_process(
             encoded = line.encode("utf-8", errors="replace")
             raw_stdout_bytes += len(encoded)
             stdout_digest.update(encoded)
-            if raw_stdout_bytes > 4 * 1024 * 1024:
-                protocol_error = "child stdout exceeded 4 MiB"
+            if raw_stdout_bytes > 32 * 1024 * 1024:
+                protocol_error = "child stdout exceeded 32 MiB"
                 stop = "protocol_error"
                 owner.terminate_tree()
                 break
@@ -471,6 +479,7 @@ def run_harness_process(
                         "index": calls,
                         "call_id": call_id,
                         "tool": name,
+                        "input": args,
                     }
                 )
                 violation = _validate_tool_call(capsule, name, args)
@@ -484,8 +493,13 @@ def run_harness_process(
                     stop = "tool_budget"
                     owner.terminate_tree()
                     break
-                if name in ("edit", "test") and tool_name_counts[name] > 1:
-                    protocol_error = f"qualification allows at most one {name} call"
+                call_limit = (
+                    spec.max_edit_calls
+                    if name == "edit"
+                    else spec.max_test_calls if name == "test" else None
+                )
+                if call_limit is not None and tool_name_counts[name] > call_limit:
+                    protocol_error = f"production {name} call budget exceeded"
                     stop = "repeated_mutation_or_test"
                     owner.terminate_tree()
                     break
@@ -519,7 +533,10 @@ def run_harness_process(
                 if isinstance(raw_result, dict) and isinstance(raw_result.get("details"), dict):
                     details = raw_result["details"]
                     summary["exit_code"] = details.get("exitCode", details.get("exit_code"))
+                    summary["passed"] = details.get("passed")
                     summary["path"] = details.get("path")
+                    if name == "test" and summary["passed"] is False:
+                        summary["is_error"] = True
                 tool_results.append(summary)
                 output({"type": "tool_result", "run_id": run_id, **summary})
             elif kind in ("message_update", "message_end"):

@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
   "recorded_at": "2026-08-20T21:24:08.0012511Z",
-  "component": "DeepSeek Harness bounded four-tool production adapter",
-  "status": "runtime_ready_pending_production_loop_integration_and_real_model_use",
+  "component": "DeepSeek Harness full-strength production coding adapter",
+  "status": "production_live_real_model_edit_promoted_with_evaluator_correction",
   "truth_boundary": {
     "deepseek_process_executed": true,
     "fake_loopback_provider_executed": true,
-    "real_local_model_called": false,
-    "backend_started_or_switched": false,
-    "user_source_modified": false,
-    "production_default_changed": false
+    "real_local_model_called": true,
+    "backend_started_or_switched": true,
+    "user_source_modified": true,
+    "production_default_changed": true
   },
   "pinned_runtime": {
     "package": "@deepseek-ai/dsh",
@@ -21,13 +21,14 @@
   },
   "production_interface": {
     "import": "from adapters.deepseek import DeepSeekAdapter",
-    "method": "DeepSeekAdapter.run(capsule, stage, endpoint=..., model=..., max_turns=8, max_tool_calls=12, max_output_tokens=8192, emit=callback)",
+    "method": "DeepSeekAdapter.run(capsule, stage, endpoint=..., model=..., max_turns=32, max_tool_calls=96, max_edit_calls=48, max_test_calls=8, max_output_tokens=16384, emit=callback)",
     "assumptions": [
       "caller owns the already-running loopback backend",
       "caller supplies a disjoint prepared stage and validated TaskCapsule",
       "one invocation is one top-level attempt"
     ],
     "model_tools": [
+      "list",
       "read",
       "search",
       "edit",
@@ -69,6 +70,69 @@
     "owned_processes_after_run": 0,
     "stale_runtime_directories_after_cleanup": 0
   },
+  "production_live_run": {
+    "recorded_at": "2026-08-20T22:35:56.192320Z",
+    "production_run_id": "466d3cfc-9ca5-4b4c-b156-bbb2527e6721",
+    "deepseek_run_id": "3b2b8b79-d5a1-4283-bacc-1ae530122ff9",
+    "model": "Qwen3.8-27B Q6_K",
+    "model_alias": "arm-qwen38-q6-native-262k",
+    "runtime_profile": "q6-text/medium/q4_0/262144/mtp-off",
+    "harness": "@deepseek-ai/dsh 0.1.0-rc.8 plus Coding Intelligence production plugin",
+    "objective_kind": "focused real repository code and operator integration",
+    "model_calls": 13,
+    "tool_calls": 29,
+    "edit_calls": 17,
+    "model_test_calls": 2,
+    "model_test_passes": 2,
+    "repair_passes": 0,
+    "automatic_retries": 0,
+    "agent_end": true,
+    "child_exit_code": 0,
+    "owned_children_cleaned": true,
+    "source_preserved_during_model_run": true,
+    "changed_paths": [
+      "README.md",
+      "docs/LIVE_COMPLETION_CONTRACT.md",
+      "docs/OPERATOR_CURRICULUM_V1.md",
+      "src/agent_continuity/production_worker.py"
+    ],
+    "model_diff_sha256": "sha256:6ae2aa8657983eca44efecc558f10b7bd2f37d31766a8a8b621079f8e324dc0d",
+    "independent_compiler": {
+      "command": "python -m compileall -q src adapters",
+      "exit_code": 0
+    },
+    "original_terminal": {
+      "status": "failed",
+      "stop": "scope_violation",
+      "classification": "evaluator_invalid",
+      "reason": "generated __pycache__ bytecode was incorrectly classified as an out-of-scope source edit"
+    },
+    "correction": {
+      "generated_artifacts_excluded_from_source_snapshots": true,
+      "model_patch_promoted": true,
+      "memory_reconciliation_event_id": "dd17ae8c-5779-42fc-ba9e-bf73e0b4c93e",
+      "memory_reconciliation_record_sha256": "sha256:5b94ed0e698cb91c10364d6607dededa4de5f5ef340b0348fe8ee48cafe39f87"
+    },
+    "devstral_advisory": {
+      "calls": 1,
+      "http_status": 200,
+      "duration_seconds": 12.343,
+      "result": "response_unavailable_due_to_operator_wrapper_parse",
+      "deterministic_execution_remained_authoritative": true
+    },
+    "backend_restored": "Qwen38Native",
+    "backend_restore_exact": true,
+    "trajectory_sha256": "sha256:ff1e8da02895b3e1448c57421060ac891c5b0669bbe609383c2a0d3d1d81f26a",
+    "harness_result_sha256": "sha256:7ac0a0585600dea65588e25a5ae959c95531e7227a6e7237000c411b64825030",
+    "memory_segment_sha256": "sha256:a4ed271d85e048e1134e8caf471545524e6a3f5d0467e2d3d1a657292f5efd83"
+  },
+  "post_run_production_tuning": {
+    "context_tokens": 262144,
+    "weights": "Q6_K unchanged",
+    "request_reasoning_effort": "low",
+    "output_ceiling_tokens": 16384,
+    "basis": "The real focused run produced correct edits but spent two oversized 13K-16K reasoning passes; current DeepSeek/Qwen3.8 community reports independently favor low effort for coding agency."
+  },
   "focused_verification": {
     "command": "py -3 -m unittest tests.test_deepseek_adapter -v",
     "tests": 9,
@@ -88,10 +152,14 @@
   "artifacts": {
     "adapters/deepseek/__init__.py": "71d2f086ec105479277a2ff22c6bda314d160d74b1befb033253d7a10b7e9f8e",
     "adapters/deepseek/__main__.py": "4ca6979e9d11b98a0714d07533191e3ecf65bc331a210255abb6dfa4b3b40fbb",
-    "adapters/deepseek/adapter.py": "41943772feff8c301e39925fbc446c387faa9a2168bf304a545a847c5c324610",
-    "adapters/deepseek/bounded_profile.patch.yml": "711fb3a4e59fecd5bd2a8ead5f1f9bfad868549f107a6f83487f02a61171db86",
-    "adapters/deepseek/event_bridge.py": "b7a6ad52faf2dbf6be729145e0398c4a72692287c480c226b17d44f458933aeb",
-    "adapters/deepseek/scoped_plugin.mjs": "894d15200e840ef9e9b3093fcec58d1f98e991f8425056faf7d93120386225a7",
+    "adapters/deepseek/adapter.py": "f6b92b73bcb13371190c9649cea875d514e13460da549de3d05ea4d900958ffa",
+    "adapters/deepseek/bounded_profile.patch.yml": "f4025380c415b0a932e6d4efcfed4e6b1060bc4007c0c8b7cb1dabc9370b51aa",
+    "adapters/deepseek/event_bridge.py": "30eb3b55959ed5db0cdf1747541460954455c0b1bae8f2c5b87c5f6275103b9f",
+    "adapters/deepseek/scoped_plugin.mjs": "d720e90e903b54b73ef2636f3f9299f0ef5acdf0c908fcd503539cb953452c6e",
+    "adapters/protocol.py": "52cf5e02ce54c3fac12dce5f4951628bd456abae05a07f28fab0de64ed025539",
+    "adapters/runner.py": "97610cf5be6f37d91c7fa6df1dba57b02462e4a518e303eb9fc0cdd7fcc5f693",
+    "src/agent_continuity/production_worker.py": "3fa4c9e39ff3eb938f0bbbb672333c6d361a063b03c078e60c3fa13cf378ea29",
+    "bin/coding.cmd": "88cefb8dc9d7802e9978bfb131f7da5b4507100df2bbc38a710a15fe9efba445",
     "tests/test_deepseek_adapter.py": "8d6a0229d551ef60b7b8b3a55732e39391db99351f9257702f53d92ff56714a0",
     "tests/test_harness_adapters.py": "f165e2e9fa11c72c3ae8fe0b565f9b2595e9e776197cb62459e3eff1e841f373"
   }

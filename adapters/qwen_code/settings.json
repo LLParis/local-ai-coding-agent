@@ -33,7 +33,7 @@
       "enableScreenshotTrigger": false
     }
   },
-  "modelFallbacks": [],
+  "modelFallbacks": "",
   "modelProviders": {
     "openai": [
       {

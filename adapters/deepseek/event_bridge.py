@@ -10,9 +10,9 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any
 
-ALLOWED_TOOLS = frozenset(("read", "search", "edit", "test"))
-MAX_LINE_BYTES = 1_048_576
-MAX_STREAM_BYTES = 4_194_304
+ALLOWED_TOOLS = frozenset(("list", "read", "search", "edit", "test"))
+MAX_LINE_BYTES = 2_097_152
+MAX_STREAM_BYTES = 33_554_432
 
 
 class EventProtocolError(ValueError):
@@ -145,8 +145,6 @@ class EventAudit:
             self.edit_calls += 1
         if name == "test":
             self.test_calls += 1
-            if not self.edit_succeeded and denied is None:
-                raise EventProtocolError("test dispatch preceded a successful edit")
         self.calls[call_id] = _Call(name=name, effect_id=effect_id, denied=denied)
 
     def _tool_end(self, event: dict[str, Any]) -> None:
@@ -251,9 +249,9 @@ def bridge(command: list[str], *, max_turns: int, max_tool_calls: int) -> int:
         for raw in iter(child.stdout.readline, b""):
             total += len(raw)
             if len(raw) > MAX_LINE_BYTES:
-                raise EventProtocolError("one event exceeded 1 MiB")
+                raise EventProtocolError("one event exceeded 2 MiB")
             if total > MAX_STREAM_BYTES:
-                raise EventProtocolError("event stream exceeded 4 MiB")
+                raise EventProtocolError("event stream exceeded 32 MiB")
             try:
                 text = raw.decode("utf-8", errors="strict")
             except UnicodeDecodeError as error:
@@ -289,8 +287,8 @@ def main() -> int:
         command = command[1:]
     if not command:
         parser.error("a child command is required after --")
-    if not 1 <= args.max_turns <= 32 or not 1 <= args.max_tool_calls <= 64:
-        parser.error("budgets are outside qualification bounds")
+    if not 1 <= args.max_turns <= 64 or not 1 <= args.max_tool_calls <= 256:
+        parser.error("budgets are outside production bounds")
     return bridge(command, max_turns=args.max_turns, max_tool_calls=args.max_tool_calls)
 
 

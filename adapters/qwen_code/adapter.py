@@ -409,8 +409,11 @@ class QwenCodeAdapter:
                         official = accumulator.finish()
                     except QwenCodeEventError as error:
                         protocol_error = str(error)
+                        official = None
                 else:
                     official = None
+                    if protocol_error is None and not timed_out:
+                        protocol_error = f"Qwen Code child exited with code {exit_code}"
         except (OSError, ValueError, AdapterContractError) as error:
             protocol_error = str(error)
             official = None

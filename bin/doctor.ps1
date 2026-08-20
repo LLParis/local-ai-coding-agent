@@ -366,7 +366,7 @@ $evidence = @(
 $evidencePresent = @($evidence | Where-Object { Test-Path -LiteralPath (Join-Path $repoRoot $_) -PathType Leaf })
 $overall = if (-not $configured) { "attention" } elseif ($active -eq "Conflict") { "conflict" } elseif ($active -eq "None") { "stopped-or-unhealthy" } else { "ready" }
 $next = if ($overall -eq "ready") {
-    "Run: bin\coding-task.cmd D:\path\to\coding-task.json"
+    'Run: bin\coding.cmd D:\path\to\repository "objective"'
 } elseif ($configured -and $active -ne "Conflict") {
     "Restore Qwen: powershell.exe -NoProfile -ExecutionPolicy Bypass -File windows\Switch-ExcaliburBackend.ps1 -Backend Qwen38"
 } elseif ($active -eq "Conflict") {

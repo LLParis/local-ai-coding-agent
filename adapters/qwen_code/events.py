@@ -125,12 +125,21 @@ class QwenCodeEventAccumulator:
         self.raw_event_count += 1
         kind = _text(value.get("type"), "event.type")
         normalized: list[dict[str, Any]] = []
-        if kind == "system" and value.get("subtype") == "session_start":
-            session_id = _text(value.get("session_id"), "session_id")
-            if self.session_id is not None and self.session_id != session_id:
-                raise QwenCodeEventError("headless stream changed session ID")
-            self.session_id = session_id
-            normalized.append({"type": "session_start", "session_id": session_id})
+        if kind == "system":
+            raw_session_id = value.get("session_id")
+            if isinstance(raw_session_id, str) and raw_session_id:
+                if self.session_id is not None and self.session_id != raw_session_id:
+                    raise QwenCodeEventError("headless stream changed session ID")
+                self.session_id = raw_session_id
+            normalized.append(
+                {
+                    "type": "session_start"
+                    if value.get("subtype") in {"session_start", "init"}
+                    else "harness_system",
+                    "session_id": self.session_id,
+                    "subtype": value.get("subtype"),
+                }
+            )
         elif kind == "assistant":
             normalized.extend(self._assistant(value))
         elif kind == "user":
@@ -139,6 +148,10 @@ class QwenCodeEventAccumulator:
             if self.result is not None:
                 raise QwenCodeEventError("headless stream emitted multiple result events")
             self.result = value
+            if self.session_id is None:
+                raw_session_id = value.get("session_id")
+                if isinstance(raw_session_id, str) and raw_session_id:
+                    self.session_id = raw_session_id
             normalized.append(
                 {
                     "type": "harness_result",
@@ -213,10 +226,10 @@ class QwenCodeEventAccumulator:
         return output
 
     def finish(self) -> dict[str, Any]:
-        if self.session_id is None:
-            raise QwenCodeEventError("headless stream omitted session_start")
         if self.result is None:
             raise QwenCodeEventError("headless stream omitted its terminal result")
+        if self.session_id is None:
+            self.session_id = "derived:" + _result_sha256(self.result).removeprefix("sha256:")[:32]
         unresolved = sorted(set(self.calls) - set(self.tool_results))
         if unresolved:
             raise QwenCodeEventError(f"headless stream left unresolved tool calls: {unresolved}")

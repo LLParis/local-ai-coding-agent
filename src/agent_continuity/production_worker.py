@@ -1,4 +1,4 @@
-"""Live autonomous local coding worker built around the official Qwen Code harness."""
+"""Live autonomous local coding worker built around Qwen3.8 and DeepSeek Harness."""
 
 from __future__ import annotations
 
@@ -17,7 +17,13 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from adapters.protocol import AdapterContractError, assert_no_reparse_path, canonical_json
+from adapters.deepseek import DeepSeekAdapter
+from adapters.protocol import (
+    AdapterContractError,
+    TaskCapsule,
+    assert_no_reparse_path,
+    canonical_json,
+)
 from adapters.qwen_code import QwenCodeAdapter
 
 from .memory_store import MemoryScope, MemoryStore
@@ -177,6 +183,8 @@ class RepairController:
     calls: dict[str, dict[str, Any]] = field(default_factory=dict)
     failure_signatures: set[str] = field(default_factory=set)
     pending_failure: str | None = None
+    baseline_failure: str | None = None
+    edits_seen: int = 0
     repairs: int = 0
     last_verification_call: dict[str, Any] | None = None
     last_verification_failed: bool = False
@@ -190,32 +198,42 @@ class RepairController:
                 event["effect_id"] = str(uuid.uuid5(uuid.UUID(self.run_id), call_id))
                 event["intent"] = (
                     "side_effect"
-                    if event.get("tool") in {"edit", "write_file", "run_shell_command"}
+                    if event.get("tool") in {"edit", "write_file", "run_shell_command", "test"}
                     else "read"
                 )
                 event["denied"] = False
                 self.calls[call_id] = event
-            if event.get("tool") in {"edit", "write_file"} and self.pending_failure is not None:
-                self.repairs += 1
-                if self.repairs > 2:
-                    raise AdapterContractError("third repair pass is forbidden")
-                self.pending_failure = None
-        elif kind == "tool_result" and event.get("tool") == "run_shell_command":
+            if event.get("tool") in {"edit", "write_file"}:
+                self.edits_seen += 1
+                if self.pending_failure is not None:
+                    self.repairs += 1
+                    if self.repairs > 2:
+                        raise AdapterContractError("third repair pass is forbidden")
+                    self.pending_failure = None
+            elif event.get("tool") == "test" and self.pending_failure is not None:
+                raise AdapterContractError("a failed test requires an intervening edit")
+        elif kind == "tool_result" and event.get("tool") in {"run_shell_command", "test"}:
             call = self.calls.get(str(event.get("call_id")), {})
             if call.get("effect_id"):
                 event["effect_id"] = call["effect_id"]
-            command = canonical_json(call.get("input", {})).casefold()
-            if any(word in command for word in _VERIFY_WORDS):
-                self.last_verification_call = call
-                self.last_verification_failed = bool(event.get("is_error"))
-            if bool(event.get("is_error")):
+            failed = (
+                bool(event.get("is_error"))
+                or event.get("passed") is False
+                or event.get("exit_code") not in (None, 0)
+            )
+            self.last_verification_call = call
+            self.last_verification_failed = failed
+            if failed:
                 signature = str(event.get("result_sha256", ""))
                 if not signature:
                     raise AdapterContractError("failed command omitted its evidence signature")
                 if signature in self.failure_signatures:
                     raise AdapterContractError("identical failure repeated without new evidence")
                 self.failure_signatures.add(signature)
-                self.pending_failure = signature
+                if self.edits_seen:
+                    self.pending_failure = signature
+                else:
+                    self.baseline_failure = signature
             else:
                 self.pending_failure = None
         self.trajectory.write(event)
@@ -339,7 +357,57 @@ def _apply(source: Path, stage: Path, before: dict[str, str], changed: list[str]
             source_path.unlink()
 
 
-def run(repository: Path, objective: str, *, stage_only: bool, stage_root: Path) -> dict[str, Any]:
+def _production_scope(stage: Path, requested: tuple[str, ...] | None = None) -> tuple[str, ...]:
+    if requested:
+        roots = []
+        for raw in requested:
+            normalized = _safe_relative(Path(raw))
+            if not (stage / Path(normalized)).exists():
+                raise ProductionWorkerError(f"requested production scope is missing: {normalized}")
+            roots.append(normalized)
+        return tuple(dict.fromkeys(roots))
+    roots = []
+    for child in sorted(stage.iterdir(), key=lambda item: item.name.casefold()):
+        if child.name in _IGNORED_DIRS or not _included_file(child):
+            continue
+        roots.append(_safe_relative(Path(child.name)))
+    if not roots:
+        raise ProductionWorkerError("repository stage has no model-readable content")
+    return tuple(roots)
+
+
+def _verification_command(stage: Path) -> tuple[str, ...]:
+    if (stage / "pyproject.toml").is_file() or (stage / "setup.py").is_file():
+        python_roots = [name for name in ("src", "adapters", "scripts") if (stage / name).is_dir()]
+        if not python_roots:
+            python_roots = ["."]
+        return (sys.executable, "-m", "compileall", "-q", *python_roots)
+    if (stage / "Package.swift").is_file():
+        return ("swift", "test")
+    if (stage / "Cargo.toml").is_file():
+        return ("cargo", "check")
+    if (stage / "go.mod").is_file():
+        return ("go", "test", "./...")
+    if (stage / "package.json").is_file():
+        return ("npm.cmd" if os.name == "nt" else "npm", "test", "--", "--runInBand")
+    solutions = sorted(stage.glob("*.sln"))
+    if solutions:
+        return ("dotnet", "test", solutions[0].name, "--no-restore")
+    raise ProductionWorkerError(
+        "cannot infer the repository's real verification command; supported roots are "
+        "Python, Swift, Rust, Go, Node, and .NET"
+    )
+
+
+def run(
+    repository: Path,
+    objective: str,
+    *,
+    stage_only: bool,
+    stage_root: Path,
+    harness: str = "deepseek",
+    scope: tuple[str, ...] | None = None,
+) -> dict[str, Any]:
     source = repository.expanduser().resolve(strict=True)
     if not source.is_dir():
         raise ProductionWorkerError("repository must be a directory")
@@ -351,6 +419,7 @@ def run(repository: Path, objective: str, *, stage_only: bool, stage_root: Path)
     trajectory = Trajectory(run_root / "trajectory.jsonl")
     source_before = _manifest(source)
     stage_before = _copy_repository(source, stage)
+    effective_scope = _production_scope(stage, scope)
     journal = MemoryJournal(source, objective, run_id)
     controller = RepairController(run_id, trajectory)
     compiled = (
@@ -362,36 +431,92 @@ def run(repository: Path, objective: str, *, stage_only: bool, stage_root: Path)
         "failure evidence for at most two targeted repair passes; stop on an identical "
         "failure. Do not merely explain the patch: finish the working repository result."
     )
+    harness_name = "deepseek-production" if harness == "deepseek" else "qwen-code-model-aligned"
+    target_backend = "Qwen38Native" if harness == "deepseek" else "Qwen38"
+    backend_start = _switch(Path(__file__).resolve().parents[2], target_backend)
     journal.append(
         "model/request",
         {
             "run_id": run_id,
-            "harness": "qwen-code-model-aligned",
+            "harness": harness_name,
             "model": "arm-qwen38-q6-text",
             "objective_sha256": _sha256_text(compiled),
             "automatic_retries": 0,
+            "scope": list(effective_scope),
+            "focused": bool(scope),
         },
     )
     started = time.monotonic()
-    result = QwenCodeAdapter().run(stage=stage, objective=compiled, emit=controller)
+    if harness == "deepseek":
+        capsule = TaskCapsule(
+            schema_version=1,
+            backend=target_backend,
+            workspace=source,
+            objective=compiled,
+            mutable=effective_scope,
+            context=(),
+            verify_context=(),
+            test_command=_verification_command(stage),
+            timeout=1800,
+        )
+        result = DeepSeekAdapter().run(
+            capsule,
+            stage,
+            endpoint="http://127.0.0.1:8818/v1",
+            model="arm-qwen38-q6-text",
+            max_turns=32,
+            max_tool_calls=96,
+            max_edit_calls=48,
+            max_test_calls=8,
+            max_output_tokens=16_384,
+            emit=controller,
+        )
+    elif harness == "qwen-code":
+        result = QwenCodeAdapter().run(stage=stage, objective=compiled, emit=controller)
+    else:
+        raise ProductionWorkerError(f"unknown production harness: {harness}")
     stage_after = _manifest(stage)
     source_after_worker = _manifest(source)
     changed = _changed(stage_before, stage_after)
     diff = _diff(source, stage, changed)
     (run_root / "diff.patch").write_text(diff, encoding="utf-8")
-    (run_root / "qwen-code-result.json").write_text(
+    (run_root / "harness-result.json").write_text(
         json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     official = result.get("official") or {}
-    tool_records = ((official.get("tool_calls") or {}).get("records") or [])
-    verification_calls = [item for item in tool_records if item.get("tool") == "run_shell_command"]
+    if harness == "deepseek":
+        verification = result.get("test") or {}
+        live_evidence = result.get("live_event_evidence") or {}
+        model_calls = int(live_evidence.get("model_requests") or 0)
+        tool_calls = int(result.get("tool_calls") or 0)
+        automatic_retries = int(result.get("automatic_retries") or 0)
+        verification_command: Any = verification.get("command")
+        verification_passed = (
+            verification.get("passed") is True and verification.get("not_run") is False
+        )
+        harness_completed = result.get("status") == "passed" and result.get("stop") == "verified"
+    else:
+        tool_records = ((official.get("tool_calls") or {}).get("records") or [])
+        verification_calls = [
+            item for item in tool_records if item.get("tool") == "run_shell_command"
+        ]
+        model_calls = int(((official.get("model_calls") or {}).get("total") or 0))
+        tool_calls = int(((official.get("tool_calls") or {}).get("total") or 0))
+        automatic_retries = 0
+        verification_command = (
+            verification_calls[-1].get("input") if verification_calls else None
+        )
+        verification_passed = bool(verification_calls) and not bool(
+            verification_calls[-1].get("is_error")
+        )
+        harness_completed = result.get("status") == "completed"
     implementation_ok = (
-        result.get("status") == "completed"
+        harness_completed
         and source_before == source_after_worker
         and bool(changed)
-        and bool(verification_calls)
-        and not bool(verification_calls[-1].get("is_error"))
+        and verification_passed
         and controller.repairs <= 2
+        and automatic_retries == 0
     )
     journal.append(
         "model/response",
@@ -399,10 +524,10 @@ def run(repository: Path, objective: str, *, stage_only: bool, stage_root: Path)
             "run_id": run_id,
             "status": result.get("status"),
             "response_sha256": _sha256_text(canonical_json(result)),
-            "model_calls": ((official.get("model_calls") or {}).get("total") or 0),
-            "tool_calls": ((official.get("tool_calls") or {}).get("total") or 0),
+            "model_calls": model_calls,
+            "tool_calls": tool_calls,
             "repair_passes": controller.repairs,
-            "automatic_retries": 0,
+            "automatic_retries": automatic_retries,
         },
     )
     review: dict[str, Any] = {"status": "not_run"}
@@ -414,7 +539,7 @@ def run(repository: Path, objective: str, *, stage_only: bool, stage_root: Path)
         except Exception as error:  # advisory review never fabricates a result
             review = {"status": "unavailable", "error": str(error)}
         finally:
-            restore = _switch(Path(__file__).resolve().parents[2], "Qwen38")
+            restore = _switch(Path(__file__).resolve().parents[2], target_backend)
     applied = False
     if implementation_ok and not stage_only:
         _apply(source, stage, source_before, changed)
@@ -426,21 +551,22 @@ def run(repository: Path, objective: str, *, stage_only: bool, stage_root: Path)
         "run_id": run_id,
         "repository": str(source),
         "objective": objective,
-        "harness": "qwen-code-model-aligned+deepseek-events+pi-tools+command-center",
+        "scope": list(effective_scope),
+        "focused": bool(scope),
+        "harness": harness_name + "+command-center-memory+devstral-review",
         "model": "arm-qwen38-q6-text",
         "stage": str(stage),
         "trajectory": str(trajectory.path),
         "changed_paths": changed,
         "diff_sha256": _sha256_text(diff),
         "repairs": controller.repairs,
-        "model_calls": ((official.get("model_calls") or {}).get("total") or 0)
-        + (1 if review.get("status") == "completed" else 0),
-        "tool_calls": ((official.get("tool_calls") or {}).get("total") or 0),
-        "automatic_retries": 0,
-        "verification_command": verification_calls[-1].get("input") if verification_calls else None,
-        "verification_passed": bool(verification_calls)
-        and not bool(verification_calls[-1].get("is_error")),
+        "model_calls": model_calls + (1 if review.get("status") == "completed" else 0),
+        "tool_calls": tool_calls,
+        "automatic_retries": automatic_retries,
+        "verification_command": verification_command,
+        "verification_passed": verification_passed,
         "devstral": review,
+        "backend_start": backend_start,
         "backend_restore": restore,
         "source_unchanged_during_worker": source_before == source_after_worker,
         "applied": applied,
@@ -468,9 +594,12 @@ def run(repository: Path, objective: str, *, stage_only: bool, stage_root: Path)
             "model_calls": final["model_calls"],
             "tool_calls": final["tool_calls"],
             "repair_passes": controller.repairs,
-            "automatic_retries": 0,
+            "automatic_retries": automatic_retries,
         },
     )
+    if applied:
+        shutil.rmtree(stage)
+    final["stage_cleaned"] = applied and not stage.exists()
     (run_root / "result.json").write_text(
         json.dumps(final, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -487,6 +616,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("objective", nargs="+")
     parser.add_argument("--stage-only", action="store_true")
     parser.add_argument("--stage-root", type=Path, default=_default_stage_root())
+    parser.add_argument(
+        "--scope",
+        action="append",
+        default=[],
+        help="Optional repository-relative readable/mutable path; repeat for a focused job.",
+    )
+    parser.add_argument(
+        "--harness",
+        choices=("deepseek", "qwen-code"),
+        default="deepseek",
+        help="Primary local coding harness; DeepSeek is the production default.",
+    )
     args = parser.parse_args(argv)
     try:
         value = run(
@@ -494,6 +635,8 @@ def main(argv: list[str] | None = None) -> int:
             " ".join(args.objective),
             stage_only=args.stage_only,
             stage_root=args.stage_root,
+            harness=args.harness,
+            scope=tuple(args.scope) or None,
         )
     except Exception as error:
         print(

@@ -1,4 +1,4 @@
-"""Pinned DeepSeek Harness adapter with a reviewed live four-tool plugin."""
+"""Pinned DeepSeek Harness adapter for the full-strength local coding worker."""
 
 from __future__ import annotations
 
@@ -144,12 +144,20 @@ class DeepSeekAdapter:
 
     @staticmethod
     def _validate_budgets(
-        max_turns: int, max_tool_calls: int, max_output_tokens: int
+        max_turns: int,
+        max_tool_calls: int,
+        max_edit_calls: int,
+        max_test_calls: int,
+        max_output_tokens: int,
     ) -> None:
-        if not isinstance(max_turns, int) or not 1 <= max_turns <= 32:
-            raise AdapterContractError("max_turns must be an integer from 1 through 32")
-        if not isinstance(max_tool_calls, int) or not 1 <= max_tool_calls <= 64:
-            raise AdapterContractError("max_tool_calls must be an integer from 1 through 64")
+        if not isinstance(max_turns, int) or not 1 <= max_turns <= 64:
+            raise AdapterContractError("max_turns must be an integer from 1 through 64")
+        if not isinstance(max_tool_calls, int) or not 1 <= max_tool_calls <= 256:
+            raise AdapterContractError("max_tool_calls must be an integer from 1 through 256")
+        if not isinstance(max_edit_calls, int) or not 1 <= max_edit_calls <= max_tool_calls:
+            raise AdapterContractError("max_edit_calls must fit inside the tool-call budget")
+        if not isinstance(max_test_calls, int) or not 1 <= max_test_calls <= max_tool_calls:
+            raise AdapterContractError("max_test_calls must fit inside the tool-call budget")
         if not isinstance(max_output_tokens, int) or not 1 <= max_output_tokens <= 65_536:
             raise AdapterContractError(
                 "max_output_tokens must be an integer from 1 through 65536"
@@ -162,15 +170,19 @@ class DeepSeekAdapter:
         *,
         endpoint: str,
         model: str,
-        max_turns: int = 8,
-        max_tool_calls: int = 12,
-        max_output_tokens: int = 8192,
+        max_turns: int = 32,
+        max_tool_calls: int = 96,
+        max_edit_calls: int = 48,
+        max_test_calls: int = 8,
+        max_output_tokens: int = 16_384,
     ) -> dict[str, Any]:
         install = self.validate_install()
         stage_path = capsule.validate_stage(stage)
         endpoint = validate_loopback_endpoint(endpoint)
         model = _valid_model(model)
-        self._validate_budgets(max_turns, max_tool_calls, max_output_tokens)
+        self._validate_budgets(
+            max_turns, max_tool_calls, max_edit_calls, max_test_calls, max_output_tokens
+        )
         return {
             "executable": install["node"],
             "argv_template": [
@@ -186,7 +198,10 @@ class DeepSeekAdapter:
             "endpoint": endpoint,
             "max_turns": max_turns,
             "max_tool_calls": max_tool_calls,
+            "max_edit_calls": max_edit_calls,
+            "max_test_calls": max_test_calls,
             "max_output_tokens": max_output_tokens,
+            "reasoning_effort": "low",
             "runtime_identity": {
                 "package": DEEPSEEK_PACKAGE,
                 "version": DEEPSEEK_PACKAGE_VERSION,
@@ -200,9 +215,9 @@ class DeepSeekAdapter:
                 "event_bridge_sha256": install["bridge"],
             },
             "runnable": True,
-            "tool_surface": ["read", "search", "edit", "test"],
+            "tool_surface": ["list", "read", "search", "edit", "test"],
             "automatic_retries": 0,
-            "automatic_compaction": False,
+            "automatic_compaction": True,
             "dynamic_plugins": False,
             "event_contract": {
                 "types": ["run_start", "turn_start", "tool_call", "tool_result", "terminal"],
@@ -219,9 +234,11 @@ class DeepSeekAdapter:
         *,
         endpoint: str,
         model: str,
-        max_turns: int = 8,
-        max_tool_calls: int = 12,
-        max_output_tokens: int = 8192,
+        max_turns: int = 32,
+        max_tool_calls: int = 96,
+        max_edit_calls: int = 48,
+        max_test_calls: int = 8,
+        max_output_tokens: int = 16_384,
         emit: Emitter | None = None,
     ) -> dict[str, Any]:
         output = emit or stdout_emitter()
@@ -232,6 +249,8 @@ class DeepSeekAdapter:
             model=model,
             max_turns=max_turns,
             max_tool_calls=max_tool_calls,
+            max_edit_calls=max_edit_calls,
+            max_test_calls=max_test_calls,
             max_output_tokens=max_output_tokens,
         )
         stage_path = Path(plan["cwd"])
@@ -275,6 +294,8 @@ class DeepSeekAdapter:
                     "CI_ADAPTER_TEST_TIMEOUT_MS": str(min(capsule.timeout * 1000, 300_000)),
                     "CI_ADAPTER_MAX_TURNS": str(max_turns),
                     "CI_ADAPTER_MAX_TOOL_CALLS": str(max_tool_calls),
+                    "CI_ADAPTER_MAX_EDIT_CALLS": str(max_edit_calls),
+                    "CI_ADAPTER_MAX_TEST_CALLS": str(max_test_calls),
                     "CI_ADAPTER_MAX_OUTPUT_TOKENS": str(max_output_tokens),
                     "CI_ADAPTER_EVENT_LEDGER": str(event_ledger),
                 }
@@ -305,7 +326,9 @@ class DeepSeekAdapter:
                 cwd=stage_path,
                 max_turns=max_turns,
                 max_tool_calls=max_tool_calls,
-                timeout_seconds=min(float(capsule.timeout), 300.0),
+                max_edit_calls=max_edit_calls,
+                max_test_calls=max_test_calls,
+                timeout_seconds=min(float(capsule.timeout), 1800.0),
             )
             captured_terminal: list[dict[str, Any]] = []
 
