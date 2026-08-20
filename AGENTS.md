@@ -4,6 +4,34 @@ This repository is the general Coding Intelligence / Agent Continuity control
 plane. It is not an Anime Frontier or Media OS product feature. Those projects
 may supply frozen evaluation fixtures only when the task explicitly says so.
 
+## Live-completion control
+
+For every task involving this program, use the personal
+`direct-live-state-of-the-art` and `coding-intelligence-live-completion` skills
+and read
+`docs/LIVE_COMPLETION_CONTRACT.md` before changing scope or priorities. The
+requested product outcome is the live autonomous coding worker, not the proof
+apparatus surrounding it.
+
+Every action on the launch critical path must map to one current incomplete
+item in that contract. Useful model, harness, benchmark, research, or
+architecture work that does not map to an item remains post-live work unless
+the user explicitly reprioritizes it. Do not abandon product-critical harness
+or model quality as an overcorrection; complete the strongest practical live
+fusion with the smallest outcome-relevant comparison.
+
+Every progress and final response must state the finite work remaining to live
+completion. Stop the launch slice when the contract is proven; do not continue
+automatically into its post-live backlog.
+
+Until that live contract is complete, research the strongest current approach
+and implement it directly. Do not create or run a benchmark, tournament, test
+framework, mutation campaign, challenger sweep, formal gate, audit campaign, or
+fallback system as a launch prerequisite. The primary product's own build,
+launch, compiler, and real execution remain part of implementation. Broader
+testing and scientific validation happen after live use unless the user
+explicitly reprioritizes them.
+
 ## System roles
 
 - EXCALIBUR is the inference, routing, lifecycle, telemetry, and evaluation
