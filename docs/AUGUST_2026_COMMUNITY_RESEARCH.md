@@ -53,8 +53,10 @@ adherence, more consistent testing/documentation, and less architectural drift.
 The [official model card](https://huggingface.co/poolside/Laguna-XS-2.1)
 describes a 33B-A3B agentic-coding model with 262K context. The
 [official GGUF card](https://huggingface.co/poolside/Laguna-XS-2.1-GGUF)
-provides a 20.3 GB Q4_K_M artifact. It fits the 5090 at bounded context, but
-upstream llama.cpp support and tool parsing must be proven before inference.
+provides a 20.3 GB Q4_K_M artifact. Its README still says upstream support is
+pending, but [llama.cpp PR #25165](https://github.com/ggml-org/llama.cpp/pull/25165)
+was merged on 2026-07-22. The pinned local build still needs an actual load,
+template/tool-parser, and task proof before inference results are trusted.
 
 ### Conditional challenger: KAT-Coder V2.5 Dev
 

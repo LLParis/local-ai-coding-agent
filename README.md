@@ -57,6 +57,41 @@ verifier, backend-swap, implementation-exit, final-process-exit, and restore
 telemetry. There are no automatic retries or automatic patch promotion;
 `-PlanOnly` makes zero model or backend calls.
 
+The same command records a durable task intent before model dispatch and a
+terminal evidence-backed state afterward. Active memory keeps hashes and
+locators rather than duplicating prompts, model output, diffs, or test logs.
+
+## Native context and harness candidates
+
+The bounded everyday Qwen profile remains 32K. A separate managed task provides
+the frozen Q6/native-262K/Q4-KV/MTP-off evaluation lane:
+
+```powershell
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+  -File windows\Switch-ExcaliburBackend.ps1 -Backend Qwen38Native
+```
+
+Restore normal operation with `-Backend Qwen38`. Both paths are current-user,
+loopback-only, exact-owner Scheduled Tasks and do not display UAC.
+
+Pi 0.84.2 is the qualification-ready lightweight interactive adapter. DeepSeek
+Harness rc.8 is installed but blocked until a reviewed plugin exposes the same
+four scoped live tools and event contract. See `runs/adapter-install-state.json`.
+
+## Memory commands
+
+The everyday runner writes Memory v1 automatically. Operators can also inspect
+or repair it explicitly:
+
+```powershell
+bin\continuity.cmd memory-verify --root "$env:LOCALAPPDATA\CodingIntelligence\MemoryV1"
+bin\continuity.cmd memory-rebuild --root "$env:LOCALAPPDATA\CodingIntelligence\MemoryV1"
+```
+
+`memory-search`, `memory-get`, `memory-pack`, `compaction-validate`, and
+`compaction-commit` expose the same exact-scope retrieval and loss-checked state
+boundaries. Run `bin\continuity.cmd --help` for their full arguments.
+
 ## Windows: run one local edit
 
 Python 3.11 or newer is required. The repository can be installed as a normal
@@ -106,7 +141,7 @@ the retained stage path, diff, test output, timing, and `model_calls: 1`.
   -- python3 -m unittest discover -s tests -v
 ```
 
-## Explicit Mac edge commands
+## Explicit Mac repair-rail commands
 
 The SSH tunnel and Codex launcher are macOS-only commands. Importing or using
 `local-edit` on Windows does not load their `fcntl`, `lsof`, or macOS runtime
@@ -116,7 +151,7 @@ path dependencies.
   EXCALIBUR port 11434.
 - `launch` validates a current checkpoint and starts the named EXCALIBUR Codex
   profile with `workspace-write` and approval `never`.
-- `emergency-triage` is the explicit, read-only Mac fallback and still requires
+- `emergency-triage` is the explicit, read-only Mac repair rail and still requires
   `--confirm EXPLICIT-TRIAGE-ONLY`.
 
 The runtime override is `CODING_INTELLIGENCE_RUNTIME_DIR`. The former

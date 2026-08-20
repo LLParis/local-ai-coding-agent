@@ -9,6 +9,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $qwenTaskName = "Coding Intelligence Excalibur Qwen3.8"
 $qwenNativeTaskName = "Coding Intelligence Excalibur Qwen3.8 Native"
 $ollamaTaskName = "AnimeFrontier Excalibur Ollama"
+$catalogTaskName = "Coding Intelligence - Codex Catalog Maintenance"
 $qwenUrl = "http://127.0.0.1:8818"
 $ollamaUrl = "http://127.0.0.1:11434"
 $researchRoot = "D:\11_CS\00_REPOS\AI Research Mastery"
@@ -307,6 +308,7 @@ $repository = Get-RepositoryState
 $qwenTask = Get-TaskState $qwenTaskName
 $qwenNativeTask = Get-TaskState $qwenNativeTaskName
 $ollamaTask = Get-TaskState $ollamaTaskName
+$catalogTask = Get-TaskState $catalogTaskName
 $qwenListener = Get-ListenerState 8818
 $ollamaListener = Get-ListenerState 11434
 $qwenHealth = Get-BackendHealth Qwen38 $qwenListener
@@ -327,8 +329,9 @@ $ollamaOwnership = Get-OwnershipState `
 $models = @(
     Get-DirectModel "Qwen3.8 27B Q6" "default local implementer" (Join-Path $qwenModelRoot "Qwen3.8-27B-Q6_K.gguf") 22884408288
     Get-OllamaModel "Devstral Small 2 24B" "local verifier" "registry.ollama.ai\library\devstral-small-2\24b"
-    Get-OllamaModel "gpt-oss 20B alias" "tiny-task fallback" "registry.ollama.ai\library\gpt-oss-20b\latest"
+    Get-OllamaModel "gpt-oss 20B alias" "fast small-task candidate" "registry.ollama.ai\library\gpt-oss-20b\latest"
     Get-DirectModel "Qwen3.8 27B Q8" "higher-fidelity reference" (Join-Path $qwenModelRoot "Qwen3.8-27B-Q8_0.gguf") 29047086048
+    Get-DirectModel "Laguna XS 2.1 Q4_K_M" "verified artifact; runtime and task qualification pending" (Join-Path $researchRoot "models\Laguna-XS-2.1-GGUF\Laguna-XS-2.1-Q4_K_M.gguf") 20274300032
     Get-OllamaModel "Gemma 4 31B QAT" "research and vision candidate" "hf.co\google\gemma-4-31B-it-qat-q4_0-gguf\latest"
     Get-OllamaModel "Qwen3.6 27B Q6" "prior candidate" "registry.ollama.ai\library\qwen3.6\27b-q6"
 )
@@ -341,14 +344,23 @@ $runningTaskCount = @(
         Where-Object { $_.state -eq "Running" }
 ).Count
 $active = if ($runningTaskCount -gt 1 -or ($qwenListener.count -gt 0 -and $ollamaListener.count -gt 0)) { "Conflict" } elseif ($qwenLive) { "Qwen38" } elseif ($qwenNativeLive) { "Qwen38Native" } elseif ($ollamaLive) { "Ollama" } else { "None" }
+$catalogReady = (
+    $catalogTask.installed -and
+    $catalogTask.runLevel -eq "Limited" -and
+    $catalogTask.logonType -eq "Interactive" -and
+    $catalogTask.triggerCount -eq 1 -and
+    $catalogTask.state -in @("Ready", "Running") -and
+    ($catalogTask.state -eq "Running" -or $catalogTask.lastResult -eq 0)
+)
 
 $required = @($models | Where-Object { $_.name -in @("Qwen3.8 27B Q6", "Devstral Small 2 24B", "gpt-oss 20B alias") })
-$configured = $qwenTask.installed -and $qwenNativeTask.installed -and $ollamaTask.installed -and @($required | Where-Object { -not $_.installed }).Count -eq 0
+$configured = $qwenTask.installed -and $qwenNativeTask.installed -and $ollamaTask.installed -and $catalogReady -and @($required | Where-Object { -not $_.installed }).Count -eq 0
 $evidence = @(
     "runs\qwen3.8-q6-capped\powershell.run.json",
     "runs\cross-language\qwen-typescript.json",
     "runs\devstral-verifier.json",
     "runs\final-end-to-end.json",
+    "runs\pc-codex-catalog-maintenance.json",
     "docs\TOURNAMENT_V1.md"
 )
 $evidencePresent = @($evidence | Where-Object { Test-Path -LiteralPath (Join-Path $repoRoot $_) -PathType Leaf })
@@ -381,6 +393,14 @@ $report = [pscustomobject]@{
         qwen38Native = [pscustomobject]@{ profileName = "Native"; profile = "q6-text/medium/q4_0/262144/mtp-off"; task = $qwenNativeTask; listener = $qwenListener; health = $qwenNativeHealth; ownership = $qwenNativeOwnership; liveReady = $qwenNativeLive }
         ollama = [pscustomobject]@{ task = $ollamaTask; listener = $ollamaListener; health = $ollamaHealth; ownership = $ollamaOwnership; liveReady = $ollamaLive }
     }
+    maintenance = [pscustomobject]@{
+        catalog = [pscustomobject]@{
+            task = $catalogTask
+            ready = $catalogReady
+            policy = "terminal subagents older than 24 hours; 25 sequential maximum; zero retries; reversible archive"
+            evidence = "runs\pc-codex-catalog-maintenance.json"
+        }
+    }
     models = $models
 }
 
@@ -406,6 +426,7 @@ if ($Json) {
     foreach ($item in @([pscustomobject]@{ name = "Qwen38 shared port"; value = $qwenListener }, [pscustomobject]@{ name = "Ollama"; value = $ollamaListener })) {
         foreach ($listener in @($item.value.listeners)) { Write-Output "    $($item.name) PID $($listener.processId): $($listener.executablePath)" }
     }
+    Write-Output "  Catalog maintenance: task=$($catalogTask.state); ready=$catalogReady; last=$($catalogTask.lastResult); policy=terminal children only / 25 per hour / zero retries"
     Write-Output ""
     Write-Output "Installed models"
     foreach ($model in $models) {

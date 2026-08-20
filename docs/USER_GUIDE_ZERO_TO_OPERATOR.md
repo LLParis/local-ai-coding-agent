@@ -16,7 +16,7 @@ model run.
 coding-task.json
        |
        v
-backend switcher --> Qwen3.8 Q6 (default) or Ollama (fallback)
+backend switcher --> Qwen3.8 Q6 (default) or explicit alternate backend
        |                         one implementation call
        v
 retained working copy --> real project test --pass--> Devstral review
@@ -38,7 +38,7 @@ answer cannot overwrite the only copy of the project.
 | Local implementation | Qwen3.8 27B Q6 | Best result in the bounded local tournament; verified work in Python, TypeScript, and corrected PowerShell tasks |
 | Local review | Devstral Small 2 24B | Correct verdict in 3/3 verifier trials |
 | Factual acceptance | The project's real tests/contracts | A passing model explanation alone never counts |
-| Tiny fallback work | gpt-oss 20B | Passed earlier tiny tasks but failed the harder tranche |
+| Fast small-task candidate | gpt-oss 20B | Passed earlier tiny tasks but failed the harder tranche |
 | Research/vision candidate | Gemma 4 31B QAT | Installed, but not promoted as implementer or verifier |
 | High-judgment arbitration | Hosted Codex, while available | Architecture, ambiguous decisions, and final review |
 
@@ -126,7 +126,7 @@ Field meanings:
 
 | Field | What to put there |
 |---|---|
-| `backend` | Use `Qwen38` normally. Use `Ollama` only for an explicit fallback trial. |
+| `backend` | Use `Qwen38` normally. Use `Ollama` only for an explicit alternate-model trial. |
 | `workspace` | Absolute path to the real project. |
 | `objective` | One defect and the intended outcome. Include known constraints. |
 | `mutable` | The one to four exact files the model may change. Start narrower and expand only when the diagnosis requires it. |
@@ -172,6 +172,12 @@ An accepted successful run uses two local model calls: one implementer and one
 verifier. An implementation or test failure normally stops after one. A
 verifier rejection or verifier error uses two. Automatic retries are always
 zero.
+
+Before the implementation request, the command also records a durable task
+intent and typed state. The final report records test, verifier, backend
+restore, and terminal evidence. Large prompt/output/diff bodies remain in the
+retained stage; active memory stores their hashes and locators rather than
+duplicating them.
 
 Local inference does not consume hosted-model tokens. It still uses the PC's
 GPU, memory, electricity, and time.
@@ -231,7 +237,7 @@ Then run the same project test in the original workspace and inspect `git diff`
 before committing. If files changed in the original workspace after the local
 trial began, do not force the patch; create a fresh task from the current state.
 
-## Backend recovery without UAC
+## Backend selection and recovery without UAC
 
 Normal operation uses existing Scheduled Tasks and should not show UAC. To
 restore the default backend:
@@ -241,7 +247,7 @@ powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
   -File windows\Switch-ExcaliburBackend.ps1 -Backend Qwen38
 ```
 
-To select the Ollama fallback explicitly:
+To select the Ollama alternate explicitly:
 
 ```powershell
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
@@ -292,11 +298,13 @@ the model or simplify the task.
 
 ## Honest current boundary
 
-Windows operation, backend lifecycle, Qwen implementation, and deterministic
-verification are working. The final Mac/Swift execution-edge proof is still
-outstanding. Automatic Devstral review is integrated; automatic patch promotion
-is not. The current evidence does not establish a 90% or 95%
-frontier-equivalence rate.
+Windows operation, backend lifecycle, Qwen implementation, deterministic
+verification, durable run memory, the Mac/Swift execution edge, PC-to-Mac Codex
+SSH, and automatic terminal-child retirement are working. The native 262K
+profile is lifecycle-proven and its final matrix is running. Pi is ready for a
+live held-out trial; DeepSeek Harness still requires a scoped live-event plugin.
+Automatic patch promotion is not enabled, and current evidence does not yet
+establish a 90% or 95% frontier-equivalence rate.
 
 For implementation evidence and current limitations, see
 [`PRODUCTION_HANDOFF_V1.md`](PRODUCTION_HANDOFF_V1.md). For raw tournament

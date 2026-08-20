@@ -132,6 +132,8 @@ class QwenProfileTests(unittest.TestCase):
             "q6-text/medium/q8_0/32768/mtp3",
             "q6-text/medium/q4_0/262144/mtp-off",
             "AnimeFrontier Excalibur Ollama",
+            "Coding Intelligence - Codex Catalog Maintenance",
+            "Laguna XS 2.1 Q4_K_M",
         ):
             self.assertIn(expected, text)
 

@@ -2,124 +2,168 @@
 
 Status date: 2026-08-20
 
-## Production-proven on EXCALIBUR
+## Production-proven foundation
 
-- Loopback Ollama Scheduled Task with exact wrapper/child ownership and model
-  preservation.
-- Loopback Qwen3.8 Q6 Scheduled Task with exact wrapper/child ownership, 32K
-  context, Q8 KV cache, medium reasoning capped at 2,048, and MTP draft 3.
-- Automatic Qwen/Ollama swap with no UAC: 8.12 seconds to Ollama and 14.69
-  seconds back to Qwen in the captured round trip.
-- Windows thin edit lane: one implementation call, zero automatic retries,
-  explicit mutable/context/verifier paths, isolated stage, real project
-  command, and source workspace unchanged.
-- Live everyday two-model command: Qwen diagnosed and fixed the frozen
-  PowerShell process-ownership defect in 4.249 seconds, the hidden test passed,
-  Devstral accepted the staged diff in 8.44 seconds through Ollama's native
-  structured endpoint, and Qwen was restored. The source fixture SHA-256 stayed
-  identical, the final process exit was zero, and no UAC or hosted model call
-  occurred. Exact evidence is in `runs/final-end-to-end.json`.
-- Immutable SHA-256 task capsule created in one process and recovered by a
-  second fresh process with the same workspace identity.
-- One everyday entry point: `bin\coding-task.cmd <task.json>`.
-- Trajectory record retained inside every isolated stage.
-- Twenty focused platform tests pass; one Mac-only tunnel test is skipped on
-  Windows by design. Frozen qualification cases pass after promoted fixes.
+### EXCALIBUR inference lifecycle
 
-## Independent verifier path
+- Ollama, bounded Qwen3.8 Q6, and native-context Qwen3.8 Q6 are current-user
+  Scheduled Tasks with exact wrapper/child ownership, loopback-only listeners,
+  Job Object teardown, rollback, mutual exclusion, and no UAC.
+- Bounded profile: Q6 weights, 32,768 context, Q8 KV, medium reasoning capped
+  at 2,048, MTP draft 3.
+- Native profile: Q6 weights, 262,144 context, Q4 KV, one text slot, medium
+  reasoning capped at 16,384, MTP off.
+- The captured native lifecycle switched bounded → native in 20.007 seconds and
+  native → bounded in 19.727 seconds. A later live scalar/array rollback defect
+  was preserved, fixed, regression-tested, and re-proven in
+  `runs/qwen-native-switch-repair.json`.
 
-- The everyday command now requires two independent results after a successful
-  staged edit: the authoritative project test and one strict Devstral Small 2
-  accept/reject verdict over only the objective, scoped diff, and test result.
-- Every non-PlanOnly path restores Qwen as the idle backend. Accepted, rejected,
-  malformed, and restore outcomes remain separate telemetry; no retry or
-  promotion is added.
-- Twenty focused tests pass with one Mac-only skip, including fake-endpoint
-  proofs of one verifier call, Unicode-safe transport, strict runtime
-  rejection, restore, and PlanOnly zero-call behavior.
-- The initial OpenAI-compatible verifier route returned HTTP 400 twice before
-  Devstral inference. It was removed, not retried again. The production command
-  now uses Ollama's native `/api/chat` structured-output route. Both failed
-  attempts and the subsequent accepted path remain under `runs/`.
+### Bounded coding path
 
-## Evidence-based model roles
+- `bin\coding-task.cmd <task.json>` makes one implementation response, applies
+  one to four scoped replacements only in a retained stage, runs the real
+  verifier-only project command, and leaves the source workspace unchanged.
+- A passing implementation receives one independent Devstral Small 2 verdict
+  through Ollama's native structured-output endpoint.
+- Every non-PlanOnly path restores bounded Qwen. Model calls, verifier calls,
+  backend swaps, process exits, restore, and zero-retry telemetry remain
+  separate.
+- Python, TypeScript, PowerShell, and Swift fixes have passed real hidden tests.
+  The Swift task used PC Qwen inference, macOS Xcode/Swift 6.3.3 verification,
+  and Devstral review; exact evidence is in `runs/swift-mac-edge.json`.
 
-| Role | Model/system | Evidence |
+### Durable memory and continuity
+
+- Coding runs now append a canonical, fsynced, hash-chained event stream before
+  model dispatch and commit typed task-state revisions with evidence.
+- Large payloads are content-addressed. Active memory stores objective/state,
+  hashes, and locators rather than copying prompts, responses, diffs, or test
+  output.
+- SQLite projections use WAL/FULL/FK/trusted-schema-off plus exact, unicode61,
+  and trigram retrieval. Scope and temporal filters run before ranking.
+- A deterministic packer places validated task state first, then at most eight
+  provenance-bearing memories under exact token budgets.
+- Compaction preserves raw history and requires invariant/citation/artifact
+  checks plus an independently bound semantic-verifier report before immutable
+  state commit.
+- Cross-process Windows/macOS/Linux locks cover append, fsync, projection,
+  verify, replay, and rebuild. Forced process death releases ownership.
+- An unmatched model request remains `outcome_unknown`; it is never replayed or
+  fabricated as completed.
+
+### PC/Mac execution edge
+
+- Proton's second-VPN filtering was repaired with official Tailscale-range
+  exclusions; Tailscale, Proton, public internet, and local inference coexist.
+- Passwordless native macOS Remote Login uses a dedicated ED25519 key.
+- The PC Codex app has a saved auto-connected SSH host. The Mac LaunchAgent owns
+  one official Codex app-server on a Unix socket; zero TCP app-server listeners
+  exist. Forced child termination recovered in four seconds.
+- Xcode is globally selected at `/Applications/Xcode.app/Contents/Developer`.
+- Mac and PC share one terminal-child catalog-maintenance engine. Only
+  `task_complete` subagents older than 24 hours can be archived; root, recent,
+  non-terminal, malformed, or out-of-scope tasks are preserved. Every mutation
+  uses supported `codex archive` and records `codex unarchive`; retries are zero.
+- Mac active tasks fell 496 → 86 and task listing reached 0.084 seconds. PC
+  active tasks fell 436 → 149, active subagents 317 → 30, active rollout bytes
+  13.35 GB → 4.27 GB, and listing reached 0.113 seconds. Nothing was deleted.
+
+## Evidence-based roles
+
+| Role | Current system | Status |
 |---|---|---|
-| Architect and final arbiter | Hosted Codex | Current frontier operator |
-| Local implementer | Qwen3.8 27B Q6 | 2/3 core tasks; verified Python, TypeScript, and corrected PowerShell edits |
-| Local verifier | Devstral Small 2 24B | 3/3 verifier cases, including one real Qwen patch |
-| Factual acceptance | Project tests/contracts | Deterministic, hidden from implementer |
-| Research/vision candidate | Gemma 4 31B QAT | 1/3 implementation; not promoted as verifier |
-| Tiny-task fallback | gpt-oss-20b | Historical tiny task passed; harder tranche 0/3 |
+| Hosted architect/escalation | Codex | Available while hosted usage exists |
+| Bounded local implementer | Qwen3.8 27B Q6 | Production-proven on scoped tasks |
+| Local verifier | Devstral Small 2 24B | Production-proven verdict lane |
+| Factual authority | Hidden project tests/contracts | Required |
+| Long-context baseline | Qwen3.8 Q6 / native 262K / Q4 KV / MTP off | Lifecycle-proven; final matrix running |
+| High-fidelity reference | Qwen3.8 27B Q8 | Installed; matched qualification pending |
+| Prior-generation control | Qwen3.6 27B Q6 | Installed; matched qualification pending |
+| Reasoning/vision candidate | Gemma 4 31B QAT | Installed; not promoted |
+| Fast small-task candidate | gpt-oss 20B | Installed; harder tranche 0/3 |
+| Project-coherence challenger | Laguna XS 2.1 Q4_K_M | Official 20.27 GB artifact verified; runtime/tasks pending |
 
-Raw qualification records are in `runs/`. Failed trials were not retried and
-were not converted into successes.
+No model is removed or demoted from anecdotes, vendor benchmarks, stale tests,
+or evaluator failures. Raw failures remain in the denominator only when the
+candidate actually received a valid applicable trial.
+
+## Harness status
+
+- The current thin runner remains production authority.
+- Pi 0.84.2 is pinned per-user and wrapped with only read, search, scoped edit,
+  and test; zero retries, no session/plugin discovery, bounded turns/calls,
+  protocol-clean NDJSON, source preservation, and child-tree cleanup are proven
+  against fake endpoints. Live Qwen qualification is pending.
+- DeepSeek Harness 0.1.0-rc.8 is installed but blocked from live qualification.
+  Its current headless mode exposes final text without a stable live event/tool
+  interception seam and mounts broad capabilities. A reviewed four-tool plugin
+  must earn entry.
 
 ## Everyday operation
 
-1. Copy `task.example.json` and fill in one bounded objective, workspace,
-   mutable files, visible context, verifier-only context, and real test command.
-2. Run:
+1. Run the read-only status command:
 
    ```powershell
-   bin\coding-task.cmd D:\path\to\task.json
+   bin\doctor.cmd
    ```
 
-3. The command makes one implementation request, stages the patch, and runs the
-   hidden project test. On test success it switches to Ollama and makes exactly
-   one Devstral verifier request. Every non-PlanOnly outcome restores Qwen as the
-   idle default.
-4. A successful report requires both the test and strict verifier acceptance.
-   Rejection or malformed verifier output fails truthfully. There is no retry,
-   automatic promotion, or direct mutation of source work.
+2. Create a bounded task from `task.example.json`.
+3. Validate without model/backend/memory mutation:
+
+   ```powershell
+   powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+     -File bin\coding-task.ps1 -Task .\my-task.json -PlanOnly
+   ```
+
+4. Run:
+
+   ```powershell
+   bin\coding-task.cmd .\my-task.json
+   ```
+
+A `verified` result means the staged patch passed its named project evidence,
+Devstral accepted it, bounded Qwen was restored, and terminal memory committed.
+It does not automatically modify or promote the source workspace.
 
 ## Current configured state
 
-- Qwen task: `Coding Intelligence Excalibur Qwen3.8`
-- Ollama task: `AnimeFrontier Excalibur Ollama` (legacy name retained for the
-  already-proven runtime; rename is cosmetic debt)
+- Bounded task: `Coding Intelligence Excalibur Qwen3.8`
+- Native task: `Coding Intelligence Excalibur Qwen3.8 Native`
+- Ollama task: `AnimeFrontier Excalibur Ollama` (legacy name retained)
+- Catalog maintenance: `Coding Intelligence - Codex Catalog Maintenance`
 - Qwen endpoint: `127.0.0.1:8818`
 - Ollama endpoint: `127.0.0.1:11434`
-- Model artifacts installed: Qwen3.8 Q6/Q8, gpt-oss-20b, Gemma 4 31B QAT,
-  Devstral Small 2, and prior Qwen3.6.
-- Raw endpoints remain loopback-only.
+- Mac host alias: `coding-intelligence-mac`
+- Operational memory root: `%LOCALAPPDATA%\CodingIntelligence\MemoryV1`
+- All raw inference endpoints remain loopback-only.
 
-## Architecture decisions, not yet runtime claims
+## Current validation
 
-- DeepSeek Harness is the pinned future rich-session adapter substrate; Pi is
-  the lightweight interactive adapter candidate. Neither is installed in the
-  production path. See `docs/HARNESS_FUSION_DECISION.md`.
-- Memory v1 is specified as hash-chained local events plus rebuildable SQLite
-  FTS5 projections, typed state, temporal supersession, provenance, and
-  loss-checked compaction. That memory plane is designed but not implemented or
-  production-proven. See `docs/MEMORY_ARCHITECTURE_DECISION.md`.
-- The 32K Qwen profile remains the bounded edit lane. The required interactive
-  baseline is separately defined as Q6 at native 262,144 context, Q4 KV, one
-  text slot, and MTP off. Allocation has passed once; real 50/75/90%-fill agent
-  qualification has not. See `docs/LONG_CONTEXT_DECISION.md`.
+- Repository suite: 98 tests passed with one expected macOS-only skip after the
+  final evaluator-ownership correction.
+- Ruff, PowerShell parsers, JSON parsing, Mac shell parsing, and diff checks pass.
+- The final frozen 60-run native-context matrix is active under evaluator commit
+  `7b4d3e2`; interim matrices remain evaluator-debug evidence, not model losses.
 
 ## Not yet production-proven
 
-- The final Mac/Swift execution-edge task. Proton VPN was proven to have blocked
-  all PC-originated Tailscale sockets; the two official Tailscale address ranges
-  are now excluded from Proton while public VPN traffic remains protected.
-  PeerAPI and Taildrop pass, and the frozen Swift archive was delivered to the
-  Mac's Downloads folder. Native port 22 now times out, so macOS Remote Login or
-  its firewall remains a one-time Mac-side bootstrap. Codex Remote is a separate
-  cause: this PC has zero enrolled/auto-connected Mac hosts. Exact evidence is
-  in `runs/network-edge-repair.json` and `runs/mac-edge-blocker.json`; no claim
-  of Apple-edge execution completion is made.
-- A 90% or 95% frontier-equivalence rate. The current sample is deliberately
-  small and contains failures.
-- Automatic patch promotion into real user work.
-- Fine-tuned weights or adapters; no training dataset is yet large or clean
-  enough to justify them.
+- Completion of the final 60-run native-context matrix.
+- Live Pi/Qwen results and a Pi-versus-thin-lane decision.
+- Laguna runtime/template/tool compatibility and matched coding/coherence tasks.
+- Final Q8/Qwen3.6/Gemma/gpt-oss and KV/MTP/DFlash/NVFP4 comparisons.
+- A measured 90% or 95% frontier-equivalence rate.
+- Automatic promotion into real user work.
+- Fine-tuned local adapters or new weights.
+- Continuous arXiv Research Radar ingestion; its architecture is decided in
+  `docs/RESEARCH_RADAR_DECISION.md`.
 
-## Exact next step when the Mac reconnects
+## Exact continuation
 
-Enable native Remote Login for user `pro` once, then use SSH to run the already
-delivered frozen Swift package through PC Qwen and `swift test`. Separately pair
-Codex Remote once, persist PC auto-connect, and lifecycle-prove the Mac remote
-control daemon. Do not reopen the completed Windows lifecycle/model-selection
-or Proton/Tailscale work.
+1. Let the final native-context matrix finish; preserve every terminal result.
+2. Restore bounded Qwen.
+3. Run Pi and the current thin lane on the same frozen path defect.
+4. Prove Laguna runtime compatibility, then run matched coding and project-
+   coherence tasks.
+5. Freeze routing roles from measured outcomes.
+6. Update the operator guide and learning curriculum; rerun the full suite and
+   doctor before declaring v1 complete.
