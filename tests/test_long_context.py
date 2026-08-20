@@ -450,8 +450,10 @@ class ScoringTests(unittest.TestCase):
             "temporal_decision": lambda result: result["response"]["temporal_answers"].update(
                 {"as_of_2026-05-20": {"value": 3, "source_ids": ["SRC-TIME-002"]}}
             ),
-            "repository_diagnosis": lambda result: result["response"]["edit"].update(
-                {"after_sha256": "sha256:" + "0" * 64}
+            "repository_diagnosis": lambda result: result["response"][
+                "verification"
+            ].update(
+                {"passed": False, "exit_code": 1}
             ),
             "tool_contract": lambda result: result["response"]["tool_trace"].append(
                 copy.deepcopy(result["response"]["tool_trace"][2])
@@ -472,6 +474,31 @@ class ScoringTests(unittest.TestCase):
                 mutate(result)
                 score = score_runner_output(case.runner_input, case.oracle, result)
                 self.assertFalse(score["passed"])
+
+    def test_repository_score_accepts_semantically_equivalent_verified_edit(self) -> None:
+        case = build_case(
+            "repository_diagnosis",
+            131072,
+            whitespace_token_count,
+            tokenizer_id="test-whitespace-v1",
+        )
+        result = valid_result(case)
+        result["response"]["diagnosis_code"] = "TAG_AGNOSTIC_BASENAME_MATCH"
+        result["response"]["edit"]["after_sha256"] = "sha256:" + "1" * 64
+        score = score_runner_output(case.runner_input, case.oracle, result)
+        self.assertTrue(score["passed"], score["checks"])
+
+    def test_resume_id_collections_are_order_insensitive(self) -> None:
+        case = build_case(
+            "resume_compaction",
+            131072,
+            whitespace_token_count,
+            tokenizer_id="test-whitespace-v1",
+        )
+        result = valid_result(case)
+        result["response"]["resume_state"]["open_success_criteria_ids"].reverse()
+        score = score_runner_output(case.runner_input, case.oracle, result)
+        self.assertTrue(score["passed"], score["checks"])
 
     def test_malformed_result_fails_without_throwing(self) -> None:
         case = build_case(

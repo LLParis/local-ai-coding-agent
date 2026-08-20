@@ -250,6 +250,58 @@ def _model_response_schema() -> dict[str, Any]:
         },
         "required": ["sequence", "call_id", "tool", "arguments", "outcome", "side_effect_id"],
     }
+    resume_tool_call = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "call_id": {"type": "string", "minLength": 1},
+            "outcome": {"enum": ["not_started", "unknown"]},
+        },
+        "required": ["call_id", "outcome"],
+    }
+    resume_artifact = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "path": {"type": "string", "minLength": 1},
+            "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        },
+        "required": ["path", "sha256"],
+    }
+    resume_state = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "objective_id": {"type": "string", "minLength": 1},
+            "open_success_criteria_ids": {
+                "type": "array",
+                "items": {"type": "string"},
+                "uniqueItems": True,
+            },
+            "active_constraint_ids": {
+                "type": "array",
+                "items": {"type": "string"},
+                "uniqueItems": True,
+            },
+            "active_blocker_ids": {
+                "type": "array",
+                "items": {"type": "string"},
+                "uniqueItems": True,
+            },
+            "open_tool_calls": {"type": "array", "items": resume_tool_call},
+            "artifacts": {"type": "array", "items": resume_artifact},
+            "next_action_id": {"type": "string", "minLength": 1},
+        },
+        "required": [
+            "objective_id",
+            "open_success_criteria_ids",
+            "active_constraint_ids",
+            "active_blocker_ids",
+            "open_tool_calls",
+            "artifacts",
+            "next_action_id",
+        ],
+    }
     return {
         "type": "object",
         "additionalProperties": False,
@@ -286,7 +338,7 @@ def _model_response_schema() -> dict[str, Any]:
             },
             "verification": {"type": ["object", "null"]},
             "tool_trace": {"type": "array", "items": tool_call},
-            "resume_state": {"type": ["object", "null"]},
+            "resume_state": {"anyOf": [{"type": "null"}, resume_state]},
             "duplicate_effect_ids": {
                 "type": "array",
                 "items": {"type": "string"},

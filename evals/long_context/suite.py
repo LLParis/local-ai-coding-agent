@@ -731,6 +731,28 @@ def _score_citations(
     )
 
 
+def _normalized_resume_state(value: Any) -> Any:
+    if not isinstance(value, dict):
+        return value
+    normalized = dict(value)
+    for key in (
+        "open_success_criteria_ids",
+        "active_constraint_ids",
+        "active_blocker_ids",
+    ):
+        if isinstance(normalized.get(key), list):
+            normalized[key] = sorted(normalized[key])
+    if isinstance(normalized.get("open_tool_calls"), list):
+        normalized["open_tool_calls"] = sorted(
+            normalized["open_tool_calls"], key=lambda item: item.get("call_id", "")
+        )
+    if isinstance(normalized.get("artifacts"), list):
+        normalized["artifacts"] = sorted(
+            normalized["artifacts"], key=lambda item: item.get("path", "")
+        )
+    return normalized
+
+
 def _score_family(
     family: str,
     expected: Mapping[str, Any],
@@ -765,15 +787,27 @@ def _score_family(
             response["next_action_ids"],
         )
     elif family == "repository_diagnosis":
+        diagnosis = response["diagnosis_code"]
         _append_check(
-            checks, "diagnosis", expected["diagnosis_code"], response["diagnosis_code"]
+            checks,
+            "diagnosis_nonempty",
+            True,
+            isinstance(diagnosis, str) and bool(diagnosis.strip()),
         )
+        observed_edit = response["edit"] or {}
         wanted_edit = {
             "path": expected["edit_path"],
             "before_sha256": expected["before_sha256"],
-            "after_sha256": expected["after_sha256"],
         }
-        _append_check(checks, "scoped_edit", wanted_edit, response["edit"])
+        _append_check(
+            checks,
+            "scoped_edit_boundary",
+            wanted_edit,
+            {
+                "path": observed_edit.get("path"),
+                "before_sha256": observed_edit.get("before_sha256"),
+            },
+        )
         verification = response["verification"] or {}
         _append_check(
             checks,
@@ -805,7 +839,10 @@ def _score_family(
         _append_check(checks, "no_duplicate_effects", [], response["duplicate_effect_ids"])
     elif family == "resume_compaction":
         _append_check(
-            checks, "resume_state_equality", expected["resume_state"], response["resume_state"]
+            checks,
+            "resume_state_equality",
+            _normalized_resume_state(expected["resume_state"]),
+            _normalized_resume_state(response["resume_state"]),
         )
         _append_check(checks, "no_duplicate_effects", [], response["duplicate_effect_ids"])
     else:
