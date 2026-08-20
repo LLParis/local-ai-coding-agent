@@ -35,6 +35,15 @@ from .protocol import (
 Emitter = Callable[[dict[str, Any]], None]
 
 
+def _strict_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    output: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in output:
+            raise AdapterContractError(f"duplicate JSON key in harness event: {key!r}")
+        output[key] = value
+    return output
+
+
 def stdout_emitter(stream: TextIO | None = None) -> Emitter:
     target = stream or sys.stdout
 
@@ -236,6 +245,11 @@ def _tool_fields(event: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     return (name if isinstance(name, str) else "", args if isinstance(args, dict) else {})
 
 
+def _tool_call_id(event: dict[str, Any]) -> str:
+    value = event.get("toolCallId", event.get("tool_call_id", event.get("id")))
+    return value if isinstance(value, str) else ""
+
+
 def _validate_tool_call(capsule: TaskCapsule, name: str, args: dict[str, Any]) -> str | None:
     if name not in ALLOWED_TOOLS:
         return f"tool {name!r} is outside the four-tool allowlist"
@@ -369,6 +383,8 @@ def run_harness_process(
     calls = 0
     tool_name_counts: dict[str, int] = {}
     tool_results: list[dict[str, Any]] = []
+    pending_tool_calls: dict[str, str] = {}
+    completed_tool_call_ids: set[str] = set()
     retry_events = 0
     agent_end = False
     timed_out = False
@@ -401,9 +417,9 @@ def run_harness_process(
                 owner.terminate_tree()
                 break
             try:
-                event = json.loads(line)
-            except json.JSONDecodeError:
-                protocol_error = "child stdout contained a non-JSON line"
+                event = json.loads(line, object_pairs_hook=_strict_json_object)
+            except (json.JSONDecodeError, AdapterContractError):
+                protocol_error = "child stdout contained malformed or duplicate-key JSON"
                 stop = "protocol_error"
                 owner.terminate_tree()
                 break
@@ -436,8 +452,27 @@ def run_harness_process(
             elif kind == "tool_execution_start":
                 calls += 1
                 name, args = _tool_fields(event)
+                call_id = _tool_call_id(event)
+                if (
+                    not call_id
+                    or call_id in pending_tool_calls
+                    or call_id in completed_tool_call_ids
+                ):
+                    protocol_error = "tool call IDs must be non-empty and globally unique"
+                    stop = "protocol_error"
+                    owner.terminate_tree()
+                    break
+                pending_tool_calls[call_id] = name
                 tool_name_counts[name] = tool_name_counts.get(name, 0) + 1
-                output({"type": "tool_call", "run_id": run_id, "index": calls, "tool": name})
+                output(
+                    {
+                        "type": "tool_call",
+                        "run_id": run_id,
+                        "index": calls,
+                        "call_id": call_id,
+                        "tool": name,
+                    }
+                )
                 violation = _validate_tool_call(capsule, name, args)
                 if violation is not None:
                     protocol_error = violation
@@ -456,10 +491,18 @@ def run_harness_process(
                     break
             elif kind == "tool_execution_end":
                 name, _args = _tool_fields(event)
+                call_id = _tool_call_id(event)
+                if not call_id or pending_tool_calls.pop(call_id, None) != name:
+                    protocol_error = "tool result does not match one pending tool call"
+                    stop = "protocol_error"
+                    owner.terminate_tree()
+                    break
+                completed_tool_call_ids.add(call_id)
                 raw_result = event.get("result")
                 serialized = canonical_json(raw_result) if raw_result is not None else "null"
                 summary: dict[str, Any] = {
                     "index": len(tool_results) + 1,
+                    "call_id": call_id,
                     "tool": name,
                     "is_error": bool(event.get("isError", event.get("is_error", False))),
                     "result_sha256": sha256_bytes(serialized.encode("utf-8")),
@@ -531,6 +574,9 @@ def run_harness_process(
         stop = "child_exit_nonzero"
     if not agent_end and protocol_error is None and not timed_out:
         protocol_error = "harness stream ended without agent_end"
+        stop = "protocol_error"
+    if pending_tool_calls and protocol_error is None and not timed_out:
+        protocol_error = "harness stream ended with unresolved tool calls"
         stop = "protocol_error"
 
     verifier: dict[str, Any] = {

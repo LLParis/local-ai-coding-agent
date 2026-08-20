@@ -12,7 +12,7 @@ from .adapter import PROVIDER, DeepSeekAdapter
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Describe the blocked DeepSeek headless qualification adapter"
+        description="Run the bounded DeepSeek Harness production adapter"
     )
     parser.add_argument("--task", required=True, type=Path)
     parser.add_argument("--stage", required=True, type=Path)
@@ -20,20 +20,22 @@ def main() -> int:
     parser.add_argument("--model", required=True)
     parser.add_argument("--max-turns", type=int, default=8)
     parser.add_argument("--max-tool-calls", type=int, default=12)
+    parser.add_argument("--max-output-tokens", type=int, default=8192)
     args = parser.parse_args()
     emit = stdout_emitter()
     started = time.monotonic()
     try:
-        DeepSeekAdapter().run(
+        result = DeepSeekAdapter().run(
             TaskCapsule.load(args.task),
             args.stage,
             endpoint=args.endpoint,
             model=args.model,
             max_turns=args.max_turns,
             max_tool_calls=args.max_tool_calls,
+            max_output_tokens=args.max_output_tokens,
             emit=emit,
         )
-        return 3
+        return 0 if result["status"] == "passed" else 1
     except (AdapterContractError, OSError, ValueError) as error:
         emit(
             {

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-08-20T21:24:08.0012511Z",
+  "component": "DeepSeek Harness bounded four-tool production adapter",
+  "status": "runtime_ready_pending_production_loop_integration_and_real_model_use",
+  "truth_boundary": {
+    "deepseek_process_executed": true,
+    "fake_loopback_provider_executed": true,
+    "real_local_model_called": false,
+    "backend_started_or_switched": false,
+    "user_source_modified": false,
+    "production_default_changed": false
+  },
+  "pinned_runtime": {
+    "package": "@deepseek-ai/dsh",
+    "version": "0.1.0-rc.8",
+    "source_commit": "141eb6fef83422698aef7a981029e843e8161534",
+    "package_lock_sha256": "22b379a26a108f2d92d6142806ae8645bd1514768bc305b28473a9605c260dfb",
+    "cli_sha256": "c0226687bb20f45c603ec6fe50f3de16d1c3510c3a803304ec575ef9bc366c62",
+    "node": "v24.18.0"
+  },
+  "production_interface": {
+    "import": "from adapters.deepseek import DeepSeekAdapter",
+    "method": "DeepSeekAdapter.run(capsule, stage, endpoint=..., model=..., max_turns=8, max_tool_calls=12, max_output_tokens=8192, emit=callback)",
+    "assumptions": [
+      "caller owns the already-running loopback backend",
+      "caller supplies a disjoint prepared stage and validated TaskCapsule",
+      "one invocation is one top-level attempt"
+    ],
+    "model_tools": [
+      "read",
+      "search",
+      "edit",
+      "test"
+    ],
+    "normalized_events": [
+      "run_start",
+      "turn_start",
+      "tool_call",
+      "tool_result",
+      "terminal"
+    ],
+    "terminal_additions": [
+      "live_event_evidence",
+      "runtime_identity",
+      "plugin_run_id"
+    ]
+  },
+  "observed_runtime_outcomes": {
+    "edit_test_final": "passed",
+    "model_requests": 3,
+    "tool_calls": 2,
+    "reported_token_usage": {
+      "input": 10,
+      "output": 1,
+      "total": 11
+    },
+    "automatic_retries": 0,
+    "independent_verifier": "passed",
+    "source_workspace": "preserved",
+    "hidden_verifier_or_argv_in_model_requests": false,
+    "path_escape": "scope_violation_before_write",
+    "duplicate_json_argument": "malformed_tool_arguments_before_write",
+    "test_before_edit": "tool_order_violation",
+    "duplicate_effect": "duplicate_side_effect",
+    "provider_failure_requests": 1,
+    "child_crash": "protocol_error_without_fabricated_agent_end",
+    "timeout_owned_grandchild_survived": false,
+    "owned_processes_after_run": 0,
+    "stale_runtime_directories_after_cleanup": 0
+  },
+  "focused_verification": {
+    "command": "py -3 -m unittest tests.test_deepseek_adapter -v",
+    "tests": 9,
+    "passed": 9,
+    "failed": 0,
+    "duration_seconds": 21.587
+  },
+  "full_suite_observation": {
+    "command": "py -3 -m unittest discover -s tests -v",
+    "tests_run": 254,
+    "duration_seconds": 112.935,
+    "deepseek_failures": 0,
+    "skipped": 2,
+    "unrelated_errors": 4,
+    "unrelated_error": "routing manifest operating-contract hash was stale against the concurrently changed AGENTS.md"
+  },
+  "artifacts": {
+    "adapters/deepseek/__init__.py": "71d2f086ec105479277a2ff22c6bda314d160d74b1befb033253d7a10b7e9f8e",
+    "adapters/deepseek/__main__.py": "4ca6979e9d11b98a0714d07533191e3ecf65bc331a210255abb6dfa4b3b40fbb",
+    "adapters/deepseek/adapter.py": "41943772feff8c301e39925fbc446c387faa9a2168bf304a545a847c5c324610",
+    "adapters/deepseek/bounded_profile.patch.yml": "711fb3a4e59fecd5bd2a8ead5f1f9bfad868549f107a6f83487f02a61171db86",
+    "adapters/deepseek/event_bridge.py": "b7a6ad52faf2dbf6be729145e0398c4a72692287c480c226b17d44f458933aeb",
+    "adapters/deepseek/scoped_plugin.mjs": "894d15200e840ef9e9b3093fcec58d1f98e991f8425056faf7d93120386225a7",
+    "tests/test_deepseek_adapter.py": "8d6a0229d551ef60b7b8b3a55732e39391db99351f9257702f53d92ff56714a0",
+    "tests/test_harness_adapters.py": "f165e2e9fa11c72c3ae8fe0b565f9b2595e9e776197cb62459e3eff1e841f373"
+  }
+}

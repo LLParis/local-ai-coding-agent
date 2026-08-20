@@ -13,7 +13,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from adapters.deepseek import DeepSeekAdapter
+from adapters.deepseek import DEEPSEEK_SOURCE_COMMIT, DeepSeekAdapter
 from adapters.pi import PiAdapter
 from adapters.protocol import AdapterContractError, TaskCapsule, validate_loopback_endpoint
 from adapters.runner import HarnessProcessSpec, run_harness_process, stdout_emitter
@@ -369,20 +369,17 @@ class HarnessAdapterTests(unittest.TestCase):
         self.assertFalse(process_alive(pid), f"owned grandchild {pid} survived adapter timeout")
         self.assertTrue(result["telemetry"]["child_cleaned"])
 
-    def test_deepseek_is_honestly_blocked_without_starting_child(self) -> None:
-        events: list[dict[str, object]] = []
-        result = DeepSeekAdapter().run(
+    def test_deepseek_reviewed_plugin_has_a_runnable_pinned_plan(self) -> None:
+        plan = DeepSeekAdapter().launch_plan(
             self.fixture.capsule,
             self.fixture.stage,
             endpoint="http://127.0.0.1:8818/v1",
             model="fake-qwen",
-            emit=events.append,
         )
-        self.assertEqual(result["status"], "blocked")
-        self.assertEqual(result["stop"], "unstable_headless_seam")
-        self.assertFalse(result["telemetry"]["child_started"])
-        self.assertEqual(sum(event["type"] == "terminal" for event in events), 1)
-        self.assertFalse(result["launch_plan"]["runnable"])
+        self.assertTrue(plan["runnable"])
+        self.assertEqual(plan["tool_surface"], ["read", "search", "edit", "test"])
+        self.assertEqual(plan["automatic_retries"], 0)
+        self.assertEqual(plan["runtime_identity"]["source_commit"], DEEPSEEK_SOURCE_COMMIT)
         self.assertEqual(
             (self.fixture.source / "src" / "value.txt").read_text(encoding="utf-8"), "old\n"
         )

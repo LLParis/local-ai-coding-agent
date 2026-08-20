@@ -1,6 +1,6 @@
-# This is deliberately non-mutating and is not a qualified tournament profile.
-# It proves the exact local provider and disables known autonomous/broad rows,
-# but rc.8 headless has no stable live event seam or reviewed four-tool plugin.
+# Coding Intelligence's bounded production DeepSeek composition. The custom
+# runner is supplied as a file URL from a per-run directory under the pinned
+# install cache. Every broad model-facing capability remains disabled.
 - id: agent-default-model
   config:
     provider: ci-loopback
@@ -12,6 +12,7 @@
         displayName: Coding Intelligence Loopback
         api: openai-completions
         baseURL: !!js process.env.CI_ADAPTER_ENDPOINT
+        apiKeyEnv: CI_ADAPTER_API_KEY
         retryPolicy:
           mode: normal
           maxRetries: 0
@@ -23,11 +24,28 @@
           supportsDeveloperRole: false
         models:
           - id: !!js process.env.CI_ADAPTER_MODEL
-            name: Local Qwen
+            name: Local qualified candidate
             contextWindow: 32768
-            maxTokens: 8192
+            maxTokens: !!js Number(process.env.CI_ADAPTER_MAX_OUTPUT_TOKENS)
             reasoningEfforts: false
+
+# Disable secondary model calls, retry/repetition machinery, dynamic settings,
+# outbound telemetry, implicit context loaders, and every shipped broad tool.
+- id: session-title
+  disabled: true
+- id: session-title-llm
+  disabled: true
 - id: llm-retry
+  disabled: true
+- id: settings
+  disabled: true
+- id: credentials
+  disabled: true
+- id: session-query-sqlite
+  disabled: true
+- id: session-telemetry-otel
+  disabled: true
+- id: shell-env
   disabled: true
 - id: compaction-basic
   disabled: true
@@ -36,6 +54,8 @@
 - id: tool-result-pruner
   disabled: true
 - id: tool-ralph
+  disabled: true
+- id: repeat-tool-reminder
   disabled: true
 - id: tool-bash
   disabled: true
@@ -77,11 +97,17 @@
   disabled: true
 - id: workflow-worker-thread
   disabled: true
+- id: agent-instructions
+  disabled: true
 - id: skill
   disabled: true
 - id: skill-filesystem
   disabled: true
+- id: skill-badge
+  disabled: true
 - id: commands
+  disabled: true
+- id: command-feedback
   disabled: true
 - id: goal
   disabled: true
@@ -95,3 +121,13 @@
   disabled: true
 - id: web-search-deepseek
   disabled: true
+- id: code-runtime
+  disabled: true
+- id: headless-startup
+  disabled: true
+- id: headless-runner
+  disabled: true
+
+- insert:
+    - id: ci-bounded-runner
+      name: __CI_DSH_PLUGIN_URL__
