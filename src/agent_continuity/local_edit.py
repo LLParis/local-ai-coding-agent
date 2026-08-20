@@ -29,6 +29,26 @@ class LocalEditError(RuntimeError):
 _IGNORED = {".git", "__pycache__", "node_modules", ".venv", "venv"}
 
 
+def _strict_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    output: dict[str, object] = {}
+    for key, value in pairs:
+        if key in output:
+            raise LocalEditError(f"duplicate JSON key: {key!r}")
+        output[key] = value
+    return output
+
+
+def _strict_json_loads(value: str | bytes) -> object:
+    def reject_constant(constant: str) -> None:
+        raise LocalEditError(f"non-finite JSON number is forbidden: {constant}")
+
+    return json.loads(
+        value,
+        object_pairs_hook=_strict_json_object,
+        parse_constant=reject_constant,
+    )
+
+
 def _relative(value: Path) -> str:
     raw = value.as_posix()
     windows_path = PureWindowsPath(str(value))
@@ -289,16 +309,18 @@ def run_local_edit(
     if response.status != 200:
         raise LocalEditError(f"local model HTTP {response.status}: {raw[:1000]!r}")
     try:
-        response_document = json.loads(raw)
+        response_document = _strict_json_loads(raw)
     except json.JSONDecodeError as exc:
         raise LocalEditError("local model endpoint returned invalid JSON") from exc
+    if not isinstance(response_document, dict):
+        raise LocalEditError("local model endpoint returned a non-object JSON document")
     model_text = _response_text(response_document)
     trajectory["model_output_text"] = model_text
     trajectory_path.write_text(
         json.dumps(trajectory, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     try:
-        candidate = json.loads(model_text)
+        candidate = _strict_json_loads(model_text)
     except json.JSONDecodeError as exc:
         raise LocalEditError(f"local model returned non-JSON text: {model_text[:2000]!r}") from exc
     inference_seconds = time.monotonic() - started
@@ -373,9 +395,7 @@ def run_local_edit(
         {
             "path": relative,
             "before_sha256": text_sha256(original),
-            "after_sha256": text_sha256(
-                (stage / relative).read_text(encoding="utf-8")
-            ),
+            "after_sha256": text_sha256((stage / relative).read_text(encoding="utf-8")),
         }
         for relative, original in sorted(before.items())
     ]

@@ -200,8 +200,7 @@ class QwenCodeAdapter:
                 f"The only writable project root is {stage}.",
                 "Inspect the repository before editing, using list/glob/grep/read and LSP",
                 "when useful. Implement the complete requested outcome, then run the repository's",
-                "real compiler,",
-                "tests, static checks, or focused execution needed to establish whether it works.",
+                "real build, launch, compiler, or focused execution needed to make it live.",
                 "Use edit/write_file for file changes and run_shell_command for repository",
                 "commands. Do not access paths outside the stage, install packages or extensions,",
                 "create agents,",
@@ -238,6 +237,8 @@ class QwenCodeAdapter:
             str(self.runtime.cli),
             "--model",
             MODEL_ID,
+            "--prompt",
+            objective,
             "--output-format",
             "stream-json",
             "--approval-mode",
@@ -260,7 +261,7 @@ class QwenCodeAdapter:
             command=command,
             environment=self.runtime.environment(runtime_state),
             cwd=stage_path,
-            prompt=objective + "\n",
+            prompt="",
             runtime_state=runtime_state,
         )
 
@@ -344,7 +345,8 @@ class QwenCodeAdapter:
                 )
                 stdout_thread.start()
                 stderr_thread.start()
-                process.stdin.write(invocation.prompt)
+                if invocation.prompt:
+                    process.stdin.write(invocation.prompt)
                 process.stdin.close()
                 stdout_done = False
                 deadline = start + max_wall_time_seconds + 30

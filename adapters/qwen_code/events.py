@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -50,6 +51,17 @@ def _content(message: dict[str, Any]) -> list[dict[str, Any]]:
     if not all(isinstance(item, dict) for item in content):
         raise QwenCodeEventError("message.content entries must be objects")
     return content
+
+
+def _result_sha256(value: Any) -> str:
+    encoded = json.dumps(
+        value,
+        ensure_ascii=True,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
 def _model_requests(stats: dict[str, Any]) -> tuple[int, dict[str, int]]:
@@ -194,6 +206,7 @@ class QwenCodeEventAccumulator:
                 "call_id": call_id,
                 "tool": self.calls[call_id]["name"],
                 "is_error": bool(block.get("is_error", False)),
+                "result_sha256": _result_sha256(block.get("content")),
             }
             self.tool_results[call_id] = result
             output.append({"type": "tool_result", **result})
@@ -245,6 +258,7 @@ class QwenCodeEventAccumulator:
                         "tool": self.calls[call_id]["name"],
                         "input": self.calls[call_id]["input"],
                         "is_error": self.tool_results[call_id]["is_error"],
+                        "result_sha256": self.tool_results[call_id]["result_sha256"],
                     }
                     for call_id in self.calls
                 ],
