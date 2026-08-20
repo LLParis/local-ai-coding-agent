@@ -1,0 +1,254 @@
+{
+  "schema": "coding-intelligence.pc-codex-catalog-maintenance-proof/v1",
+  "status": "limited_hourly_task_lifecycle_proven_zero_eligible_backlog",
+  "recorded_at": "2026-08-20T14:43:00Z",
+  "scope": "EXCALIBUR Codex completed-subagent catalog maintenance",
+  "host": {
+    "role": "EXCALIBUR command center",
+    "user": "sirlo",
+    "task_user": "sirlo",
+    "installer_integrity": "Medium Mandatory Level",
+    "task_run_level": "Limited",
+    "task_logon_type": "Interactive",
+    "uac_prompts": 0
+  },
+  "standalone_codex": {
+    "reason_required": "The desktop-bundled WindowsApps codex.exe returned Access Denied from the normal current-user shell and was unsuitable for a Limited Scheduled Task.",
+    "official_installer_url": "https://chatgpt.com/codex/install.ps1",
+    "official_installer_redirect": "https://releases.openai.com/codex/install.ps1",
+    "installer_sha256": "391f247de2c70c7e99041979ec02dae7e76be27ac9cfc1dfe7c1eb21d48d8b97",
+    "installer_mode": "CODEX_NON_INTERACTIVE=1; current user; release assets verified by official SHA-256 metadata",
+    "installer_exit_code": 0,
+    "version": "0.148.0",
+    "visible_path": "C:\\Users\\sirlo\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin\\codex.exe",
+    "visible_bin": "junction to C:\\Users\\sirlo\\.codex\\packages\\standalone\\current\\bin",
+    "current_release": "junction to C:\\Users\\sirlo\\.codex\\packages\\standalone\\releases\\0.148.0-x86_64-pc-windows-msvc",
+    "codex_exe_sha256": "2ad2cf8a732da68b8f141634f92db1a03016c5faf533a7225fbc0fb740130410",
+    "auth": "doctor auth.credentials=ok",
+    "installation": "doctor installation=ok",
+    "update_state": "doctor updates.status=ok"
+  },
+  "canonical_implementation": {
+    "source": "ops/codex_catalog_maintenance.py",
+    "sha256": "995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "deployed_path": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\CatalogMaintenance\\codex_catalog_maintenance.py",
+    "deployed_sha256": "995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "mac_deployed_sha256": "995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "python": "3.14.2",
+    "python_path": "C:\\Users\\sirlo\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+    "focused_tests": "6/6 passed on Windows",
+    "test_coverage": [
+      "malformed and exact structured subagent sources",
+      "root/vscode exclusion",
+      "age and terminal task_complete boundary",
+      "active-session path and identity boundary",
+      "cross-platform single-instance lock",
+      "failure recorded before mutation and zero automatic retry"
+    ]
+  },
+  "selection_and_mutation_contract": {
+    "database_access": "SQLite URI mode=ro plus PRAGMA query_only=ON",
+    "database_or_rollout_mutation_by_python": false,
+    "mutation_command": "codex archive <UUID>",
+    "recovery_command": "codex unarchive <UUID>",
+    "all_required": [
+      "unarchived row",
+      "source JSON has exactly one top-level subagent object",
+      "updated_at older than 24 hours",
+      "non-symlink rollout beneath active sessions",
+      "filename ends with exact UUID",
+      "rollout mtime older than 24 hours",
+      "final non-empty record in a bounded 1 MiB tail is event_msg.payload.type=task_complete",
+      "row and rollout contract revalidated immediately before archive"
+    ],
+    "never_auto_archived": [
+      "vscode/root/user tasks",
+      "recent subagents",
+      "non-terminal subagents",
+      "malformed or out-of-scope rollout files",
+      "any UUID already journaled as attempted"
+    ],
+    "candidate_scan_limit": 500,
+    "hard_archive_limit": 100,
+    "configured_task_limit": 25,
+    "task_interval_minutes": 60,
+    "run_wall_time_limit_seconds": 600,
+    "per_archive_timeout_seconds": 60,
+    "parallel_archive_commands": 1,
+    "automatic_retries_per_uuid": 0,
+    "stop_after_first_unique_failure": true
+  },
+  "scheduled_task": {
+    "name": "Coding Intelligence - Codex Catalog Maintenance",
+    "state_after_proof": "Ready",
+    "user_id": "sirlo",
+    "run_level": "Limited",
+    "logon_type": "Interactive",
+    "multiple_instances": "IgnoreNew",
+    "execution_time_limit": "PT10M",
+    "interval_minutes": 60,
+    "archive_limit": 25,
+    "last_task_result": 0,
+    "missed_runs": 0,
+    "task_proof_runs": 12,
+    "archive_processes_after_proof": 0,
+    "task_xml_sha256": "9e2ed9430483fe3ef72176624297eba26b7e4cc6c4b33e3629eaa7310c712442",
+    "action": "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File Run-CodexCatalogMaintenance.ps1 -Limit 25",
+    "runtime_root": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\CatalogMaintenance"
+  },
+  "first_task_process_tree": {
+    "task_state": "Running",
+    "task_engine_parent_pid": 2988,
+    "wrapper": {
+      "pid": 46392,
+      "ppid": 2988,
+      "argv": "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File Run-CodexCatalogMaintenance.ps1 -Limit 25"
+    },
+    "python": {
+      "pid": 5984,
+      "ppid": 46392,
+      "argv": "python.exe codex_catalog_maintenance.py --limit 25"
+    },
+    "codex": {
+      "pid": 47204,
+      "ppid": 5984,
+      "argv": "codex.exe archive 019eba01-57c7-73e1-b42a-53840de4311f"
+    },
+    "exact_owner_chain": true,
+    "duplicate_archive_processes": 0
+  },
+  "initial_state": {
+    "active": 436,
+    "active_subagents": 317,
+    "active_vscode": 119,
+    "archived": 4,
+    "total_rows": 440,
+    "active_rollout_files": 436,
+    "active_rollout_bytes": 13346567106,
+    "archived_rollout_files": 4,
+    "archived_rollout_bytes": 66263510,
+    "dry_run_selected_cap": 100,
+    "dry_run_skips": {
+      "terminal_event_not_task_complete": 6
+    },
+    "thread_list_seconds": 0.102,
+    "doctor_seconds": 1.044,
+    "doctor_relevant_checks": "app-server/auth/install/websocket/state paths/rollout parity all ok"
+  },
+  "task_runs": [
+    {"run": 1, "selected": 25, "archived": 25, "elapsed_seconds": 7.465, "sha256": "a4e5b90e4bb284c73314b68b5992a4f6cbd871b455d51f565293c99f039fd665"},
+    {"run": 2, "selected": 25, "archived": 25, "elapsed_seconds": 7.284, "sha256": "945837adce507abcadf406e6d549a6f1f4320be49b1114ae7e36b8aeca227973"},
+    {"run": 3, "selected": 25, "archived": 25, "elapsed_seconds": 7.258, "sha256": "ed92aef75ddb5d13839450b0d7562b1bde4e37bdb4cfc978a3fc51f7c29607a4"},
+    {"run": 4, "selected": 25, "archived": 25, "elapsed_seconds": 7.389, "sha256": "923fee6fc130b3e91c2806ce0e68505064ea5932e9cb36c5090a0e89bec138bb"},
+    {"run": 5, "selected": 25, "archived": 25, "elapsed_seconds": 7.419, "sha256": "07a62cf5f13ac69f9c35c2c826cde735906dd64d242abed03c77a4a71e8f63c6"},
+    {"run": 6, "selected": 25, "archived": 25, "elapsed_seconds": 7.222, "sha256": "fc41dc67ef7746442f054bcd0370d0c82269e467433ccbcc39cfec33412166df"},
+    {"run": 7, "selected": 25, "archived": 25, "elapsed_seconds": 7.044, "sha256": "8f4452b8d3ff3b4a566ebf7fb2325249fe0b2fa6cbea9dd86cf19ce36176d0c0"},
+    {"run": 8, "selected": 25, "archived": 25, "elapsed_seconds": 7.441, "sha256": "5faf81712a7881cd0bf7c52d8a6b30cc3185a50061b3463930278309d7ff34a8"},
+    {"run": 9, "selected": 25, "archived": 25, "elapsed_seconds": 7.316, "sha256": "ce1a1cef846685b5af515582b5f3603b28a523ba813fc0b5506bf3a255af4dc3"},
+    {"run": 10, "selected": 25, "archived": 25, "elapsed_seconds": 7.331, "sha256": "047875d8fb28011c5f08a9bddfe7504833828105bd3aacaa6a62cbd62e17301f"},
+    {"run": 11, "selected": 25, "archived": 25, "elapsed_seconds": 7.494, "sha256": "6b0c035488979bca4e6d793b0ce6f3cd0a3bffde3eb0ecbae459f50fe605ff80"},
+    {"run": 12, "selected": 7, "archived": 7, "elapsed_seconds": 2.052, "sha256": "d77c7f48e0c26099e272939d1d020abf4f5f340b2e3c3f05d691112a7fea82ec"}
+  ],
+  "drain_summary": {
+    "scheduled_task_archive_attempts": 282,
+    "scheduled_task_verified_archives": 282,
+    "scheduled_task_failures": 0,
+    "scheduled_task_retries": 0,
+    "task_run_seconds_total": 82.715,
+    "task_run_seconds_average": 6.893,
+    "task_run_seconds_minimum": 2.052,
+    "task_run_seconds_maximum": 7.494,
+    "database_archived_delta": 287,
+    "external_concurrent_archives_not_claimed_by_this_task": 5
+  },
+  "journal_and_recovery": {
+    "path": "C:\\Users\\sirlo\\.codex\\coding-intelligence\\catalog-maintenance\\attempted-ids.json",
+    "write_boundary": "atomic write and fsync before every Codex mutation",
+    "attempted_uuid_count": 282,
+    "archived_status_count": 282,
+    "failed_status_count": 0,
+    "unarchive_command_count": 282,
+    "sha256": "bb834d0a7023d5876d82b6e5eb318c484876610c1d72c6b013844acab6bd2ec2"
+  },
+  "final_state": {
+    "active": 149,
+    "active_subagents": 30,
+    "active_vscode": 119,
+    "archived": 291,
+    "total_rows": 440,
+    "active_vscode_unchanged": true,
+    "preexisting_archived_vscode": 3,
+    "final_archived_vscode": 3,
+    "old_nonterminal_subagents_preserved": 13,
+    "recent_subagents_preserved": 17,
+    "eligible_older_terminal_subagents": 0,
+    "zero_eligible_proof_seconds": 0.045,
+    "zero_eligible_proof_sha256": "45ca1c82236ef260cc5b6f98fa32e7d5c05a278bb2bb156d9d0d5ef55b6a16ef",
+    "rejection_reasons": {
+      "terminal_event_not_task_complete": 13
+    },
+    "active_rollout_files": 149,
+    "active_rollout_bytes": 4270220186,
+    "archived_rollout_files": 291,
+    "archived_rollout_bytes": 9147364393,
+    "active_bytes_reduced": 9076346920,
+    "combined_rollout_bytes_initial": 13412830616,
+    "combined_rollout_bytes_final": 13417584579,
+    "rollout_or_thread_deletions": 0
+  },
+  "final_responsiveness": {
+    "thread_list_method": "thread/list",
+    "thread_list_seconds": 0.113,
+    "thread_list_page_count": 50,
+    "thread_list_has_next_cursor": true,
+    "doctor_seconds": 1.087,
+    "doctor_process_exit_code": 0,
+    "doctor_overall": "warning",
+    "only_doctor_warning": "git.worktree.dev_drive; unrelated repository placement advisory",
+    "doctor_app_server": "ok",
+    "doctor_auth": "ok",
+    "doctor_installation": "ok",
+    "doctor_websocket": "ok",
+    "doctor_state_paths": "ok",
+    "doctor_rollout_db_parity": "ok",
+    "probe_sha256": "9776e5ebbe4d6d601edcdd5c7c46923586eb9a3672e4e5b9664a842f09c2f895",
+    "doctor_sha256": "4f89753663ebae7df4d818cc6f333119a86825f01857c6b0610032a5dfa2b063"
+  },
+  "artifacts": {
+    "ops/codex_catalog_maintenance.py": "sha256:995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "windows/Run-CodexCatalogMaintenance.ps1": "sha256:f883065e81e0cf99c621e750ff0a93cd0af9688e825e58b2597d15ab1cad1292",
+    "windows/Install-CodexCatalogMaintenance.ps1": "sha256:a4e23c769e4dd44a1b25037f388d7efe45cdddc86473a2f0da2bc1041757df44",
+    "tests/test_catalog_maintenance.py": "sha256:89d35c8d8eec18e710e851c139403043470a2a8887d05c349a848017c52b9522",
+    "deployed_runtime_paths.json": "sha256:8449e522b27556d211ad45fe99f1291ff31aed40ac012c3ff3d5d48b190442d7"
+  },
+  "bounded_observability": {
+    "state_root": "C:\\Users\\sirlo\\.codex\\coding-intelligence\\catalog-maintenance",
+    "operational_log": "maintenance.log",
+    "observed_log_bytes": 26695,
+    "log_rotation_threshold_bytes": 262144,
+    "log_generations": 2,
+    "preserved_task_run_files": 12,
+    "last_probe": "last-probe.json",
+    "final_doctor": "pc-final-doctor.json"
+  },
+  "repository_validation": {
+    "ruff": "passed",
+    "catalog_focused_tests": "6/6 passed",
+    "powershell_parser": "both new Windows scripts passed",
+    "evidence_json_parse": "passed",
+    "full_suite": {
+      "total": 94,
+      "passed": 92,
+      "failed": 1,
+      "skipped": 1,
+      "unrelated_failure": "tests.test_harness_adapters.HarnessAdapterTests.test_pi_scoped_edit_test_loop_and_hidden_verifier",
+      "failure_owner_boundary": "Concurrent harness work: fake endpoint used old_text/new_text while current Pi edit schema requires oldText/newText. Catalog code and tests were green; this task did not modify that lane."
+    }
+  },
+  "truth_status": {
+    "configured": "Current-user Limited hourly Scheduled Task with stable standalone Codex and shared cross-platform engine.",
+    "tested": "Exact Task Scheduler process tree, 12 bounded task runs, 282/282 supported archives, zero retry/failure, and zero-eligible final scan.",
+    "production_proven": "The current historical eligible PC backlog is drained while root, recent, and non-terminal tasks remain available and every task-owned archive is reversible.",
+    "future_behavior": "At most 25 newly eligible completed subagents are archived hourly; any failed UUID is journaled once and held for manual review."
+  }
+}

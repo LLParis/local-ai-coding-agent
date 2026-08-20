@@ -31,14 +31,13 @@
     "mac_peerapi": "connected in 36 ms",
     "iphone_peerapi": "connected in 212 ms",
     "qwen_health": "ok",
-    "taildrop": "sent",
-    "taildrop_destination": "macOS ~/Downloads",
+    "taildrop": "sender returned success, but the file was not found on the Mac after SSH became available",
+    "taildrop_delivery_proven": false,
     "taildrop_archive_bytes": 1101,
     "taildrop_archive_sha256": "b41938a140d4371c83e4766b1362d87083a012e2ced54478d339813fcd35ee47",
-    "mac_tcp_22": "timeout; local WSAEACCES removed, native macOS Remote Login/firewall remains"
+    "mac_tcp_22": "transport subsequently became reachable after native macOS Remote Login was enabled"
   },
   "remaining_independent_causes": [
-    "macOS Remote Login is not reachable on port 22 and must be enabled for user pro on the Mac.",
     "This PC has zero enrolled Codex Remote hosts; Mac and PC require one-time host pairing and PC auto-connect."
   ]
 }

@@ -1,0 +1,9 @@
+# Coding Intelligence: make the managed Codex CLI available to noninteractive
+# SSH login shells used by the ChatGPT desktop app.
+typeset -U path PATH
+path=("$HOME/.local/bin" $path)
+export PATH
+
+# The LaunchAgent owns the SSH-host app server. The desktop SSH bootstrap must
+# attach through `codex app-server proxy` instead of spawning a competing owner.
+export CODEX_SSH_SKIP_APP_SERVER_BOOT=true

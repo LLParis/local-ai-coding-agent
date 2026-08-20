@@ -1,0 +1,143 @@
+{
+  "schema": "coding-intelligence.mac-codex-primary-proof/v1",
+  "status": "ssh_host_primary_lifecycle_proven",
+  "recorded_at": "2026-08-20T13:45:00Z",
+  "scope": "Mac Codex SSH-host app-server primary",
+  "host": {
+    "local_hostname": "Londons-MacBook-Pro",
+    "user": "pro",
+    "uid": 501,
+    "os": "macOS 26.5.2",
+    "architecture": "x86_64",
+    "ssh_alias_from_excalibur": "coding-intelligence-mac",
+    "ssh_auth": "dedicated ED25519, BatchMode passwordless"
+  },
+  "standalone_codex": {
+    "path": "/Users/pro/.local/bin/codex",
+    "version": "0.148.0",
+    "install_kind": "official standalone",
+    "managed_release_path": "/Users/pro/.codex/packages/standalone/current/codex",
+    "authentication": "doctor auth.credentials=ok, stored auth mode=chatgpt",
+    "update_state": "doctor updates.status=ok"
+  },
+  "primary_contract": {
+    "launchagent_label": "com.ggen5.coding-intelligence.codex-ssh-host-primary",
+    "run_at_load": true,
+    "keep_alive": true,
+    "launchagent_program": "/Users/pro/.local/libexec/coding-intelligence/codex-ssh-host-primary.sh",
+    "app_server_argv": [
+      "/Users/pro/.local/bin/codex",
+      "-c",
+      "features.code_mode_host=true",
+      "app-server",
+      "--listen",
+      "unix://"
+    ],
+    "control_socket": "/Users/pro/.codex/app-server-control/app-server-control.sock",
+    "tcp_listener_count": 0,
+    "state_file": "/Users/pro/.codex/coding-intelligence/ssh-host-primary/state.json",
+    "bounded_log": {
+      "path": "/Users/pro/.codex/coding-intelligence/ssh-host-primary/supervisor.log",
+      "rotation_threshold_bytes": 262144,
+      "observed_bytes": 2041,
+      "retained_generations": 2
+    }
+  },
+  "ssh_bootstrap_ownership": {
+    "zshenv": "/Users/pro/.zshenv",
+    "CODEX_SSH_SKIP_APP_SERVER_BOOT": true,
+    "purpose": "The desktop SSH bootstrap attaches with codex app-server proxy and does not create a competing app-server owner.",
+    "launchagent_inherits_skip_variable": false,
+    "observed_proxy": {
+      "pid": 24018,
+      "ppid": 24017,
+      "parent": "sshd-session: pro@notty",
+      "argv": "codex app-server proxy",
+      "unix_fd_peer": "proxy fd 10 -> 0x3bd8878a170bc6c7; app-server fd 36 owns the same socket identity"
+    }
+  },
+  "deployment": {
+    "idempotent": true,
+    "second_install": {
+      "exit": 0,
+      "supervisor_pid_before": 22450,
+      "supervisor_pid_after": 23817,
+      "app_server_pid_before": 22465,
+      "app_server_pid_after": 23876,
+      "proxy_pid_before": 22565,
+      "proxy_pid_after": 24018,
+      "result": "healthy with one exact owner after transactional reinstall"
+    },
+    "rollback": "Installer retains the prior wrapper and plist and restores/reloads them if the replacement does not become healthy.",
+    "prompts": 0,
+    "elevation": "not required; per-user gui/501 LaunchAgent"
+  },
+  "forced_kill_recovery": {
+    "target_validation": "PID, UID, PPID, and exact argv matched before SIGTERM",
+    "signal": "SIGTERM to exact app-server child only",
+    "old_supervisor_pid": 22169,
+    "new_supervisor_pid": 22450,
+    "old_app_server_pid": 22191,
+    "new_app_server_pid": 22465,
+    "old_proxy_pid": 22239,
+    "new_proxy_pid": 22565,
+    "elapsed_seconds": 4,
+    "result": "LaunchAgent restarted the supervisor and app-server; the PC SSH proxy reconnected without an unmanaged bootstrap process."
+  },
+  "final_ownership_snapshot": {
+    "launchagent_state": "running",
+    "launchagent_runs": 1,
+    "supervisor": {
+      "pid": 23817,
+      "ppid": 1,
+      "uid": 501,
+      "argv": "/bin/sh /Users/pro/.local/libexec/coding-intelligence/codex-ssh-host-primary.sh"
+    },
+    "app_server": {
+      "pid": 23876,
+      "ppid": 23817,
+      "uid": 501,
+      "argv": "/Users/pro/.local/bin/codex -c features.code_mode_host=true app-server --listen unix://"
+    },
+    "control_socket_owner_pid": 23876,
+    "supervised_exact_owner_count": 1,
+    "unmanaged_ssh_boot_owner_count": 0,
+    "remote_control_owner_count": 0,
+    "remote_control_updater_count": 0,
+    "ssh_proxy_count": 1,
+    "tcp_listener_count": 0
+  },
+  "doctor": {
+    "remote_report": "/Users/pro/.codex/coding-intelligence/ssh-host-primary/doctor.json",
+    "sha256": "fbbff57a66e9ad7a429a6f4d07be88dd5898e26755cb96959a65f61b03a3a214",
+    "overall_status": "ok",
+    "codex_version": "0.148.0",
+    "app_server_status": "ok",
+    "app_server_summary": "background server is running",
+    "app_server_mode": "persistent",
+    "auth_credentials": "ok",
+    "installation": "ok",
+    "websocket_reachability": "ok",
+    "runtime_provenance": "running standalone on macos-x86_64",
+    "updates_status": "ok"
+  },
+  "artifacts": {
+    "mac/codex-ssh-host-primary.sh": "sha256:fd769ea3945e014847a439e028051aec98f78015f64c9b32120e470c960644d4",
+    "mac/install-codex-ssh-host-primary.sh": "sha256:ad8738daf5b1f051f7ef3caa053f2afca0f44c143ef16144843b8dc13fbbdba9",
+    "mac/com.ggen5.coding-intelligence.codex-ssh-host-primary.plist": "sha256:ef2a8769d1ba1e386289f9e079f5dbcf2f46833dc5c19a67d8dfc89525d03c66",
+    "mac/zshenv.coding-intelligence": "sha256:351719182c2486e39bc8711a810fb76f640b15b555f2ab3fc6acb06b7ffcd0b8"
+  },
+  "superseded_conflict": {
+    "finding": "The remote-control daemon and the official desktop SSH-host app-server are distinct socket owners and cannot share the same unix control socket.",
+    "observed_official_ssh_command": "codex -c features.code_mode_host=true app-server --listen unix://",
+    "resolution": "The LaunchAgent now supervises the official SSH-host command directly. The stale remote-control app-server/updater were reconciled by exact PID and argv, never by a broad process kill."
+  },
+  "assertions": [
+    "The official standalone Codex is installed, authenticated, current, and healthy.",
+    "The Mac app-server starts at user login and is kept alive by launchd.",
+    "A forced exact-child termination recovered autonomously in four seconds.",
+    "The desktop SSH connection reused the supervised Unix socket through one proxy after recovery.",
+    "There is exactly one SSH-host app-server owner and no unmanaged or remote-control duplicate.",
+    "The app-server has no TCP listener and is not exposed to LAN or Tailnet."
+  ]
+}

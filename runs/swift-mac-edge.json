@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "status": "verified",
+  "captured_at_utc": "2026-08-20T13:07:59.9835606Z",
+  "objective": "Require listenerPID to equal ownerPID while preserving Running, IPv4 loopback, and healthy readiness requirements.",
+  "transport": {
+    "kind": "native macOS Remote Login over Tailscale",
+    "host": "100.122.229.30",
+    "user": "pro",
+    "authentication": "dedicated ED25519 key",
+    "fingerprint": "SHA256:cuVjPoOydWy3SeNQCTq0SGIA5XO5GCZIbx6xIl7hfuA",
+    "passwordless_ssh": true
+  },
+  "implementer": {
+    "model": "arm-qwen38-q6-text",
+    "model_calls": 1,
+    "automatic_retries": 0,
+    "inference_seconds": 2.773,
+    "stage": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-upwo0f63",
+    "trajectory_sha256": "0316265d066b97fe0dc267b28e8f5c60fd64ce7072882409051f6d60fffb3015",
+    "diagnosis": "isReady omitted listenerPID == ownerPID",
+    "patched_source_sha256": "032b0e3718d1c18e4c07d769cb26de8b20a9615c06f72906b6fd5ac1db0560da"
+  },
+  "mac_verification": {
+    "os": "macOS 26.5.2 x86_64",
+    "toolchain": "Apple Swift 6.3.3 from /Applications/Xcode.app/Contents/Developer",
+    "stage": "/tmp/coding-intelligence-swift.xw6ZnR",
+    "package_sha256": "9f7c692eb1cf6215148d358c0c32bcd22cd9de27137f0a9926a93fe168130e5d",
+    "hidden_test_sha256": "aa76b357e8ab62690471e924a46c0415b0b36da33488c630a3bb039970c25d5e",
+    "build_seconds": 20.58,
+    "tests": 1,
+    "failures": 0,
+    "test": "readinessRequiresListenerOwnership",
+    "test_seconds": 0.005
+  },
+  "verifier": {
+    "model": "devstral-small-2:24b",
+    "model_calls": 1,
+    "automatic_retries": 0,
+    "seconds": 8.804,
+    "verdict": "accept",
+    "risks": [
+      "Callers must initialize listenerPID and ownerPID consistently."
+    ]
+  },
+  "source_fixture_sha256_before_and_after": "2c9c43bc9417b4aef782fed498718c58e9888359abb7eb021cc14d7d9b9e1d96",
+  "source_workspace_mutated": false,
+  "qwen_restored": true,
+  "uac_prompt": false
+}

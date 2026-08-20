@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "blocked_mac_bootstrap",
+  "status": "native_ssh_and_swift_resolved_codex_remote_pending",
   "captured_at_utc": "2026-08-20T12:39:11.2892152Z",
   "mac": {
     "hostname": "London’s MacBook Pro",
@@ -12,8 +12,8 @@
   },
   "control_paths": {
     "ssh": {
-      "status": "network_repaired_remote_service_unreachable",
-      "result": "Proton WSAEACCES removed; TCP 22 now times out, isolating the remaining issue to macOS Remote Login/firewall."
+      "status": "resolved",
+      "result": "Proton WSAEACCES removed, native Remote Login enabled, and dedicated ED25519 passwordless authentication proven for user pro."
     },
     "codex_app_server": {
       "status": "not_paired",
@@ -21,14 +21,14 @@
       "result": "PC Codex state has savedRemoteConnectionCount=0 and autoConnectConnectionCount=0; opening a task does not register a host."
     },
     "taildrop": {
-      "status": "repaired_and_sent",
+      "status": "sender_success_receiver_missing",
       "failed_attempts_before_network_repair": 2,
-      "latest_result": "sent to macOS ~/Downloads after Proton split-tunnel repair",
+      "latest_result": "PC sender returned success after Proton repair, but the archive was not present in macOS Downloads or bounded Tailscale container searches; SSH/SCP replaced Taildrop as the authoritative rail.",
       "archive_bytes": 1101,
       "archive_sha256": "b41938a140d4371c83e4766b1362d87083a012e2ced54478d339813fcd35ee47"
     }
   },
   "fixture": "evals/cross_language/swift",
-  "required_next_state": "On Mac, enable System Settings > General > Sharing > Remote Login for user pro. Then bootstrap Codex Settings > Connections host pairing and PC auto-connect once.",
+  "required_next_state": "Bootstrap Codex Settings > Connections host pairing and PC auto-connect once; native SSH and Swift execution are complete.",
   "pc_network_work_remaining": false
 }

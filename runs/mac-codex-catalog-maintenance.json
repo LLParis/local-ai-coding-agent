@@ -1,0 +1,270 @@
+{
+  "schema": "coding-intelligence.mac-codex-catalog-maintenance-proof/v1",
+  "status": "installed_lifecycle_proven_zero_eligible_backlog",
+  "recorded_at": "2026-08-20T14:21:00Z",
+  "scope": "Mac Codex completed-subagent catalog maintenance",
+  "supported_interfaces": {
+    "archive": "codex archive <SESSION_UUID>",
+    "unarchive": "codex unarchive <SESSION_UUID>",
+    "archive_help_observed": "Archive a saved session by id or session name",
+    "unarchive_help_observed": "Unarchive a saved session by id or session name",
+    "database_access": "SQLite URI mode=ro plus PRAGMA query_only=ON; selection only",
+    "database_or_rollout_mutation_by_maintenance_code": false,
+    "session_mutation_owner": "supported Codex archive command only"
+  },
+  "prior_batch_diagnosis": {
+    "unsafe_command_shape": "sqlite candidate query | xargs -n 1 -P 4 codex archive",
+    "observed_defects": [
+      "Four concurrent archive commands mutated one catalog.",
+      "Per-ID stdout was suppressed and no failed ID/exit tuple survived.",
+      "The batch selected by source and age without validating a terminal task_complete event."
+    ],
+    "exact_sequential_diagnostic": {
+      "thread_id": "019fafcc-ae2a-73a1-92a6-17ea91f84d51",
+      "source": "subagent",
+      "updated_at": 1785363957,
+      "rollout_bytes": 314325575,
+      "terminal_record": "event_msg.payload.type=task_complete",
+      "attempts": 1,
+      "exit_code": 0,
+      "elapsed_seconds": 3,
+      "stdout": "Archived session 019fafcc-ae2a-73a1-92a6-17ea91f84d51.",
+      "before_archived": 0,
+      "after_archived": 1,
+      "archived_rollout_exists": true,
+      "archived_rollout_bytes": 314325575
+    },
+    "root_cause_conclusion": "The same oldest surviving eligible record succeeded immediately when serialized. Together with 171 later serialized successes and zero failures, this isolates concurrency and missing telemetry as the operational failure, not intrinsic non-archivability of the record.",
+    "retry_count": 0
+  },
+  "selection_policy": {
+    "all_required": [
+      "threads.archived = 0",
+      "source is valid JSON with exactly one top-level subagent object",
+      "threads.updated_at is older than 86400 seconds",
+      "rollout is a non-symlink regular file beneath the active sessions root",
+      "rollout filename ends with the exact thread UUID",
+      "rollout mtime is older than 86400 seconds",
+      "the final non-empty JSON record inside a bounded 1048576-byte tail is event_msg.payload.type=task_complete",
+      "the row, source, timestamp, path, and terminal record are revalidated immediately before mutation"
+    ],
+    "never_selected": [
+      "source=vscode",
+      "root/user tasks",
+      "recent subagents",
+      "non-terminal or malformed rollout tails",
+      "any UUID already present in attempted-ids.json"
+    ],
+    "candidate_scan_limit": 500,
+    "hard_archive_limit": 100,
+    "configured_periodic_archive_limit": 25,
+    "configured_interval_seconds": 3600,
+    "run_wall_time_limit_seconds": 600,
+    "per_archive_timeout_seconds": 60,
+    "parallel_archive_commands": 1,
+    "automatic_retries_per_uuid": 0,
+    "stop_after_first_unique_failure_in_a_run": true
+  },
+  "failure_and_recovery_contract": {
+    "pre_mutation_journal": "/Users/pro/.codex/coding-intelligence/catalog-maintenance/attempted-ids.json",
+    "journal_write": "atomic mode-0600 write and fsync before codex archive",
+    "failed_uuid_policy": "failed_no_automatic_retry; future runs skip it",
+    "recovery": "Every attempted UUID records /Users/pro/.local/bin/codex unarchive <UUID>.",
+    "attempted_uuid_count": 171,
+    "archived_status_count": 171,
+    "failed_status_count": 0,
+    "recovery_command_count": 171,
+    "attempted_ids_sha256": "228d67fbd47bb458b26afd5ac3eee73c863b9d2eff9633172990dd4bdaf72288"
+  },
+  "launchagent": {
+    "label": "com.ggen5.coding-intelligence.codex-catalog-maintenance",
+    "domain": "gui/501",
+    "state_after_proof": "not running between intervals",
+    "runs": 8,
+    "last_exit_code": 0,
+    "active_archive_processes_after_proof": 0,
+    "program": "/usr/bin/python3 /Users/pro/.local/libexec/coding-intelligence/codex-catalog-maintenance.py --limit 25",
+    "start_interval_seconds": 3600,
+    "launchd_single_instance": true,
+    "additional_fcntl_lock": true,
+    "overlap_probe": "returned already_running without selecting or archiving",
+    "nice": 10,
+    "low_priority_io": true,
+    "prompts": 0,
+    "elevation": "not required; per-user LaunchAgent"
+  },
+  "proof_runs": {
+    "manual_installed_program": {
+      "selected": 1,
+      "archived": 1,
+      "elapsed_seconds": 7.704,
+      "counts_before": {
+        "active": 253,
+        "active_subagents": 246,
+        "active_vscode": 7,
+        "archived": 245
+      },
+      "counts_after": {
+        "active": 252,
+        "active_subagents": 245,
+        "active_vscode": 7,
+        "archived": 246
+      }
+    },
+    "launchagent_archived_total": 170,
+    "launchagent_batches": [
+      {
+        "run": 1,
+        "selected": 10,
+        "archived": 10,
+        "elapsed_seconds": 35.845,
+        "sha256": "941d2a92f6abd7ec3eb6083a0a23463696530e3dc4dd200fd516e73a547e925c"
+      },
+      {
+        "run": 2,
+        "selected": 25,
+        "archived": 25,
+        "elapsed_seconds": 80.256,
+        "sha256": "70c71317bb91ada5c061a87e9c59e4d363c34e6434f984de860263a00ce6686b"
+      },
+      {
+        "run": 3,
+        "selected": 25,
+        "archived": 25,
+        "elapsed_seconds": 88.252,
+        "sha256": "ffdec4e86713d86e00a36ae5035ce55ebe1f6f6ad241fbd7f3ac7ec6463ab53a"
+      },
+      {
+        "run": 4,
+        "selected": 25,
+        "archived": 25,
+        "elapsed_seconds": 89.453,
+        "sha256": "6f0e18e00c5b8709c719d0a0eb0e1392d07525cc274d3d24277229978358dffd"
+      },
+      {
+        "run": 5,
+        "selected": 25,
+        "archived": 25,
+        "elapsed_seconds": 92.452,
+        "sha256": "e946025300a0e4a7d43c7bf479abfb9557d989b6a7a2089fcc85dbd42c5780af"
+      },
+      {
+        "run": 6,
+        "selected": 25,
+        "archived": 25,
+        "elapsed_seconds": 89.642,
+        "sha256": "36b9fcf9d832bbf8edfb9ae2b0ce001cf8e2691afad142ecc08dca1093d7535c"
+      },
+      {
+        "run": 7,
+        "selected": 25,
+        "archived": 25,
+        "elapsed_seconds": 56.599,
+        "sha256": "feca0f2c671f1b7a5dc74897e88c11f41776fdfc2ffa7aff3b4b5717baaa1c20"
+      },
+      {
+        "run": 8,
+        "selected": 10,
+        "archived": 10,
+        "elapsed_seconds": 14.103,
+        "sha256": "ed6470ada3485d1389178b29cff7ea948c544e47e27b6e5aa0c4a6733fbcc6a0"
+      }
+    ],
+    "batch_failures": 0,
+    "batch_retries": 0
+  },
+  "final_catalog": {
+    "active": 86,
+    "active_subagents": 79,
+    "active_vscode": 7,
+    "archived": 416,
+    "archived_vscode": 0,
+    "old_active_subagents_rejected_by_terminal_policy": 21,
+    "recent_active_subagents_preserved": 58,
+    "eligible_older_terminal_subagents": 0,
+    "zero_eligible_proof_elapsed_seconds": 0.033,
+    "zero_eligible_proof_sha256": "396c45e1a6fd6dd228c9e5ac89eb1203a246f48c2b272a42436282eeb946820f",
+    "rejection_reasons": {
+      "terminal_event_not_task_complete": 18,
+      "terminal_record_not_event": 3
+    },
+    "active_rollout_storage_bytes": 9637164832,
+    "measured_partial_backlog_storage_bytes": 16615906329,
+    "additional_storage_removed_by_serial_drain_bytes": 6978741497
+  },
+  "responsiveness": {
+    "partial_backlog_snapshot": {
+      "active": 252,
+      "thread_list_seconds": 0.152,
+      "doctor_seconds": 3.691
+    },
+    "final_snapshot": {
+      "active": 86,
+      "thread_list_method": "thread/list",
+      "thread_list_transport": "fresh stdio app-server",
+      "thread_list_use_state_db_only": true,
+      "thread_list_page_count": 7,
+      "thread_list_seconds": 0.087,
+      "doctor_seconds": 2.756,
+      "doctor_overall": "ok",
+      "doctor_app_server": "ok",
+      "doctor_auth": "ok",
+      "doctor_rollout_db_parity": "ok",
+      "doctor_state_paths": "ok",
+      "codex_version": "0.148.0",
+      "probe_sha256": "c3c16c79dc3e78b0b7d3d7d6934675ede2d0a653389ac9c2a5a1bc34919da430",
+      "doctor_sha256": "96988c5e52cb56cd60e37c02d658c4ec7f836011c80c5d36465340f731220c50"
+    }
+  },
+  "bounded_observability": {
+    "state_root": "/Users/pro/.codex/coding-intelligence/catalog-maintenance",
+    "operational_log": "maintenance.log",
+    "log_rotation_threshold_bytes": 262144,
+    "log_generations": 2,
+    "observed_log_bytes": 16429,
+    "last_run": "last-run.json",
+    "last_probe": "last-probe.json",
+    "preserved_launchagent_run_files": 8
+  },
+  "artifacts": {
+    "ops/codex_catalog_maintenance.py": "sha256:995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "mac/com.ggen5.coding-intelligence.codex-catalog-maintenance.plist": "sha256:825125ede78dbdf2936b948b112fa66a7388c0d627424ededc84c6554361776a",
+    "mac/install-codex-catalog-maintenance.sh": "sha256:2fcdfe61abe7afeb9a9226c4add0fb0366a941544f9ce000e4e9936f4aa56a88"
+  },
+  "cross_platform_reproof": {
+    "recorded_at": "2026-08-20T14:37:33Z",
+    "canonical_source": "ops/codex_catalog_maintenance.py",
+    "canonical_sha256": "995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "deployed_sha256": "995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "launchagent_runs_after_reinstall": 1,
+    "launchagent_last_exit_code": 0,
+    "selected": 0,
+    "archived": 0,
+    "elapsed_seconds": 0.353,
+    "counts": {
+      "active": 87,
+      "active_subagents": 80,
+      "active_vscode": 7,
+      "archived": 416
+    },
+    "preserved_rejections": {
+      "terminal_event_not_task_complete": 18,
+      "terminal_record_not_event": 3
+    },
+    "thread_list_seconds": 0.084,
+    "doctor_seconds": 3.061,
+    "doctor_overall": "ok",
+    "doctor_app_server": "ok",
+    "doctor_auth": "ok",
+    "doctor_rollout_db_parity": "ok",
+    "doctor_state_paths": "ok",
+    "last_run_sha256": "9fcc69cac3e14229252bdc190ace4b54d02924e30294a27d5adea10357319406",
+    "last_probe_sha256": "04eacf177159a3e1ecf124983edc4cdfd67f05a7ffe0258f5e1ed4d547bb5020"
+  },
+  "truth_status": {
+    "configured": "Hourly per-user LaunchAgent loaded with a 25-item sequential cap.",
+    "tested": "Eight LaunchAgent runs archived 170/170; installed manual proof archived 1/1; exact diagnostic archived 1/1.",
+    "production_proven": "Current historical eligible set drained to zero with supported reversible commands and no root task mutation.",
+    "future_behavior": "New subagent sessions become eligible only after 24 hours and terminal task_complete; automatic failures are attempted once and then held for manual review."
+  }
+}
