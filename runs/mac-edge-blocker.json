@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "blocked",
+  "captured_at_utc": "2026-08-20T12:18:12Z",
+  "mac": {
+    "hostname": "London’s MacBook Pro",
+    "tailscale_ip": "100.122.229.30",
+    "tailscale_online": true,
+    "tailscale_active": true,
+    "tailscale_ping": "pong via DERP(sea) in 46ms",
+    "last_handshake_local": "2026-08-20T05:15:00.1423794-07:00"
+  },
+  "control_paths": {
+    "ssh": {
+      "status": "denied",
+      "command_mode": "BatchMode with five-second connection timeout",
+      "error": "ssh: connect to host 100.122.229.30 port 22: Permission denied"
+    },
+    "codex_app_server": {
+      "status": "unavailable",
+      "thread_id": "01a01d8a-48eb-79a0-9ec2-0441b1248430",
+      "result": "bounded remote thread read produced no response"
+    },
+    "taildrop": {
+      "status": "failed",
+      "attempts_observed_across_program": 2,
+      "latest_error": "502 Bad Gateway",
+      "archive_bytes": 1101,
+      "archive_sha256": "b41938a140d4371c83e4766b1362d87083a012e2ced54478d339813fcd35ee47"
+    }
+  },
+  "fixture": "evals/cross_language/swift",
+  "required_next_state": "Open the existing Mac Codex task so its AppServer registers, or enable macOS Remote Login for user pro.",
+  "pc_work_remaining": false
+}

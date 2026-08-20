@@ -97,11 +97,13 @@ were not converted into successes.
 
 ## Not yet production-proven
 
-- The final Mac/Swift execution-edge task. The Mac remains online in Tailscale,
-  but its Codex host/app server and inbound SSH are currently unavailable from
-  this PC. A bounded Taildrop transfer attempt returned HTTP 502. The complete
-  frozen Swift package is committed under `evals/cross_language/swift/`; no
-  claim of Apple-edge completion is made.
+- The final Mac/Swift execution-edge task. The Mac is online and active in
+  Tailscale and answered a relay ping, but inbound SSH is denied and its Codex
+  AppServer is unavailable from this PC. Taildrop returned HTTP 502 on both
+  bounded attempts and was stopped. The complete frozen Swift package is
+  committed under `evals/cross_language/swift/`; no claim of Apple-edge
+  completion is made. Exact current evidence is in
+  `runs/mac-edge-blocker.json`.
 - A 90% or 95% frontier-equivalence rate. The current sample is deliberately
   small and contains failures.
 - Automatic patch promotion into real user work.
