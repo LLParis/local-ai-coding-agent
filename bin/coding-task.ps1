@@ -7,6 +7,14 @@ param(
     [Parameter(DontShow = $true)]
     [string]$ContinuityPath,
     [Parameter(DontShow = $true)]
+    [string]$MemoryContinuityPath,
+    [Parameter(DontShow = $true)]
+    [string]$MemoryRoot,
+    [Parameter(DontShow = $true)]
+    [string]$RunTaskId,
+    [Parameter(DontShow = $true)]
+    [string]$RunSessionId,
+    [Parameter(DontShow = $true)]
     [string]$VerifierUri = "http://127.0.0.1:11434/api/chat"
 )
 
@@ -24,6 +32,11 @@ $continuity = if ([string]::IsNullOrWhiteSpace($ContinuityPath)) {
 } else {
     $ContinuityPath
 }
+$memoryContinuity = if ([string]::IsNullOrWhiteSpace($MemoryContinuityPath)) {
+    Join-Path $PSScriptRoot "continuity.cmd"
+} else {
+    $MemoryContinuityPath
+}
 $taskPath = (Resolve-Path -LiteralPath $Task -ErrorAction Stop).Path
 $plan = Get-Content -LiteralPath $taskPath -Raw | ConvertFrom-Json
 
@@ -32,6 +45,36 @@ function Limit-TestOutput([string]$Text, [int]$Limit = 32768) {
         return $Text
     }
     return $Text.Substring(0, $Limit) + "`n...[test output truncated at $Limit characters]"
+}
+
+function Get-TextSha256([AllowNull()][string]$Text) {
+    if ($null -eq $Text) {
+        $Text = ""
+    }
+    $bytes = [Text.Encoding]::UTF8.GetBytes($Text)
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        return "sha256:" + ([BitConverter]::ToString($hasher.ComputeHash($bytes))).Replace("-", "").ToLowerInvariant()
+    } finally {
+        $hasher.Dispose()
+    }
+}
+
+function Get-FileSha256OrEmpty([AllowNull()][string]$Path) {
+    if (-not [string]::IsNullOrWhiteSpace($Path) -and (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return "sha256:" + (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    return Get-TextSha256 -Text ""
+}
+
+function Get-PropertyOrDefault([AllowNull()][object]$Value, [string]$Name, [object]$Default) {
+    if ($null -ne $Value -and $null -ne $Value.PSObject.Properties[$Name]) {
+        $candidate = $Value.PSObject.Properties[$Name].Value
+        if ($null -ne $candidate) {
+            return $candidate
+        }
+    }
+    return $Default
 }
 
 function Invoke-IndependentVerifier(
@@ -225,8 +268,7 @@ foreach ($path in $context) {
 foreach ($path in $verifyContext) {
     $arguments += @("--verify-context", [string]$path)
 }
-$arguments += @("--base-url", $baseUrl, "--model", $model, "--timeout", [string]$timeout, "--")
-$arguments += @($testCommand | ForEach-Object { [string]$_ })
+$arguments += @("--base-url", $baseUrl, "--model", $model, "--timeout", [string]$timeout)
 
 if ($PlanOnly) {
     [pscustomobject]@{
@@ -241,6 +283,76 @@ if ($PlanOnly) {
     } | ConvertTo-Json -Compress
     exit 0
 }
+
+$runTask = if ([string]::IsNullOrWhiteSpace($RunTaskId)) {
+    [guid]::NewGuid().ToString()
+} else {
+    ([guid]::Parse($RunTaskId)).ToString()
+}
+$runSession = if ([string]::IsNullOrWhiteSpace($RunSessionId)) {
+    [guid]::NewGuid().ToString()
+} else {
+    ([guid]::Parse($RunSessionId)).ToString()
+}
+$operationalMemoryRoot = if (-not [string]::IsNullOrWhiteSpace($MemoryRoot)) {
+    [IO.Path]::GetFullPath($MemoryRoot)
+} elseif (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+    Join-Path $env:LOCALAPPDATA "CodingIntelligence\MemoryV1"
+} else {
+    throw "LOCALAPPDATA is required for the default Coding Intelligence memory root."
+}
+
+$priorErrorAction = $ErrorActionPreference
+try {
+    $ErrorActionPreference = "Continue"
+    $memoryStartOutput = @(& $memoryContinuity `
+        "run-memory-start" `
+        "--root" $operationalMemoryRoot `
+        "--task-id" $runTask `
+        "--session-id" $runSession `
+        "--workspace" $workspace `
+        "--objective" ([string]$plan.objective) `
+        "--model" $model `
+        "--manifest" $taskPath 2>&1)
+    $memoryStartExit = $LASTEXITCODE
+} finally {
+    $ErrorActionPreference = $priorErrorAction
+}
+if ($memoryStartExit -ne 0 -or -not $memoryStartOutput.Count) {
+    [pscustomobject]@{
+        status = "failed"
+        task = $taskPath
+        taskId = $runTask
+        sessionId = $runSession
+        backend = [string]$plan.backend
+        model = $model
+        switch = $null
+        edit = $null
+        verifierSwitch = $null
+        verifier = $null
+        restore = $null
+        commandExit = $memoryStartExit
+        processExit = 1
+        rawFailure = "pre-model memory checkpoint failed: $($memoryStartOutput -join "`n")"
+        modelCalls = 0
+        automaticRetries = 0
+        memory = [ordered]@{
+            status = "failed"
+            root = $operationalMemoryRoot
+            taskId = $runTask
+            sessionId = $runSession
+        }
+    } | ConvertTo-Json -Depth 12 -Compress
+    exit 1
+}
+$memoryStart = $memoryStartOutput[-1] | ConvertFrom-Json
+$arguments += @(
+    "--memory-root", $operationalMemoryRoot,
+    "--task-id", $runTask,
+    "--session-id", $runSession
+)
+$arguments += "--"
+$arguments += @($testCommand | ForEach-Object { [string]$_ })
 
 $swap = $null
 $verifierSwap = $null
@@ -264,13 +376,13 @@ $implementationCalls = 0
 $verifierCalls = 0
 try {
     $swap = & $switcher -Backend ([string]$plan.backend) | ConvertFrom-Json
-    $implementationCalls = 1
     $output = @(& $continuity @arguments 2>&1)
     $exitCode = $LASTEXITCODE
     if (-not $output.Count) {
         throw "local edit command returned no report"
     }
     $edit = $output[-1] | ConvertFrom-Json
+    $implementationCalls = [int](Get-PropertyOrDefault -Value $edit -Name "model_calls" -Default 0)
     $editPassed = (
         $exitCode -eq 0 -and
         [string]$edit.status -eq "verified" -and
@@ -344,9 +456,127 @@ try {
     }
 }
 
+$emptyHash = Get-TextSha256 -Text ""
+$stageLocator = [string](Get-PropertyOrDefault -Value $edit -Name "stage" -Default "unavailable")
+$trajectoryLocator = [string](Get-PropertyOrDefault -Value $edit -Name "trajectory" -Default "unavailable")
+$diffText = [string](Get-PropertyOrDefault -Value $edit -Name "diff" -Default "")
+$testOutputText = [string](Get-PropertyOrDefault -Value $edit -Name "test_output" -Default "")
+$testCommandJson = @($testCommand | ForEach-Object { [string]$_ }) | ConvertTo-Json -Compress
+$editFailure = [string](Get-PropertyOrDefault -Value $edit -Name "memory_failure" -Default "")
+$failureText = if (-not [string]::IsNullOrWhiteSpace($failure)) {
+    [string]$failure
+} elseif (-not [string]::IsNullOrWhiteSpace($editFailure)) {
+    $editFailure
+} else {
+    ""
+}
+$restoreError = [string](Get-PropertyOrDefault -Value $restore -Name "error" -Default "")
+$verifierReason = [string](Get-PropertyOrDefault -Value $verifier -Name "reason" -Default "")
+$verifierRisks = @(Get-PropertyOrDefault -Value $verifier -Name "risks" -Default @())
+$verifierRisksJson = $verifierRisks | ConvertTo-Json -Compress
+$finalization = [ordered]@{
+    schema = "coding-intelligence-run-finalization/v1"
+    status = $resultStatus
+    process_exit = $resultExit
+    command_exit = $exitCode
+    model_calls = $implementationCalls + $verifierCalls
+    automatic_retries = 0
+    failure_sha256 = if ([string]::IsNullOrWhiteSpace($failureText)) {
+        $null
+    } else {
+        Get-TextSha256 -Text $failureText
+    }
+    implementation = [ordered]@{
+        status = [string](Get-PropertyOrDefault -Value $edit -Name "status" -Default "failed")
+        stage_locator = $stageLocator
+        trajectory_locator = $trajectoryLocator
+        trajectory_sha256 = [string](Get-PropertyOrDefault `
+            -Value $edit -Name "trajectory_sha256" -Default (Get-FileSha256OrEmpty $trajectoryLocator))
+        request_sha256 = [string](Get-PropertyOrDefault -Value $edit -Name "request_sha256" -Default $emptyHash)
+        prompt_sha256 = [string](Get-PropertyOrDefault -Value $edit -Name "prompt_sha256" -Default $emptyHash)
+        response_sha256 = [string](Get-PropertyOrDefault -Value $edit -Name "response_sha256" -Default $emptyHash)
+        response_observed = [bool](Get-PropertyOrDefault -Value $edit -Name "response_observed" -Default $false)
+        response_bytes = [int](Get-PropertyOrDefault -Value $edit -Name "response_bytes" -Default 0)
+        http_status = [int](Get-PropertyOrDefault -Value $edit -Name "http_status" -Default 0)
+        inference_seconds = [double](Get-PropertyOrDefault -Value $edit -Name "inference_seconds" -Default 0)
+        files = @(Get-PropertyOrDefault -Value $edit -Name "edited_files" -Default @())
+        diff_sha256 = [string](Get-PropertyOrDefault -Value $edit -Name "diff_sha256" -Default (Get-TextSha256 $diffText))
+        test_command_sha256 = [string](Get-PropertyOrDefault -Value $edit -Name "test_command_sha256" -Default (Get-TextSha256 $testCommandJson))
+        test_exit = [int](Get-PropertyOrDefault -Value $edit -Name "test_exit" -Default -1)
+        test_output_sha256 = [string](Get-PropertyOrDefault -Value $edit -Name "test_output_sha256" -Default (Get-TextSha256 $testOutputText))
+    }
+    verifier = [ordered]@{
+        status = [string](Get-PropertyOrDefault -Value $verifier -Name "status" -Default "not_run")
+        model = [string](Get-PropertyOrDefault -Value $verifier -Name "model" -Default "devstral-small-2:24b")
+        verdict = Get-PropertyOrDefault -Value $verifier -Name "verdict" -Default $null
+        reason_sha256 = if ([string]::IsNullOrWhiteSpace($verifierReason)) {
+            $null
+        } else {
+            Get-TextSha256 -Text $verifierReason
+        }
+        risks_sha256 = Get-TextSha256 -Text $verifierRisksJson
+        model_calls = [int](Get-PropertyOrDefault -Value $verifier -Name "modelCalls" -Default $verifierCalls)
+    }
+    restore = [ordered]@{
+        status = [string](Get-PropertyOrDefault -Value $restore -Name "status" -Default "failed")
+        backend = [string](Get-PropertyOrDefault -Value $restore -Name "backend" -Default "Qwen38")
+        error_sha256 = if ([string]::IsNullOrWhiteSpace($restoreError)) {
+            $null
+        } else {
+            Get-TextSha256 -Text $restoreError
+        }
+    }
+}
+$memoryFinal = $null
+$finalizationPath = Join-Path ([IO.Path]::GetTempPath()) ("coding-memory-" + [guid]::NewGuid() + ".json")
+try {
+    [IO.File]::WriteAllText(
+        $finalizationPath,
+        ($finalization | ConvertTo-Json -Depth 12 -Compress),
+        [Text.UTF8Encoding]::new($false)
+    )
+    $priorErrorAction = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $memoryFinalOutput = @(& $memoryContinuity `
+            "run-memory-finalize" `
+            "--root" $operationalMemoryRoot `
+            "--task-id" $runTask `
+            "--session-id" $runSession `
+            "--workspace" $workspace `
+            "--objective" ([string]$plan.objective) `
+            "--model" $model `
+            "--input" $finalizationPath 2>&1)
+        $memoryFinalExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $priorErrorAction
+    }
+    if ($memoryFinalExit -ne 0 -or -not $memoryFinalOutput.Count) {
+        throw "terminal memory finalization failed: $($memoryFinalOutput -join "`n")"
+    }
+    $memoryFinal = $memoryFinalOutput[-1] | ConvertFrom-Json
+} catch {
+    $memoryFinal = [ordered]@{
+        status = "failed"
+        root = $operationalMemoryRoot
+        task_id = $runTask
+        session_id = $runSession
+        error = $_.Exception.Message
+    }
+    $resultStatus = "failed"
+    $resultExit = 1
+    if ($null -eq $failure) {
+        $failure = $_.Exception.Message
+    }
+} finally {
+    Remove-Item -LiteralPath $finalizationPath -Force -ErrorAction SilentlyContinue
+}
+
 [pscustomobject]@{
     status = $resultStatus
     task = $taskPath
+    taskId = $runTask
+    sessionId = $runSession
     backend = [string]$plan.backend
     model = $model
     switch = $swap
@@ -365,6 +595,7 @@ try {
     }
     modelCalls = $implementationCalls + $verifierCalls
     automaticRetries = 0
+    memory = $memoryFinal
 } | ConvertTo-Json -Depth 12 -Compress
 
 exit $resultExit

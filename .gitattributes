@@ -1,0 +1,4 @@
+bin/continuity text eol=lf
+mac/*.sh text eol=lf
+mac/*.plist text eol=lf
+mac/zshenv.coding-intelligence text eol=lf

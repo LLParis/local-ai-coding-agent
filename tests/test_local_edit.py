@@ -11,6 +11,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -18,6 +19,7 @@ PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "src"))
 
 from agent_continuity.local_edit import LocalEditError, run_local_edit  # noqa: E402
+from agent_continuity.run_memory import RunIdentity, RunMemoryRecorder  # noqa: E402
 
 
 class _EditHandler(http.server.BaseHTTPRequestHandler):
@@ -104,6 +106,9 @@ class LocalEditContractTests(unittest.TestCase):
                 environment = {
                     **os.environ,
                     "CODING_INTELLIGENCE_PYTHON": sys.executable,
+                    "CODING_INTELLIGENCE_MEMORY_ROOT": str(
+                        Path(temporary) / "memory"
+                    ),
                 }
                 result = subprocess.run(
                     [
@@ -167,6 +172,35 @@ class LocalEditContractTests(unittest.TestCase):
                     (workspace / "src" / "calculator.py").read_text(encoding="utf-8"),
                     original_source,
                 )
+                recorder = RunMemoryRecorder(
+                    root=Path(report["memory"]["root"]),
+                    identity=RunIdentity(
+                        report["memory"]["task_id"], report["memory"]["session_id"]
+                    ),
+                    workspace=workspace,
+                    objective="Repair addition and prove it with the authoritative test.",
+                    model="fake-local-model",
+                    host_id="test-host",
+                )
+                events = recorder._events()
+                self.assertEqual(
+                    [event["type"] for event in events],
+                    [
+                        "task/started",
+                        "state/committed",
+                        "model/request",
+                        "model/response",
+                        "file/edited",
+                        "verification/result",
+                    ],
+                )
+                self.assertEqual(recorder.store.verify().event_count, 6)
+                raw_events = "".join(
+                    path.read_text(encoding="utf-8")
+                    for path in Path(report["memory"]["root"]).glob("events/*/*.jsonl")
+                )
+                self.assertNotIn("return left + right", raw_events)
+                self.assertNotIn("VERIFIER_ONLY_SENTINEL_54d971", raw_events)
 
     def test_runtime_enforces_string_diagnosis_when_server_ignores_schema(self) -> None:
         document = _valid_model_document()
@@ -190,6 +224,9 @@ class LocalEditContractTests(unittest.TestCase):
                         base_url=f"http://127.0.0.1:{server.server_address[1]}/v1",
                         model="fake-local-model",
                         timeout=5,
+                        memory_root=base / "memory",
+                        task_id=str(uuid.uuid4()),
+                        session_id=str(uuid.uuid4()),
                     )
                 self.assertEqual(len(server.requests), 1)  # type: ignore[attr-defined]
                 self.assertEqual(
@@ -222,6 +259,9 @@ class LocalEditContractTests(unittest.TestCase):
                             base_url=f"http://127.0.0.1:{server.server_address[1]}/v1",
                             model="fake-local-model",
                             timeout=5,
+                            memory_root=base / "memory",
+                            task_id=str(uuid.uuid4()),
+                            session_id=str(uuid.uuid4()),
                         )
                     self.assertEqual(len(server.requests), 1)  # type: ignore[attr-defined]
                     self.assertEqual(

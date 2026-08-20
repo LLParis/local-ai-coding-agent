@@ -1,0 +1,179 @@
+{
+  "schema": "coding-intelligence-long-context-suite/v1",
+  "suite_id": "qwen38-q6-native-262144-v1",
+  "context_window_tokens": 262144,
+  "reserved_completion_tokens": 24576,
+  "baseline": {
+    "model_family": "qwen3.8-27b",
+    "weight_quantization": "Q6_K",
+    "backend": "llama.cpp",
+    "backend_build": "b10435",
+    "kv_cache": "q4_0",
+    "mtp": false
+  },
+  "fill_targets": [
+    {"id": "fill-50", "prompt_tokens": 131072},
+    {"id": "fill-75", "prompt_tokens": 196608},
+    {"id": "fill-90", "prompt_tokens": 235930}
+  ],
+  "families": [
+    {
+      "id": "depth_retrieval",
+      "records": [
+        {
+          "position": "early",
+          "source_id": "SRC-RET-001",
+          "text": "Authoritative deployment registry: continuity_codename is ORBITAL-CEDAR-731."
+        },
+        {
+          "position": "middle",
+          "source_id": "SRC-RET-002",
+          "text": "Authoritative artifact ledger: routing_manifest_sha256 is sha256:8e8997bcd1e55bfca5bbf0dd0703d30c1224cdf1a8f5c22d225d63f7d53cc9af."
+        },
+        {
+          "position": "middle",
+          "source_id": "SRC-RET-X01",
+          "text": "Unverified retrospective claim: continuity_codename is ORBITAL-CEDAR-713. This source is explicitly contradicted by SRC-RET-001."
+        },
+        {
+          "position": "late",
+          "source_id": "SRC-RET-003",
+          "text": "Authoritative recovery ledger: recovery_phrase is HELIOS-LATTICE-906."
+        }
+      ],
+      "expected": {
+        "facts": {
+          "continuity_codename": {"value": "ORBITAL-CEDAR-731", "source_ids": ["SRC-RET-001"]},
+          "recovery_phrase": {"value": "HELIOS-LATTICE-906", "source_ids": ["SRC-RET-003"]},
+          "routing_manifest_sha256": {"value": "sha256:8e8997bcd1e55bfca5bbf0dd0703d30c1224cdf1a8f5c22d225d63f7d53cc9af", "source_ids": ["SRC-RET-002"]}
+        },
+        "rejected_claim_ids": ["SRC-RET-X01"],
+        "required_citations": ["SRC-RET-001", "SRC-RET-002", "SRC-RET-003"]
+      }
+    },
+    {
+      "id": "temporal_decision",
+      "records": [
+        {
+          "position": "early",
+          "source_id": "SRC-TIME-001",
+          "text": "Decision D-QUEUE-1: max_workers=8 was valid from 2026-05-01T00:00:00Z through 2026-06-14T23:59:59Z."
+        },
+        {
+          "position": "middle",
+          "source_id": "SRC-TIME-002",
+          "text": "Decision D-QUEUE-2: max_workers=3 is effective from 2026-06-15T00:00:00Z and supersedes D-QUEUE-1."
+        },
+        {
+          "position": "late",
+          "source_id": "SRC-TIME-003",
+          "text": "Active constraint C-OWNED-1: terminate only the exact owned child process; broad process kills are forbidden."
+        },
+        {
+          "position": "late",
+          "source_id": "SRC-TIME-004",
+          "text": "Current ordered plan: NEXT-LIFECYCLE-1 is the next action and requires one stop/start lifecycle proof."
+        }
+      ],
+      "expected": {
+        "temporal_answers": {
+          "as_of_2026-05-20": {"value": 8, "source_ids": ["SRC-TIME-001"]},
+          "as_of_2026-07-01": {"value": 3, "source_ids": ["SRC-TIME-002"]},
+          "current_max_workers": {"value": 3, "source_ids": ["SRC-TIME-002"]}
+        },
+        "active_constraint_ids": ["C-OWNED-1"],
+        "next_action_ids": ["NEXT-LIFECYCLE-1"],
+        "required_citations": ["SRC-TIME-001", "SRC-TIME-002", "SRC-TIME-003", "SRC-TIME-004"]
+      }
+    },
+    {
+      "id": "repository_diagnosis",
+      "fixture": "fixtures/repository_diagnosis",
+      "records": [
+        {
+          "position": "early",
+          "source_id": "SRC-CODE-001",
+          "text": "Readiness identity contract: an observed model matches only the exact launched ID, or the same untagged launched ID with the implicit :latest alias. Other explicit tags must not match."
+        },
+        {
+          "position": "middle",
+          "source_id": "SRC-CODE-002",
+          "text": "Counterexample required by the contract: launched=qwen3.8 and observed=qwen3.8:q4 must be false, while observed=qwen3.8:latest must be true."
+        },
+        {
+          "position": "late",
+          "source_id": "SRC-CODE-003",
+          "text": "The only mutable file is src/model_identity.py. Its complete current content is:\ndef model_matches(launched: str, observed: str) -> bool:\n    return observed.split(\":\", 1)[0] == launched.split(\":\", 1)[0]\nReturn one full-file replacement; the runner owns the hidden verifier identified by verify-hidden."
+        }
+      ],
+      "expected": {
+        "diagnosis_code": "overbroad_tag_matching",
+        "edit_path": "src/model_identity.py",
+        "replacement": "def model_matches(launched: str, observed: str) -> bool:\n    return observed == launched or (\n        \":\" not in launched and observed == f\"{launched}:latest\"\n    )\n",
+        "verification_command_id": "verify-hidden",
+        "required_citations": ["SRC-CODE-001", "SRC-CODE-002", "SRC-CODE-003"]
+      }
+    },
+    {
+      "id": "tool_contract",
+      "records": [
+        {
+          "position": "early",
+          "source_id": "SRC-TOOL-001",
+          "text": "Tool contract: execute exactly these ordered operations once each: read, search, edit, test. Every call needs a unique call_id and terminal outcome=success."
+        },
+        {
+          "position": "middle",
+          "source_id": "SRC-TOOL-002",
+          "text": "Arguments: read {path: src/owner.ps1}; search {query: Get-CimInstance, path: src/owner.ps1}; edit {path: src/owner.ps1, change_id: owner-check-v1}."
+        },
+        {
+          "position": "late",
+          "source_id": "SRC-TOOL-003",
+          "text": "Final test arguments are {command_id: verify-owned-process}. The edit is side effect effect-owner-fix-1 and must never execute twice after a missing or summarized result."
+        }
+      ],
+      "expected": {
+        "tool_calls": [
+          {"tool": "read", "arguments": {"path": "src/owner.ps1"}, "side_effect_id": null},
+          {"tool": "search", "arguments": {"path": "src/owner.ps1", "query": "Get-CimInstance"}, "side_effect_id": null},
+          {"tool": "edit", "arguments": {"change_id": "owner-check-v1", "path": "src/owner.ps1"}, "side_effect_id": "effect-owner-fix-1"},
+          {"tool": "test", "arguments": {"command_id": "verify-owned-process"}, "side_effect_id": null}
+        ],
+        "required_citations": ["SRC-TOOL-001", "SRC-TOOL-002", "SRC-TOOL-003"]
+      }
+    },
+    {
+      "id": "resume_compaction",
+      "records": [
+        {
+          "position": "early",
+          "source_id": "SRC-RESUME-001",
+          "text": "Checkpoint objective OBJ-CONT-1: prove Apple-edge continuity. Open success criteria are SC-SWIFT and SC-REMOTE. Active constraint is C-NO-UAC."
+        },
+        {
+          "position": "middle",
+          "source_id": "SRC-RESUME-002",
+          "text": "Artifact src/BackendState.swift has sha256:1d76142527e78b59ee26118a48e8af5e5063835826162f886c38fa4a22a555d9. Tool call CALL-TRANSFER-1 has outcome unknown and must not be replayed blindly."
+        },
+        {
+          "position": "late",
+          "source_id": "SRC-RESUME-003",
+          "text": "Active blocker B-SWIFT-UNPROVEN remains open. The one correct next action is NEXT-SWIFT-TEST: inspect the transferred artifact before deciding whether any transfer is needed."
+        }
+      ],
+      "expected": {
+        "resume_state": {
+          "objective_id": "OBJ-CONT-1",
+          "open_success_criteria_ids": ["SC-REMOTE", "SC-SWIFT"],
+          "active_constraint_ids": ["C-NO-UAC"],
+          "active_blocker_ids": ["B-SWIFT-UNPROVEN"],
+          "open_tool_calls": [{"call_id": "CALL-TRANSFER-1", "outcome": "unknown"}],
+          "artifacts": [{"path": "src/BackendState.swift", "sha256": "sha256:1d76142527e78b59ee26118a48e8af5e5063835826162f886c38fa4a22a555d9"}],
+          "next_action_id": "NEXT-SWIFT-TEST"
+        },
+        "required_citations": ["SRC-RESUME-001", "SRC-RESUME-002", "SRC-RESUME-003"]
+      }
+    }
+  ]
+}

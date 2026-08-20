@@ -6,12 +6,16 @@ import json
 import os
 import socketserver
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PACKAGE / "src"))
+
+from agent_continuity.run_memory import RunIdentity, RunMemoryRecorder  # noqa: E402
 
 
 class _VerifierHandler(http.server.BaseHTTPRequestHandler):
@@ -61,7 +65,10 @@ def verifier_server(verdict: object):
 class CodingTaskVerifierTests(unittest.TestCase):
     def _fixture(self, root: Path) -> tuple[Path, Path, Path, dict[str, object]]:
         workspace = root / "workspace"
-        workspace.mkdir()
+        (workspace / "src").mkdir(parents=True)
+        (workspace / "src" / "calculator.py").write_text(
+            "def add(left, right):\n    return left - right\n", encoding="utf-8"
+        )
         task = root / "task.json"
         task.write_text(
             json.dumps(
@@ -94,10 +101,13 @@ class CodingTaskVerifierTests(unittest.TestCase):
             '@echo off\r\ntype "%CODING_TASK_EDIT_REPORT%"\r\nexit /b 0\r\n',
             encoding="utf-8",
         )
+        stage = root / "stage"
+        stage.mkdir()
+        (stage / "preserved.txt").write_text("preserve me\n", encoding="utf-8")
         edit = {
             "status": "verified",
             "model": "arm-qwen38-q6-text",
-            "stage": str(root / "stage"),
+            "stage": str(stage),
             "diagnosis": "add subtracts",
             "diff": (
                 "--- a/src/calculator.py\n"
@@ -108,6 +118,7 @@ class CodingTaskVerifierTests(unittest.TestCase):
             "test_command": ["py", "-3", "-m", "unittest"],
             "test_exit": 0,
             "test_output": "test_add ... ok — café 🧪\n",
+            "response_observed": True,
             "model_calls": 1,
         }
         report_path = root / "edit.json"
@@ -119,6 +130,10 @@ class CodingTaskVerifierTests(unittest.TestCase):
             {
                 "CODING_TASK_SWITCH_LOG": str(switch_log),
                 "CODING_TASK_EDIT_REPORT": str(report_path),
+                "CODING_TASK_MEMORY_ROOT": str(root / "memory"),
+                "CODING_TASK_RUN_TASK_ID": "00000000-0000-4000-8000-000000000101",
+                "CODING_TASK_RUN_SESSION_ID": "00000000-0000-4000-8000-000000000102",
+                "CODING_INTELLIGENCE_PYTHON": sys.executable,
             },
         )
 
@@ -149,9 +164,19 @@ class CodingTaskVerifierTests(unittest.TestCase):
             str(continuity),
             "-VerifierUri",
             verifier_uri,
+            "-MemoryRoot",
+            str(environment["CODING_TASK_MEMORY_ROOT"]),
+            "-RunTaskId",
+            str(environment["CODING_TASK_RUN_TASK_ID"]),
+            "-RunSessionId",
+            str(environment["CODING_TASK_RUN_SESSION_ID"]),
         ]
         if plan_only:
             command.append("-PlanOnly")
+        if "CODING_TASK_MEMORY_CONTINUITY" in environment:
+            command.extend(
+                ["-MemoryContinuityPath", str(environment["CODING_TASK_MEMORY_CONTINUITY"])]
+            )
         return subprocess.run(
             command,
             cwd=PACKAGE,
@@ -208,6 +233,50 @@ class CodingTaskVerifierTests(unittest.TestCase):
             self.assertNotIn("add subtracts", prompt)
             self.assertNotIn(str(root / "stage"), prompt)
             self.assertNotIn("VERIFIER_ONLY_SENTINEL", prompt)
+            recorder = RunMemoryRecorder(
+                root=Path(str(environment["CODING_TASK_MEMORY_ROOT"])),
+                identity=RunIdentity(
+                    str(environment["CODING_TASK_RUN_TASK_ID"]),
+                    str(environment["CODING_TASK_RUN_SESSION_ID"]),
+                ),
+                workspace=root / "workspace",
+                objective="Repair addition without changing hidden tests.",
+                model="arm-qwen38-q6-text",
+                host_id="test-host",
+            )
+            events = recorder._events()
+            self.assertEqual(
+                [event["type"] for event in events],
+                [
+                    "task/started",
+                    "state/committed",
+                    "model/request",
+                    "model/response",
+                    "file/edited",
+                    "verification/result",
+                    "verification/result",
+                    "tool/result",
+                    "task/completed",
+                    "memory/committed",
+                    "state/committed",
+                ],
+            )
+            episode = recorder.store.get(
+                f"episode:{environment['CODING_TASK_RUN_TASK_ID']}"
+            )
+            self.assertEqual(len(episode["evidence"]), 2)
+            raw_events = "".join(
+                path.read_text(encoding="utf-8")
+                for path in Path(str(environment["CODING_TASK_MEMORY_ROOT"])).glob(
+                    "events/*/*.jsonl"
+                )
+            )
+            self.assertNotIn("return left + right", raw_events)
+            self.assertNotIn("test_add ... ok", raw_events)
+            self.assertEqual(
+                (root / "workspace" / "src" / "calculator.py").read_text(encoding="utf-8"),
+                "def add(left, right):\n    return left - right\n",
+            )
 
     def test_reject_is_a_truthful_terminal_result_and_restores_qwen(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -315,6 +384,7 @@ class CodingTaskVerifierTests(unittest.TestCase):
             self.assertEqual(report["modelCalls"], 0)
             self.assertEqual(report["automaticRetries"], 0)
             self.assertFalse((root / "switch.log").exists())
+            self.assertFalse(Path(str(environment["CODING_TASK_MEMORY_ROOT"])).exists())
 
     def test_failed_project_test_skips_verifier_but_still_restores_qwen(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -343,6 +413,79 @@ class CodingTaskVerifierTests(unittest.TestCase):
             self.assertEqual(
                 (root / "switch.log").read_text(encoding="utf-8").splitlines(),
                 ["Qwen38", "Qwen38"],
+            )
+
+    def test_pre_model_memory_failure_prevents_backend_and_model_calls(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            task, switcher, continuity, environment = self._fixture(root)
+            failing_memory = root / "fail-memory.cmd"
+            failing_memory.write_text(
+                "@echo off\r\necho forced pre-model memory failure 1>&2\r\nexit /b 9\r\n",
+                encoding="utf-8",
+            )
+            environment["CODING_TASK_MEMORY_CONTINUITY"] = str(failing_memory)
+
+            result = self._run(
+                task,
+                switcher,
+                continuity,
+                environment,
+                verifier_uri="http://127.0.0.1:9/api/chat",
+            )
+
+            self.assertEqual(result.returncode, 1)
+            report = json.loads(result.stdout)
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["modelCalls"], 0)
+            self.assertEqual(report["automaticRetries"], 0)
+            self.assertIn("pre-model memory checkpoint failed", report["rawFailure"])
+            self.assertFalse((root / "switch.log").exists())
+            self.assertEqual(report["memory"]["status"], "failed")
+
+    def test_terminal_memory_failure_fails_truthfully_and_preserves_edit_report(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            task, switcher, continuity, environment = self._fixture(root)
+            terminal_failure = root / "terminal-memory.cmd"
+            real_continuity = PACKAGE / "bin" / "continuity.cmd"
+            terminal_failure.write_text(
+                "@echo off\r\n"
+                'if /i "%~1"=="run-memory-finalize" (\r\n'
+                "  echo forced terminal memory failure 1>&2\r\n"
+                "  exit /b 9\r\n"
+                ")\r\n"
+                f'call "{real_continuity}" %*\r\n'
+                "exit /b %errorlevel%\r\n",
+                encoding="utf-8",
+            )
+            environment["CODING_TASK_MEMORY_CONTINUITY"] = str(terminal_failure)
+            verdict = {"verdict": "accept", "reason": "Patch is correct.", "risks": []}
+            with verifier_server(verdict) as server:
+                result = self._run(
+                    task,
+                    switcher,
+                    continuity,
+                    environment,
+                    verifier_uri=f"http://127.0.0.1:{server.server_address[1]}/api/chat",
+                )
+
+            self.assertEqual(result.returncode, 1)
+            report = json.loads(result.stdout)
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["modelCalls"], 2)
+            self.assertEqual(report["automaticRetries"], 0)
+            self.assertEqual(report["edit"]["stage"], str(root / "stage"))
+            self.assertEqual(
+                (root / "stage" / "preserved.txt").read_text(encoding="utf-8"),
+                "preserve me\n",
+            )
+            self.assertIn("terminal memory finalization failed", report["rawFailure"])
+            self.assertEqual(report["memory"]["status"], "failed")
+            self.assertEqual(len(server.requests), 1)  # type: ignore[attr-defined]
+            self.assertEqual(
+                (root / "switch.log").read_text(encoding="utf-8").splitlines(),
+                ["Qwen38", "Ollama", "Qwen38"],
             )
 
 

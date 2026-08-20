@@ -11,6 +11,16 @@ import time
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from urllib.parse import urlsplit
 
+from .run_memory import (
+    RunIdentity,
+    RunMemoryError,
+    RunMemoryRecorder,
+    bytes_sha256,
+    ensure_secret_free,
+    file_sha256,
+    text_sha256,
+)
+
 
 class LocalEditError(RuntimeError):
     pass
@@ -133,6 +143,9 @@ def run_local_edit(
     base_url: str,
     model: str,
     timeout: float,
+    memory_root: Path,
+    task_id: str,
+    session_id: str,
     verify_context: list[Path] | None = None,
 ) -> dict[str, object]:
     workspace = workspace.expanduser().resolve(strict=True)
@@ -219,14 +232,40 @@ def run_local_edit(
         "model_calls": 1,
         "automatic_retries": 0,
     }
+    try:
+        recorder = RunMemoryRecorder(
+            root=memory_root,
+            identity=RunIdentity(task_id=task_id, session_id=session_id),
+            workspace=workspace,
+            objective=objective.strip(),
+            model=model,
+        )
+        ensure_secret_free({"prompt": prompt, "request": request})
+        recorder.ensure_started(
+            mutable=mutable_paths,
+            context=context_paths,
+            verify_context=verify_paths,
+            test_command=test_command,
+        )
+        recorder.record_model_intent(
+            request_sha256=bytes_sha256(body),
+            prompt_sha256=text_sha256(prompt),
+            trajectory_path=trajectory_path,
+        )
+    except RunMemoryError as error:
+        raise LocalEditError(f"pre-model memory checkpoint failed: {error}") from error
     started = time.monotonic()
     connection = http.client.HTTPConnection(parsed_url.hostname, port, timeout=timeout)
-    connection.request(
-        "POST", f"{prefix}/chat/completions", body, {"Content-Type": "application/json"}
-    )
-    response = connection.getresponse()
-    raw = response.read(8 * 1024 * 1024)
-    connection.close()
+    try:
+        connection.request(
+            "POST", f"{prefix}/chat/completions", body, {"Content-Type": "application/json"}
+        )
+        response = connection.getresponse()
+        raw = response.read(8 * 1024 * 1024)
+    except (OSError, http.client.HTTPException) as error:
+        raise LocalEditError(f"local model request failed: {error}") from error
+    finally:
+        connection.close()
     trajectory.update(
         {
             "http_status": response.status,
@@ -238,6 +277,15 @@ def run_local_edit(
     trajectory_path.write_text(
         json.dumps(trajectory, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    try:
+        recorder.record_model_response(
+            response_sha256=bytes_sha256(raw),
+            response_bytes=len(raw),
+            http_status=response.status,
+            inference_seconds=time.monotonic() - started,
+        )
+    except RunMemoryError as error:
+        raise LocalEditError(f"model-response memory recording failed: {error}") from error
     if response.status != 200:
         raise LocalEditError(f"local model HTTP {response.status}: {raw[:1000]!r}")
     try:
@@ -292,17 +340,21 @@ def run_local_edit(
             )
         )
     test_started = time.monotonic()
-    test = subprocess.run(
-        test_command,
-        cwd=stage,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
+    try:
+        test = subprocess.run(
+            test_command,
+            cwd=stage,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.SubprocessError as error:
+        raise LocalEditError(f"authoritative test failed to execute: {error}") from error
     diff = "".join(diff_parts)
+    test_seconds = time.monotonic() - test_started
     trajectory.update(
         {
             "candidate": candidate,
@@ -310,23 +362,83 @@ def run_local_edit(
             "test_command": test_command,
             "test_exit": test.returncode,
             "test_output": test.stdout,
-            "test_seconds": round(time.monotonic() - test_started, 3),
+            "test_seconds": round(test_seconds, 3),
         }
     )
     trajectory_path.write_text(
         json.dumps(trajectory, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    implementation_status = "verified" if test.returncode == 0 else "failed"
+    edited_files = [
+        {
+            "path": relative,
+            "before_sha256": text_sha256(original),
+            "after_sha256": text_sha256(
+                (stage / relative).read_text(encoding="utf-8")
+            ),
+        }
+        for relative, original in sorted(before.items())
+    ]
+    trajectory_sha256 = file_sha256(trajectory_path)
+    memory_failure: str | None = None
+    try:
+        recorder.record_implementation(
+            files=edited_files,
+            diff_sha256=text_sha256(diff),
+            test_command_sha256=bytes_sha256(
+                json.dumps(
+                    test_command,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ),
+            test_exit=test.returncode,
+            test_output_sha256=text_sha256(test.stdout),
+            trajectory_path=trajectory_path,
+            trajectory_sha256=trajectory_sha256,
+            status=implementation_status,
+        )
+    except RunMemoryError as error:
+        memory_failure = str(error)
+
     return {
-        "status": "verified" if test.returncode == 0 else "failed",
+        "status": "failed" if memory_failure is not None else implementation_status,
         "model": model,
         "stage": str(stage),
         "diagnosis": diagnosis,
         "diff": diff,
         "inference_seconds": round(inference_seconds, 3),
         "model_calls": 1,
-        "test_seconds": round(time.monotonic() - test_started, 3),
+        "automatic_retries": 0,
+        "test_seconds": round(test_seconds, 3),
         "test_command": test_command,
         "test_exit": test.returncode,
         "test_output": test.stdout,
         "trajectory": str(trajectory_path),
+        "trajectory_sha256": trajectory_sha256,
+        "request_sha256": bytes_sha256(body),
+        "prompt_sha256": text_sha256(prompt),
+        "response_sha256": bytes_sha256(raw),
+        "response_observed": True,
+        "response_bytes": len(raw),
+        "http_status": response.status,
+        "diff_sha256": text_sha256(diff),
+        "test_command_sha256": bytes_sha256(
+            json.dumps(
+                test_command,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ),
+        "test_output_sha256": text_sha256(test.stdout),
+        "edited_files": edited_files,
+        "memory_failure": memory_failure,
+        "memory": {
+            "root": str(recorder.root),
+            "task_id": recorder.identity.task_id,
+            "session_id": recorder.identity.session_id,
+            "host_id": recorder.host_id,
+            "workspace_id": recorder.workspace_id,
+            "resume": recorder.resume_classification(),
+        },
     }

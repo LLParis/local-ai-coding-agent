@@ -60,6 +60,42 @@ Use the repository's normal non-elevated context for ordinary source edits and
 tests; elevation is an execution requirement, not a substitute for correct
 scope.
 
+## Primary-path reliability
+
+A recovery rail does not satisfy the primary outcome. The primary path is not
+complete until it starts automatically, reconnects without user intervention,
+has exact lifecycle ownership, exposes current health and failure state,
+updates with rollback, and survives the relevant process/app/login restart.
+
+- Never relabel a recovery rail as a successful fallback when ordinary use of
+  the primary still fails.
+- If normal operation depends on SSH, a repair script, a manual prompt, or a
+  second application, report the primary as broken and continue repairing it.
+- Keep one independently owned repair rail so the primary can be recovered, but
+  do not route routine work through it.
+- After repairing a primary, prove stop/start, reconnect, and fresh-process or
+  login recovery. A health response in the same process is insufficient.
+- Make failure observable and bounded; repeated silent reconnect loops are not
+  resilience.
+
+## Child-agent lifecycle
+
+Every spawned child must have one parent, a bounded role, one terminal event,
+and deterministic retirement. Completion without cleanup is a failed run.
+
+- On success, failure, cancellation, or parent abort, close the child's tool
+  calls and transcript, terminate only its owned processes, and release its
+  resources.
+- Return a bounded cited result to the parent. Store large tool output once as
+  a content-addressed artifact; never multiply it across active transcripts.
+- Keep root/user tasks visible. Automatically archive terminal child tasks only
+  after the configured retention window; archival must be reversible and must
+  never be implemented as deletion.
+- Record an archive failure once with the exact child ID and error. Do not retry
+  it in an open loop or let one bad record block cleanup of unrelated children.
+- Doctor/status must report active root tasks, active children, terminal children
+  awaiting retirement, retained bytes, and cleanup failures separately.
+
 ## Canonical evidence
 
 Read `docs/handoffs/CODING_INTELLIGENCE_COMMAND_CENTER_HANDOFF.md`, then
