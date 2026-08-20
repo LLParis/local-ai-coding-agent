@@ -1,17 +1,19 @@
 {
-  "swap": {
+  "capturedAtUtc": "2026-08-20T11:32:52.1999235Z",
+  "defaultImplementer": "arm-qwen38-q6-text",
+  "localVerifier": "devstral-small-2:24b",
+  "backend": {
     "status": "ready",
     "backend": "Qwen38",
     "port": 8818,
-    "swapSeconds": 15.166,
+    "swapSeconds": 3.402,
     "qwenTaskState": "Running",
     "ollamaTaskState": "Ready",
     "uacPrompt": false
   },
-  "health": "ok",
   "wrapperPid": 13136,
   "serverPid": 4692,
   "reasoningBudget": 2048,
-  "ollamaPortCount": 0,
-  "qwenPortOwner": 4692
+  "health": "ok",
+  "ollamaPortCount": 0
 }
