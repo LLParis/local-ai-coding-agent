@@ -64,7 +64,9 @@ were not converted into successes.
 
 - The final Mac/Swift execution-edge task. The Mac remains online in Tailscale,
   but its Codex host/app server and inbound SSH are currently unavailable from
-  this PC. No claim of Apple-edge completion is made.
+  this PC. A bounded Taildrop transfer attempt returned HTTP 502. The complete
+  frozen Swift package is committed under `evals/cross_language/swift/`; no
+  claim of Apple-edge completion is made.
 - A 90% or 95% frontier-equivalence rate. The current sample is deliberately
   small and contains failures.
 - Automatic patch promotion into real user work.
