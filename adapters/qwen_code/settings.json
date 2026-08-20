@@ -1,0 +1,203 @@
+{
+  "$version": 4,
+  "disableAllHooks": true,
+  "general": {
+    "chatRecording": false,
+    "dynamicCommandTranslation": false,
+    "enableAutoUpdate": false,
+    "gitCoAuthor": {
+      "commit": false,
+      "pr": false
+    },
+    "preventSystemSleep": true,
+    "voice": {
+      "enabled": false,
+      "refineTranscript": false
+    }
+  },
+  "privacy": {
+    "usageStatisticsEnabled": false
+  },
+  "model": {
+    "name": "arm-qwen38-q6-text",
+    "maxSessionTurns": 48,
+    "maxToolCalls": 80,
+    "maxToolCallsPerTurn": 80,
+    "maxSubagentDepth": 1,
+    "maxWallTimeSeconds": 900,
+    "sessionTokenLimit": 32768,
+    "skipLoopDetection": false,
+    "chatCompression": {
+      "maxRecentFilesToRetain": 8,
+      "maxRecentImagesToRetain": 0,
+      "enableScreenshotTrigger": false
+    }
+  },
+  "modelFallbacks": [],
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "arm-qwen38-q6-text",
+        "name": "Coding Intelligence Qwen3.8 27B Q6 bounded",
+        "description": "Loopback-only EXCALIBUR implementation model",
+        "envKey": "CODING_INTELLIGENCE_LOCAL_API_KEY",
+        "baseUrl": "http://127.0.0.1:8818/v1",
+        "generationConfig": {
+          "timeout": 900000,
+          "maxRetries": 0,
+          "retryInitialDelayMs": 0,
+          "retryMaxDelayMs": 0,
+          "contextWindowSize": 32768,
+          "samplingParams": {
+            "temperature": 0,
+            "max_tokens": 8192
+          }
+        }
+      }
+    ]
+  },
+  "context": {
+    "fileName": [
+      "AGENTS.md",
+      "QWEN.md"
+    ],
+    "autoCompactThreshold": 0.78,
+    "includeDirectories": [],
+    "loadFromIncludeDirectories": false,
+    "fileFiltering": {
+      "respectGitIgnore": true,
+      "respectQwenIgnore": true,
+      "customIgnoreFiles": [
+        ".agentignore",
+        ".aiignore"
+      ],
+      "enableRecursiveFileSearch": true,
+      "enableFuzzySearch": false
+    }
+  },
+  "tools": {
+    "approvalMode": "yolo",
+    "useRipgrep": true,
+    "useBuiltinRipgrep": false,
+    "shell": {
+      "enableInteractiveShell": false,
+      "defaultTimeoutMs": 300000,
+      "heartbeatIntervalMs": 10000
+    },
+    "toolSearch": {
+      "enabled": false
+    },
+    "disabled": [
+      "zoom_image",
+      "todo_write",
+      "save_memory",
+      "agent",
+      "skill",
+      "exit_plan_mode",
+      "enter_plan_mode",
+      "web_fetch",
+      "web_search",
+      "image_gen",
+      "ask_user_question",
+      "cron_create",
+      "cron_list",
+      "cron_delete",
+      "loop_wakeup",
+      "create_sub_session",
+      "list_agents",
+      "task_stop",
+      "task_create",
+      "task_update",
+      "task_list",
+      "team_create",
+      "team_delete",
+      "team_plan_approval",
+      "send_message",
+      "structured_output",
+      "monitor",
+      "notebook_edit",
+      "tool_search",
+      "read_mcp_resource",
+      "enter_worktree",
+      "exit_worktree",
+      "workflow",
+      "artifact",
+      "record_artifact",
+      "get_goal",
+      "update_goal",
+      "display_image"
+    ]
+  },
+  "memory": {
+    "enableManagedAutoMemory": false,
+    "enableManagedAutoDream": false,
+    "enableAutoSkill": false,
+    "autoSkillConfirm": false,
+    "enableTeamMemory": false,
+    "enableTeamMemorySync": false
+  },
+  "skills": {
+    "disabledLevels": [
+      "project",
+      "user",
+      "extension",
+      "bundled"
+    ]
+  },
+  "mcp": {
+    "allowed": [],
+    "excluded": [
+      "*"
+    ]
+  },
+  "mcpServers": {},
+  "security": {
+    "folderTrust": {
+      "enabled": false
+    },
+    "auth": {
+      "selectedType": "openai",
+      "enforcedType": "openai",
+      "useExternal": false
+    }
+  },
+  "slashCommands": {
+    "disabled": [
+      "auth",
+      "mcp",
+      "extensions",
+      "skills",
+      "agents",
+      "memory",
+      "remember",
+      "dream",
+      "goal",
+      "loop",
+      "workflows",
+      "hooks",
+      "permissions",
+      "settings",
+      "update",
+      "quit"
+    ]
+  },
+  "ui": {
+    "disableWorkflowKeywordTrigger": true,
+    "enableCacheSharing": false,
+    "enableFollowupSuggestions": false,
+    "enableSpeculation": false
+  },
+  "experimental": {
+    "cron": false,
+    "todoStopGuard": false,
+    "sessionWriterLease": false,
+    "agentTeam": false,
+    "artifact": false,
+    "emitToolUseSummaries": false
+  },
+  "telemetry": {
+    "enabled": false,
+    "logPrompts": false,
+    "includeSensitiveSpanAttributes": false
+  }
+}
