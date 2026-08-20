@@ -1,4 +1,6 @@
 param(
+    [ValidateSet("Bounded", "Native")]
+    [string]$Profile = "Bounded",
     [switch]$ValidateOnly,
     [ValidateRange(0, 2147483647)]
     [int]$ExpectedUnmanagedServerPid = 0,
@@ -8,14 +10,52 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$taskName = "Coding Intelligence Excalibur Qwen3.8"
-$stateRoot = Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38"
+$profiles = @{
+    Bounded = [ordered]@{
+        taskName = "Coding Intelligence Excalibur Qwen3.8"
+        otherQwenTaskName = "Coding Intelligence Excalibur Qwen3.8 Native"
+        stateName = "Qwen38"
+        profileId = "q6-text/medium/q8_0/32768/mtp3"
+        modelAlias = "arm-qwen38-q6-text"
+        contextTokens = 32768
+        cacheType = "q8_0"
+        reasoningBudget = 2048
+        mtp = $true
+        jobNamespace = "Qwen38"
+    }
+    Native = [ordered]@{
+        taskName = "Coding Intelligence Excalibur Qwen3.8 Native"
+        otherQwenTaskName = "Coding Intelligence Excalibur Qwen3.8"
+        stateName = "Qwen38Native"
+        profileId = "q6-text/medium/q4_0/262144/mtp-off"
+        modelAlias = "arm-qwen38-q6-native-262k"
+        contextTokens = 262144
+        cacheType = "q4_0"
+        reasoningBudget = 16384
+        mtp = $false
+        jobNamespace = "Qwen38Native"
+    }
+}
+$selectedProfile = $profiles[$Profile]
+$taskName = [string]$selectedProfile.taskName
+$otherQwenTaskName = [string]$selectedProfile.otherQwenTaskName
+$stateRoot = Join-Path $env:LOCALAPPDATA ("CodingIntelligence\{0}" -f $selectedProfile.stateName)
 $runtimeScript = Join-Path $stateRoot "Start-ExcaliburQwen38.ps1"
 $ownerPath = Join-Path $stateRoot "qwen38-owner.json"
+$otherStateRoot = Join-Path $env:LOCALAPPDATA (
+    "CodingIntelligence\{0}" -f $(if ($Profile -eq "Bounded") { "Qwen38Native" } else { "Qwen38" })
+)
+$otherOwnerPath = Join-Path $otherStateRoot "qwen38-owner.json"
 $rollbackRoot = Join-Path $stateRoot "rollback"
 $sourceRuntime = Join-Path $PSScriptRoot "Start-ExcaliburQwen38.ps1"
 $windowsPowerShell = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
-$taskArguments = '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}"' -f $runtimeScript
+$taskArguments = if ($Profile -eq "Bounded") {
+    # Preserve the existing bounded task action byte-for-byte. The wrapper's
+    # default profile is Bounded.
+    '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}"' -f $runtimeScript
+} else {
+    '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Profile Native' -f $runtimeScript
+}
 $endpoint = "http://127.0.0.1:8818"
 $localPort = 8818
 $projectRoot = "D:\11_CS\00_REPOS\AI Research Mastery"
@@ -24,13 +64,13 @@ $modelPath = Join-Path $projectRoot "models\Qwen3.8-27B-GGUF\Qwen3.8-27B-Q6_K.gg
 
 $fixedServerArguments = @(
     "--model", $modelPath,
-    "--alias", "arm-qwen38-q6-text",
-    "--ctx-size", "32768",
+    "--alias", ([string]$selectedProfile.modelAlias),
+    "--ctx-size", ([string]$selectedProfile.contextTokens),
     "--parallel", "1",
     "--gpu-layers", "999",
     "--flash-attn", "on",
-    "--cache-type-k", "q8_0",
-    "--cache-type-v", "q8_0",
+    "--cache-type-k", ([string]$selectedProfile.cacheType),
+    "--cache-type-v", ([string]$selectedProfile.cacheType),
     "--fit", "off",
     "--jinja",
     "--reasoning-format", "deepseek",
@@ -43,11 +83,14 @@ $fixedServerArguments = @(
     "--no-context-shift",
     "--reasoning", "on",
     "--reasoning-effort", "medium",
-    "--reasoning-budget", "2048",
-    "--reasoning-preserve",
-    "--spec-type", "draft-mtp",
-    "--spec-draft-n-max", "3"
+    "--reasoning-budget", ([string]$selectedProfile.reasoningBudget),
+    "--reasoning-preserve"
 )
+if ([bool]$selectedProfile.mtp) {
+    $fixedServerArguments += @("--spec-type", "draft-mtp", "--spec-draft-n-max", "3")
+} else {
+    $fixedServerArguments += @("--spec-type", "none")
+}
 
 if (($ExpectedUnmanagedServerPid -eq 0) -ne ([string]::IsNullOrWhiteSpace($ExpectedUnmanagedServerStartTimeUtc))) {
     throw "Unmanaged reconciliation requires both the exact PID and start time, or neither."
@@ -153,6 +196,25 @@ function Get-ProcessIdentity {
     }
 }
 
+function Test-SameUtcTimestamp {
+    param(
+        [Parameter(Mandatory = $true)][string]$Left,
+        [Parameter(Mandatory = $true)][string]$Right
+    )
+    try {
+        $leftTime = [DateTimeOffset]::Parse($Left).ToUniversalTime()
+        $rightTime = [DateTimeOffset]::Parse($Right).ToUniversalTime()
+        # Win32_Process.CreationDate is rounded slightly compared with
+        # Get-Process.StartTime. PID, path, parent, command line, and listener
+        # ownership are checked separately; tolerate only this sub-ms rounding.
+        return [Math]::Abs($leftTime.UtcTicks - $rightTime.UtcTicks) -le (
+            [TimeSpan]::TicksPerMillisecond
+        )
+    } catch {
+        return $false
+    }
+}
+
 function Assert-QwenServerIdentity {
     param(
         [Parameter(Mandatory = $true)]
@@ -246,6 +308,61 @@ function Get-ExistingTask {
     return $matches[0]
 }
 
+function Get-OtherProfileLiveOwnership {
+    $otherTask = Get-ScheduledTask -TaskName $otherQwenTaskName -ErrorAction SilentlyContinue
+    if ($null -eq $otherTask -or [string]$otherTask.State -ne "Running") {
+        return $null
+    }
+    $listeners = @(Get-PortListenerRows)
+    if (
+        $listeners.Count -ne 1 -or
+        [string]$listeners[0].LocalAddress -ne "127.0.0.1"
+    ) {
+        throw "The other Running Qwen3.8 profile does not own one exact loopback listener."
+    }
+    if (-not (Test-Path -LiteralPath $otherOwnerPath -PathType Leaf)) {
+        throw "The other Running Qwen3.8 profile has no owner record."
+    }
+    try {
+        $otherOwner = Get-Content -LiteralPath $otherOwnerPath -Raw | ConvertFrom-Json
+    } catch {
+        throw "The other Running Qwen3.8 profile owner record is invalid."
+    }
+    if (
+        [int]$otherOwner.schemaVersion -ne 2 -or
+        [string]$otherOwner.taskName -ne $otherQwenTaskName -or
+        [string]$otherOwner.endpoint -ne $endpoint -or
+        [int]$otherOwner.serverPid -ne [int]$listeners[0].OwningProcess -or
+        -not [bool]$otherOwner.jobKillOnClose -or
+        -not [bool]$otherOwner.jobAssignmentVerified
+    ) {
+        throw "The other Running Qwen3.8 profile owner record does not match its listener."
+    }
+    $server = Get-ProcessIdentity -ProcessId ([int]$otherOwner.serverPid)
+    $wrapper = Get-ProcessIdentity -ProcessId ([int]$otherOwner.wrapperPid)
+    if (
+        [string]$server.processName -ne "llama-server" -or
+        [int]$server.parentProcessId -ne [int]$wrapper.processId -or
+        [int]$otherOwner.serverParentPid -ne [int]$wrapper.processId -or
+        -not (Test-SameUtcTimestamp $server.startTimeUtc $otherOwner.serverStartTimeUtc) -or
+        -not (Test-SameUtcTimestamp $wrapper.startTimeUtc $otherOwner.wrapperStartTimeUtc) -or
+        -not [string]::Equals(
+            [string]$server.executablePath,
+            [System.IO.Path]::GetFullPath($serverRuntimePath),
+            [StringComparison]::OrdinalIgnoreCase
+        )
+    ) {
+        throw "The other Running Qwen3.8 profile wrapper-child identity is not exact."
+    }
+    return [pscustomobject]@{
+        task = $otherTask
+        owner = $otherOwner
+        wrapper = $wrapper
+        server = $server
+        listener = $listeners[0]
+    }
+}
+
 function Get-RegisteredTriggerCount {
     $taskXml = [xml](Export-ScheduledTask -TaskName $taskName -ErrorAction Stop)
     return @(
@@ -263,6 +380,23 @@ function Assert-OwnedTaskDefinition {
 
     if ([string]$Task.TaskPath -ne "\") {
         throw "The Qwen3.8 task resolves outside the root task folder."
+    }
+    $expectedSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    try {
+        $taskSid = (
+            New-Object System.Security.Principal.NTAccount([string]$Task.Principal.UserId)
+        ).Translate([System.Security.Principal.SecurityIdentifier]).Value
+    } catch {
+        throw "The Qwen3.8 task principal cannot be resolved to the current user."
+    }
+    if ($taskSid -ne $expectedSid) {
+        throw "The Qwen3.8 task principal is not the current user."
+    }
+    if (
+        [string]$Task.Principal.RunLevel -ne "Limited" -or
+        [string]$Task.Principal.LogonType -ne "Interactive"
+    ) {
+        throw "The Qwen3.8 task must use current-user Interactive/Limited execution."
     }
     $actions = @($Task.Actions)
     if ($actions.Count -ne 1) {
@@ -320,12 +454,26 @@ function Assert-OwnerMatchesLiveService {
     if (-not [Guid]::TryParse([string]$Owner.instanceId, [ref]$parsedInstance)) {
         throw "The live Qwen3.8 owner record has an invalid instance ID."
     }
+    $hasTypedProfile = $Owner.PSObject.Properties.Name -contains "profileName"
+    $profileMatches = if ($hasTypedProfile) {
+        [string]$Owner.profileName -eq $Profile -and
+        [string]$Owner.profile -eq [string]$selectedProfile.profileId -and
+        [string]$Owner.modelAlias -eq [string]$selectedProfile.modelAlias -and
+        [int]$Owner.contextTokens -eq [int]$selectedProfile.contextTokens -and
+        [string]$Owner.cacheType -eq [string]$selectedProfile.cacheType -and
+        [bool]$Owner.mtp -eq [bool]$selectedProfile.mtp -and
+        [int]$Owner.reasoningBudget -eq [int]$selectedProfile.reasoningBudget
+    } else {
+        $Profile -eq "Bounded" -and
+        [string]$Owner.profile -eq "q6-text/medium/q8_0/32768/mtp3" -and
+        [string]$Owner.modelAlias -eq "arm-qwen38-q6-text"
+    }
     if (
         [string]$Owner.taskName -ne $taskName -or
         [string]$Owner.endpoint -ne $endpoint -or
         [string]$Owner.localAddress -ne "127.0.0.1" -or
         [int]$Owner.localPort -ne $localPort -or
-        [string]$Owner.profile -ne "q6-text/medium/q8_0/32768/mtp3"
+        -not $profileMatches
     ) {
         throw "The live Qwen3.8 owner record has the wrong task, endpoint, or profile."
     }
@@ -336,7 +484,7 @@ function Assert-OwnerMatchesLiveService {
     $server = $Listener.process
     Assert-QwenServerIdentity -Identity $server
     if (
-        [string]$Owner.serverStartTimeUtc -ne [string]$server.startTimeUtc -or
+        -not (Test-SameUtcTimestamp $Owner.serverStartTimeUtc $server.startTimeUtc) -or
         [int]$Owner.serverParentPid -ne [int]$server.parentProcessId -or
         -not [string]::Equals(
             [string]$Owner.serverExecutablePath,
@@ -350,7 +498,7 @@ function Assert-OwnerMatchesLiveService {
 
     $wrapper = Get-ProcessIdentity -ProcessId ([int]$Owner.wrapperPid)
     if (
-        [string]$Owner.wrapperStartTimeUtc -ne [string]$wrapper.startTimeUtc -or
+        -not (Test-SameUtcTimestamp $Owner.wrapperStartTimeUtc $wrapper.startTimeUtc) -or
         [int]$server.parentProcessId -ne [int]$wrapper.processId -or
         -not [string]::Equals(
             [string]$Owner.wrapperExecutablePath,
@@ -377,7 +525,7 @@ function Assert-OwnerMatchesLiveService {
     )) {
         throw "The Qwen3.8 owner record points to a different runtime path."
     }
-    $expectedJobPrefix = "Local\CodingIntelligence.Qwen38.$($wrapper.processId)."
+    $expectedJobPrefix = "Local\CodingIntelligence.$($selectedProfile.jobNamespace).$($wrapper.processId)."
     if (
         -not ([string]$Owner.jobObjectName).StartsWith($expectedJobPrefix, [StringComparison]::Ordinal) -or
         -not [bool]$Owner.jobKillOnClose -or
@@ -457,7 +605,7 @@ function Remove-ProvenStaleOwnerRecord {
         }
         $native.Dispose()
         $identity = Get-ProcessIdentity -ProcessId ([int]$owner.$pidProperty)
-        if ([string]$identity.startTimeUtc -eq [string]$owner.$startProperty) {
+        if (Test-SameUtcTimestamp $identity.startTimeUtc $owner.$startProperty) {
             throw "Refusing to remove an owner record whose $prefix process is still live."
         }
     }
@@ -503,7 +651,7 @@ function Wait-ManagedServiceReady {
 
 Assert-ScriptParses -Path $PSCommandPath
 Assert-ScriptParses -Path $sourceRuntime
-$validationOutput = & $windowsPowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $sourceRuntime -ValidateOnly 2>&1
+$validationOutput = & $windowsPowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $sourceRuntime -Profile $Profile -ValidateOnly 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "The Qwen3.8 runtime failed static and Job Object validation: $($validationOutput -join ' ')"
 }
@@ -514,7 +662,15 @@ if ($ValidateOnly) {
         installer = $PSCommandPath
         runtime = $sourceRuntime
         runtimeValidation = ($validationOutput -join " ")
+        profileName = $Profile
+        profile = [string]$selectedProfile.profileId
         task = $taskName
+        stateRoot = $stateRoot
+        modelAlias = [string]$selectedProfile.modelAlias
+        contextTokens = [int]$selectedProfile.contextTokens
+        cacheType = [string]$selectedProfile.cacheType
+        mtp = [bool]$selectedProfile.mtp
+        reasoningBudget = [int]$selectedProfile.reasoningBudget
         onDemand = $true
         triggerCount = 0
         endpoint = $endpoint
@@ -532,7 +688,7 @@ if ((Get-FileHash -LiteralPath $stagePath -Algorithm SHA256).Hash.ToLowerInvaria
     throw "The staged Qwen3.8 runtime hash does not match its parsed source."
 }
 Assert-ScriptParses -Path $stagePath
-$stageValidation = & $windowsPowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $stagePath -ValidateOnly 2>&1
+$stageValidation = & $windowsPowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $stagePath -Profile $Profile -ValidateOnly 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "The staged Qwen3.8 runtime failed validation: $($stageValidation -join ' ')"
 }
@@ -542,9 +698,14 @@ if ($null -ne $existingTask) {
     Assert-OwnedTaskDefinition -Task $existingTask
 }
 
-$existingListener = Get-ExactListener -AllowProtectedMetadata
+$otherProfileOwnership = Get-OtherProfileLiveOwnership
+$existingListener = if ($null -eq $otherProfileOwnership) {
+    Get-ExactListener -AllowProtectedMetadata
+} else {
+    $null
+}
 $owner = Read-OwnerRecord
-$ownershipKind = "none"
+$ownershipKind = if ($null -eq $otherProfileOwnership) { "none" } else { "other-profile" }
 $managedOwnership = $null
 
 if ($null -ne $existingListener) {
@@ -657,7 +818,7 @@ try {
         -Action $action `
         -Principal $principal `
         -Settings $settings `
-        -Description "On-demand, loopback-only Qwen3.8 Q6 coding backend for EXCALIBUR." `
+        -Description ("On-demand, loopback-only Qwen3.8 Q6 {0} backend for EXCALIBUR." -f $Profile) `
         -Force | Out-Null
     $taskMutated = $true
 
@@ -768,7 +929,13 @@ Assert-OwnedTaskDefinition -Task $finalTask
     runtime = $runtimeScript
     runtimeSha256 = $sourceHash
     endpoint = $endpoint
-    profile = "q6-text/medium/q8_0/32768/mtp3"
+    profileName = $Profile
+    profile = [string]$selectedProfile.profileId
+    modelAlias = [string]$selectedProfile.modelAlias
+    contextTokens = [int]$selectedProfile.contextTokens
+    cacheType = [string]$selectedProfile.cacheType
+    mtp = [bool]$selectedProfile.mtp
+    reasoningBudget = [int]$selectedProfile.reasoningBudget
     priorOwnership = $ownershipKind
     unmanagedReconciled = $unmanagedStopped
     priorManagedStateRestored = $priorTaskRunning

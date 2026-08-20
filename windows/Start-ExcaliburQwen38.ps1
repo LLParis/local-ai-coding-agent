@@ -1,11 +1,43 @@
 param(
+    [ValidateSet("Bounded", "Native")]
+    [string]$Profile = "Bounded",
     [switch]$ValidateOnly
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$taskName = "Coding Intelligence Excalibur Qwen3.8"
+$profiles = @{
+    Bounded = [ordered]@{
+        taskName = "Coding Intelligence Excalibur Qwen3.8"
+        otherQwenTaskName = "Coding Intelligence Excalibur Qwen3.8 Native"
+        stateName = "Qwen38"
+        profileId = "q6-text/medium/q8_0/32768/mtp3"
+        modelAlias = "arm-qwen38-q6-text"
+        contextTokens = 32768
+        cacheType = "q8_0"
+        reasoningBudget = 2048
+        mtp = $true
+        jobNamespace = "Qwen38"
+        backendId = "qwen38-bounded"
+    }
+    Native = [ordered]@{
+        taskName = "Coding Intelligence Excalibur Qwen3.8 Native"
+        otherQwenTaskName = "Coding Intelligence Excalibur Qwen3.8"
+        stateName = "Qwen38Native"
+        profileId = "q6-text/medium/q4_0/262144/mtp-off"
+        modelAlias = "arm-qwen38-q6-native-262k"
+        contextTokens = 262144
+        cacheType = "q4_0"
+        reasoningBudget = 16384
+        mtp = $false
+        jobNamespace = "Qwen38Native"
+        backendId = "qwen38-native"
+    }
+}
+$selectedProfile = $profiles[$Profile]
+$taskName = [string]$selectedProfile.taskName
+$otherQwenTaskName = [string]$selectedProfile.otherQwenTaskName
 $ollamaTaskName = "AnimeFrontier Excalibur Ollama"
 $projectRoot = "D:\11_CS\00_REPOS\AI Research Mastery"
 $runtimePath = Join-Path $projectRoot "artifacts\runtime\llama.cpp\b10435\bin\llama-server.exe"
@@ -15,7 +47,7 @@ $runtimeManifestPath = Join-Path $projectRoot "research\runtime_manifest.json"
 $expectedRuntimeSha256 = "9c554aac54df3b2ceaa68fa96401928d794f2ba87f345bf4c04af1f1310f8e89"
 $expectedModelSha256 = "562fbf760503008f118e5df38de5b3e97992d1f693f475815631198547486727"
 $expectedModelBytes = 22884408288
-$stateRoot = Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38"
+$stateRoot = Join-Path $env:LOCALAPPDATA ("CodingIntelligence\{0}" -f $selectedProfile.stateName)
 $coordinationRoot = Split-Path -Parent $stateRoot
 $stdoutPath = Join-Path $stateRoot "qwen38.stdout.log"
 $stderrPath = Join-Path $stateRoot "qwen38.stderr.log"
@@ -29,13 +61,13 @@ $localPort = 8818
 
 $serverArguments = @(
     "--model", $modelPath,
-    "--alias", "arm-qwen38-q6-text",
-    "--ctx-size", "32768",
+    "--alias", ([string]$selectedProfile.modelAlias),
+    "--ctx-size", ([string]$selectedProfile.contextTokens),
     "--parallel", "1",
     "--gpu-layers", "999",
     "--flash-attn", "on",
-    "--cache-type-k", "q8_0",
-    "--cache-type-v", "q8_0",
+    "--cache-type-k", ([string]$selectedProfile.cacheType),
+    "--cache-type-v", ([string]$selectedProfile.cacheType),
     "--fit", "off",
     "--jinja",
     "--reasoning-format", "deepseek",
@@ -48,11 +80,14 @@ $serverArguments = @(
     "--no-context-shift",
     "--reasoning", "on",
     "--reasoning-effort", "medium",
-    "--reasoning-budget", "2048",
-    "--reasoning-preserve",
-    "--spec-type", "draft-mtp",
-    "--spec-draft-n-max", "3"
+    "--reasoning-budget", ([string]$selectedProfile.reasoningBudget),
+    "--reasoning-preserve"
 )
+if ([bool]$selectedProfile.mtp) {
+    $serverArguments += @("--spec-type", "draft-mtp", "--spec-draft-n-max", "3")
+} else {
+    $serverArguments += @("--spec-type", "none")
+}
 
 function ConvertTo-SafeCommandLineArgument {
     param(
@@ -271,7 +306,16 @@ if ($ValidateOnly) {
     }
     [pscustomobject]@{
         status = "valid"
-        profile = "q6-text/medium/q8_0/32768/mtp3"
+        profileName = $Profile
+        profile = [string]$selectedProfile.profileId
+        task = $taskName
+        stateRoot = $stateRoot
+        modelAlias = [string]$selectedProfile.modelAlias
+        contextTokens = [int]$selectedProfile.contextTokens
+        cacheType = [string]$selectedProfile.cacheType
+        mtp = [bool]$selectedProfile.mtp
+        reasoningEffort = "medium"
+        reasoningBudget = [int]$selectedProfile.reasoningBudget
         endpoint = $endpoint
         runtimeSha256 = [string]$staticConfiguration.runtimeSha256
         modelSha256Expected = $expectedModelSha256
@@ -322,7 +366,11 @@ function Get-PortListenerRows {
     }
 }
 
-function Assert-OllamaBackendInactive {
+function Assert-OtherBackendsInactive {
+    $otherQwenTask = Get-ScheduledTask -TaskName $otherQwenTaskName -ErrorAction SilentlyContinue
+    if ($null -ne $otherQwenTask -and [string]$otherQwenTask.State -eq "Running") {
+        throw "$otherQwenTaskName is Running; refusing concurrent Qwen3.8 profiles."
+    }
     $ollamaTask = Get-ScheduledTask -TaskName $ollamaTaskName -ErrorAction SilentlyContinue
     if ($null -ne $ollamaTask -and [string]$ollamaTask.State -eq "Running") {
         throw "Ollama Scheduled Task is Running; refusing concurrent GPU backends."
@@ -414,13 +462,13 @@ try {
     }
 
     $lockBytes = [System.Text.Encoding]::UTF8.GetBytes(
-        "backend=qwen38`nwrapperPid=$PID`ninstanceId=$instanceId`n"
+        "backend=$($selectedProfile.backendId)`nwrapperPid=$PID`ninstanceId=$instanceId`n"
     )
     $backendLock.SetLength(0)
     $backendLock.Write($lockBytes, 0, $lockBytes.Length)
     $backendLock.Flush($true)
 
-    Assert-OllamaBackendInactive
+    Assert-OtherBackendsInactive
     if (@(Get-PortListenerRows -Port $localPort).Count -ne 0) {
         throw "Port $localPort already has a listener; refusing to overwrite its ownership record."
     }
@@ -431,7 +479,7 @@ try {
         Remove-Item -LiteralPath $ownerPath -Force
     }
 
-    $jobName = "Local\CodingIntelligence.Qwen38.$PID.$($instanceId.Replace('-', ''))"
+    $jobName = "Local\CodingIntelligence.$($selectedProfile.jobNamespace).$PID.$($instanceId.Replace('-', ''))"
     $jobHandle = [CodingIntelligence.Qwen38KillOnCloseJob]::Create($jobName)
     $startParameters = @{
         FilePath = $runtimePath
@@ -462,7 +510,7 @@ try {
             throw "Qwen3.8 exited before reaching readiness with code $($process.ExitCode)."
         }
         try {
-            Assert-OllamaBackendInactive
+            Assert-OtherBackendsInactive
             $listeners = @(Get-PortListenerRows -Port $localPort)
             if ($listeners.Count -ne 1) {
                 throw "Expected one Qwen3.8 listener; found $($listeners.Count)."
@@ -503,8 +551,14 @@ try {
             endpoint = $endpoint
             localAddress = $localAddress
             localPort = $localPort
-            profile = "q6-text/medium/q8_0/32768/mtp3"
-            modelAlias = "arm-qwen38-q6-text"
+            profileName = $Profile
+            profile = [string]$selectedProfile.profileId
+            modelAlias = [string]$selectedProfile.modelAlias
+            contextTokens = [int]$selectedProfile.contextTokens
+            cacheType = [string]$selectedProfile.cacheType
+            mtp = [bool]$selectedProfile.mtp
+            reasoningEffort = "medium"
+            reasoningBudget = [int]$selectedProfile.reasoningBudget
             modelPath = $modelPath
             modelBytes = [long]$staticConfiguration.modelBytes
             modelSha256Expected = $expectedModelSha256
@@ -546,7 +600,7 @@ try {
     while (-not $process.WaitForExit(1000)) {
         # The existing Ollama wrapper predates the shared backend lock. Until it
         # participates, fail closed if that endpoint is started while Qwen runs.
-        Assert-OllamaBackendInactive
+        Assert-OtherBackendsInactive
     }
     $exitCode = $process.ExitCode
     Write-LifecycleEvent -Event "server-exited" -Message "Server PID $($process.Id) exited with code $exitCode."

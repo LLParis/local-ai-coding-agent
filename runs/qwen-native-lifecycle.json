@@ -1,0 +1,186 @@
+{
+  "schema": "coding-intelligence-qwen-native-lifecycle/v1",
+  "captured_at_utc": "2026-08-20T14:13:43.1323262Z",
+  "status": "lifecycle_proven_no_inference",
+  "host": "EXCALIBUR",
+  "endpoint": "http://127.0.0.1:8818",
+  "operation": {
+    "uac_prompts": 0,
+    "inference_requests": 0,
+    "backend_start_stop_only": true,
+    "automatic_retries": 0
+  },
+  "implementation": {
+    "single_wrapper_source": "windows/Start-ExcaliburQwen38.ps1",
+    "profiles": {
+      "Bounded": {
+        "task": "Coding Intelligence Excalibur Qwen3.8",
+        "state_root": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\Qwen38",
+        "model_alias": "arm-qwen38-q6-text",
+        "profile": "q6-text/medium/q8_0/32768/mtp3",
+        "context_tokens": 32768,
+        "cache_type": "q8_0",
+        "mtp": true,
+        "reasoning_effort": "medium",
+        "reasoning_budget": 2048
+      },
+      "Native": {
+        "task": "Coding Intelligence Excalibur Qwen3.8 Native",
+        "state_root": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\Qwen38Native",
+        "model_alias": "arm-qwen38-q6-native-262k",
+        "profile": "q6-text/medium/q4_0/262144/mtp-off",
+        "context_tokens": 262144,
+        "cache_type": "q4_0",
+        "mtp": false,
+        "reasoning_effort": "medium",
+        "reasoning_budget": 16384
+      }
+    },
+    "shared_backend_lock": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\active-backend.lock",
+    "shared_port": 8818,
+    "source_sha256": {
+      "windows/Start-ExcaliburQwen38.ps1": "sha256:7507dd5896cff4e09694b37afc2b81e0deb207e25e977312840c9ac68ec1a289",
+      "windows/Install-ExcaliburQwen38.ps1": "sha256:65581025b77425182fc1a9019f5d44bd8e4935b11bcc586de29408cf493cfd26",
+      "windows/Switch-ExcaliburBackend.ps1": "sha256:47728c7470ed06e52a6214aaecdf9a39191f21a259e892ec3dea44021306f16a",
+      "bin/doctor.ps1": "sha256:68b3752925467cc2745f9c33218d78377e607b7fbf80f1c1a0213819178f0d00",
+      "tests/test_qwen_profiles.py": "sha256:e379b4b99046001d582f7d052c8acf5faa5a19c16a40feb42fd40d56a940d42f"
+    },
+    "deployed_wrapper_sha256": {
+      "Bounded": "sha256:7507dd5896cff4e09694b37afc2b81e0deb207e25e977312840c9ac68ec1a289",
+      "Native": "sha256:7507dd5896cff4e09694b37afc2b81e0deb207e25e977312840c9ac68ec1a289"
+    }
+  },
+  "static_proof": {
+    "powershell_parser_files": 4,
+    "powershell_parser_errors": 0,
+    "wrapper_validate_only_profiles": ["Bounded", "Native"],
+    "installer_validate_only_profiles": ["Bounded", "Native"],
+    "focused_tests": {"passed": 5, "failed": 0},
+    "rollback": {
+      "implemented": true,
+      "static_tested": true,
+      "failure_injection_performed": false
+    }
+  },
+  "deployment": {
+    "native": {
+      "task_state_after_install": "Ready",
+      "on_demand": true,
+      "trigger_count": 0,
+      "principal": "sirlo",
+      "run_level": "Limited",
+      "logon_type": "Interactive",
+      "prior_ownership": "other-profile",
+      "bounded_remained_running_during_install": true
+    },
+    "bounded_upgrade": {
+      "task_state_after_install": "Running",
+      "on_demand": true,
+      "trigger_count": 0,
+      "prior_ownership": "managed",
+      "prior_managed_state_restored": true,
+      "rollback_artifacts_created": true
+    },
+    "predeployment_correction": {
+      "rejected_attempts": 2,
+      "reason": "Win32_Process timestamp precision was compared as an exact string",
+      "fix": "UTC tick comparison with a one-millisecond maximum tolerance plus existing PID, path, parent, command-line, listener, and owner checks",
+      "scheduled_task_runtime_or_listener_mutation_before_fix": false,
+      "temporary_stage_files_removed": true
+    }
+  },
+  "transitions": [
+    {
+      "from": "Qwen38",
+      "to": "Qwen38Native",
+      "swap_seconds": 20.007,
+      "result": "ready",
+      "bounded_task": "Ready",
+      "native_task": "Running",
+      "ollama_task": "Ready",
+      "listener_pid": 28504,
+      "mutual_exclusion_proven": true,
+      "exact_ownership_proven": true
+    },
+    {
+      "from": "Qwen38Native",
+      "to": "Qwen38",
+      "swap_seconds": 19.727,
+      "result": "ready",
+      "bounded_task": "Running",
+      "native_task": "Ready",
+      "ollama_task": "Ready",
+      "listener_pid": 4160,
+      "mutual_exclusion_proven": true,
+      "exact_ownership_proven": true
+    }
+  ],
+  "native_live_proof": {
+    "captured_at_utc": "2026-08-20T14:11:09.6904380Z",
+    "task": {
+      "name": "Coding Intelligence Excalibur Qwen3.8 Native",
+      "state": "Running",
+      "principal": "sirlo",
+      "run_level": "Limited",
+      "logon_type": "Interactive",
+      "trigger_count": 0
+    },
+    "listener": {"address": "127.0.0.1", "port": 8818, "pid": 28504, "count": 1},
+    "wrapper": {"pid": 32524, "server_pid": 28504, "server_parent_pid": 32524},
+    "owner": {
+      "schema_version": 2,
+      "sha256": "sha256:4acdfb9cccbbee9a44994f0fe05c9c6697e06e14f16bd8b76face00210e96285",
+      "job_object": "Local\\CodingIntelligence.Qwen38Native.32524.27ae4e27504844c28b460de2bf7d4ac6",
+      "kill_on_close": true,
+      "assignment_verified": true
+    },
+    "runtime": {
+      "model_alias": "arm-qwen38-q6-native-262k",
+      "model_type": "Q6_K",
+      "context_tokens": 262144,
+      "total_slots": 1,
+      "vision": false,
+      "build_info": "b10435-9e40df63b",
+      "command_line_proved_q4_kv": true,
+      "command_line_proved_mtp_off": true,
+      "command_line_proved_reasoning_budget_16384": true
+    }
+  },
+  "native_teardown_proof": {
+    "wrapper_pid_32524_absent": true,
+    "server_pid_28504_absent": true,
+    "stale_native_owner_removed": true,
+    "native_task_state": "Ready"
+  },
+  "final_state": {
+    "captured_at_utc": "2026-08-20T14:13:43.1323262Z",
+    "active_backend": "Qwen38",
+    "doctor_overall": "ready",
+    "doctor_configured": "ready",
+    "doctor_live": "ready",
+    "bounded_task": "Running",
+    "native_task": "Ready",
+    "ollama_task": "Ready",
+    "listener": {"address": "127.0.0.1", "port": 8818, "pid": 4160, "count": 1},
+    "bounded_owner": {
+      "status": "exact",
+      "wrapper_pid": 40864,
+      "server_pid": 4160,
+      "server_parent_pid": 40864,
+      "job_kill_on_close": true,
+      "job_assignment_verified": true
+    },
+    "bounded_runtime": {
+      "model_alias": "arm-qwen38-q6-text",
+      "model_type": "Q6_K",
+      "context_tokens": 32768,
+      "total_slots": 1,
+      "vision": false,
+      "build_info": "b10435-9e40df63b"
+    },
+    "inactive_owner_records_absent": {"Native": true, "Ollama": true},
+    "duplicate_listener": false,
+    "uac_prompt": false,
+    "inference_requests": 0
+  }
+}

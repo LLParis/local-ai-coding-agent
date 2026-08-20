@@ -7,6 +7,7 @@ $ErrorActionPreference = "Stop"
 # cache writes, or elevation.
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $qwenTaskName = "Coding Intelligence Excalibur Qwen3.8"
+$qwenNativeTaskName = "Coding Intelligence Excalibur Qwen3.8 Native"
 $ollamaTaskName = "AnimeFrontier Excalibur Ollama"
 $qwenUrl = "http://127.0.0.1:8818"
 $ollamaUrl = "http://127.0.0.1:11434"
@@ -56,6 +57,10 @@ function Get-TaskState {
     try {
         $task = Get-ScheduledTask -TaskName $Name -ErrorAction Stop
         $info = Get-ScheduledTaskInfo -TaskName $Name -ErrorAction SilentlyContinue
+        $taskXml = [xml](Export-ScheduledTask -TaskName $Name -ErrorAction Stop)
+        $triggerCount = @(
+            $taskXml.SelectNodes("/*[local-name()='Task']/*[local-name()='Triggers']/*")
+        ).Count
         $last = if ($null -eq $info) { $null } else { [long]$info.LastTaskResult }
         [pscustomobject]@{
             name = $Name
@@ -63,6 +68,8 @@ function Get-TaskState {
             state = [string]$task.State
             principal = [string]$task.Principal.UserId
             runLevel = [string]$task.Principal.RunLevel
+            logonType = [string]$task.Principal.LogonType
+            triggerCount = $triggerCount
             lastResult = $last
             lastResultHex = if ($null -eq $last) { $null } else { "0x{0:X8}" -f ([uint32]$last) }
             error = $null
@@ -74,6 +81,8 @@ function Get-TaskState {
             state = "Missing"
             principal = $null
             runLevel = $null
+            logonType = $null
+            triggerCount = $null
             lastResult = $null
             lastResultHex = $null
             error = $_.Exception.Message
@@ -113,20 +122,43 @@ function Get-ListenerState {
 }
 
 function Get-BackendHealth {
-    param([ValidateSet("Qwen38", "Ollama")][string]$Backend, [object]$Listener)
+    param(
+        [ValidateSet("Qwen38", "Qwen38Native", "Ollama")][string]$Backend,
+        [object]$Listener
+    )
     if ($Listener.count -eq 0) {
         return [pscustomobject]@{ status = "inactive"; health = $null; exactModelPresent = $false; version = $null; error = $null }
     }
     try {
-        if ($Backend -eq "Qwen38") {
+        if ($Backend -in @("Qwen38", "Qwen38Native")) {
+            $expectedAlias = if ($Backend -eq "Qwen38") {
+                "arm-qwen38-q6-text"
+            } else {
+                "arm-qwen38-q6-native-262k"
+            }
+            $expectedContext = if ($Backend -eq "Qwen38") { 32768 } else { 262144 }
             $health = Invoke-RestMethod -Uri "$qwenUrl/health" -TimeoutSec 3
             $models = Invoke-RestMethod -Uri "$qwenUrl/v1/models" -TimeoutSec 3
-            $exact = "arm-qwen38-q6-text" -in @($models.data | ForEach-Object { [string]$_.id })
-            $ready = [string]$health.status -eq "ok" -and $exact
+            $props = Invoke-RestMethod -Uri "$qwenUrl/props" -TimeoutSec 3
+            $exact = $expectedAlias -in @($models.data | ForEach-Object { [string]$_.id })
+            $ready = (
+                [string]$health.status -eq "ok" -and
+                $exact -and
+                [string]$props.model_alias -eq $expectedAlias -and
+                [int]$props.default_generation_settings.n_ctx -eq $expectedContext -and
+                [int]$props.total_slots -eq 1 -and
+                [string]$props.model_ftype -eq "Q6_K" -and
+                -not [bool]$props.modalities.vision
+            )
             return [pscustomobject]@{
-                status = if ($ready) { "ready" } else { "unhealthy" }
+                status = if ($ready) { "ready" } else { "other-profile-or-unhealthy" }
                 health = [string]$health.status
                 exactModelPresent = $exact
+                modelAlias = [string]$props.model_alias
+                contextTokens = [int]$props.default_generation_settings.n_ctx
+                modelType = [string]$props.model_ftype
+                textOnly = -not [bool]$props.modalities.vision
+                totalSlots = [int]$props.total_slots
                 version = $null
                 error = $null
             }
@@ -149,9 +181,31 @@ function Get-BackendHealth {
 }
 
 function Get-OwnershipState {
-    param([string]$OwnerPath, [string]$TaskName, [string]$Endpoint, [object]$Listener)
+    param(
+        [string]$OwnerPath,
+        [string]$TaskName,
+        [string]$Endpoint,
+        [object]$Listener,
+        [object]$Task,
+        [string]$ExpectedProfileName,
+        [string]$ExpectedProfile,
+        [string]$ExpectedAlias,
+        [int]$ExpectedContextTokens,
+        [string]$ExpectedCacheType,
+        [bool]$ExpectedMtp
+    )
+    if ($Task.state -ne "Running") {
+        return [pscustomobject]@{
+            status = "standby"
+            exact = $null
+            ownerPath = $OwnerPath
+            wrapperPid = $null
+            serverPid = $null
+            failures = @()
+        }
+    }
     if ($Listener.count -eq 0) {
-        return [pscustomobject]@{ status = "standby"; exact = $null; ownerPath = $OwnerPath; wrapperPid = $null; serverPid = $null; failures = @() }
+        return [pscustomobject]@{ status = "mismatch"; exact = $false; ownerPath = $OwnerPath; wrapperPid = $null; serverPid = $null; failures = @("Running task has no listener") }
     }
 
     $failures = @()
@@ -166,6 +220,23 @@ function Get-OwnershipState {
         $wrapper = Get-Process -Id ([int]$owner.wrapperPid) -ErrorAction SilentlyContinue
         if ([string]$owner.taskName -ne $TaskName) { $failures += "task name mismatch" }
         if ([string]$owner.endpoint -ne $Endpoint) { $failures += "endpoint mismatch" }
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedProfileName)) {
+            $hasTypedProfile = $owner.PSObject.Properties.Name -contains "profileName"
+            if ($hasTypedProfile) {
+                if ([string]$owner.profileName -ne $ExpectedProfileName) { $failures += "profile name mismatch" }
+                if ([string]$owner.profile -ne $ExpectedProfile) { $failures += "profile contract mismatch" }
+                if ([string]$owner.modelAlias -ne $ExpectedAlias) { $failures += "model alias mismatch" }
+                if ([int]$owner.contextTokens -ne $ExpectedContextTokens) { $failures += "context mismatch" }
+                if ([string]$owner.cacheType -ne $ExpectedCacheType) { $failures += "KV cache mismatch" }
+                if ([bool]$owner.mtp -ne $ExpectedMtp) { $failures += "MTP mismatch" }
+            } elseif (
+                $ExpectedProfileName -ne "Bounded" -or
+                [string]$owner.profile -ne $ExpectedProfile -or
+                [string]$owner.modelAlias -ne $ExpectedAlias
+            ) {
+                $failures += "typed profile fields are missing"
+            }
+        }
         if ([string]$owner.localAddress -ne "127.0.0.1") { $failures += "owner is not IPv4 loopback" }
         if (-not [bool]$owner.jobKillOnClose -or -not [bool]$owner.jobAssignmentVerified) { $failures += "job ownership flags missing" }
         if ($Listener.count -ne 1 -or [int]$owner.serverPid -ne [int]$Listener.listeners[0].processId) { $failures += "listener PID mismatch" }
@@ -234,13 +305,24 @@ function Get-OllamaModel {
 
 $repository = Get-RepositoryState
 $qwenTask = Get-TaskState $qwenTaskName
+$qwenNativeTask = Get-TaskState $qwenNativeTaskName
 $ollamaTask = Get-TaskState $ollamaTaskName
 $qwenListener = Get-ListenerState 8818
 $ollamaListener = Get-ListenerState 11434
 $qwenHealth = Get-BackendHealth Qwen38 $qwenListener
+$qwenNativeHealth = Get-BackendHealth Qwen38Native $qwenListener
 $ollamaHealth = Get-BackendHealth Ollama $ollamaListener
-$qwenOwnership = Get-OwnershipState (Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38\qwen38-owner.json") $qwenTaskName $qwenUrl $qwenListener
-$ollamaOwnership = Get-OwnershipState (Join-Path $env:LOCALAPPDATA "AnimeFrontier\AgentContinuity\service-owner.json") $ollamaTaskName $ollamaUrl $ollamaListener
+$qwenOwnership = Get-OwnershipState `
+    (Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38\qwen38-owner.json") `
+    $qwenTaskName $qwenUrl $qwenListener $qwenTask `
+    "Bounded" "q6-text/medium/q8_0/32768/mtp3" "arm-qwen38-q6-text" 32768 "q8_0" $true
+$qwenNativeOwnership = Get-OwnershipState `
+    (Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38Native\qwen38-owner.json") `
+    $qwenNativeTaskName $qwenUrl $qwenListener $qwenNativeTask `
+    "Native" "q6-text/medium/q4_0/262144/mtp-off" "arm-qwen38-q6-native-262k" 262144 "q4_0" $false
+$ollamaOwnership = Get-OwnershipState `
+    (Join-Path $env:LOCALAPPDATA "AnimeFrontier\AgentContinuity\service-owner.json") `
+    $ollamaTaskName $ollamaUrl $ollamaListener $ollamaTask "" "" "" 0 "" $false
 
 $models = @(
     Get-DirectModel "Qwen3.8 27B Q6" "default local implementer" (Join-Path $qwenModelRoot "Qwen3.8-27B-Q6_K.gguf") 22884408288
@@ -251,12 +333,17 @@ $models = @(
     Get-OllamaModel "Qwen3.6 27B Q6" "prior candidate" "registry.ollama.ai\library\qwen3.6\27b-q6"
 )
 
-$qwenLive = $qwenTask.state -eq "Running" -and $qwenListener.exactIpv4Loopback -and $qwenHealth.status -eq "ready" -and $qwenOwnership.exact -eq $true -and $ollamaListener.count -eq 0
-$ollamaLive = $ollamaTask.state -eq "Running" -and $ollamaListener.exactIpv4Loopback -and $ollamaHealth.status -eq "ready" -and $ollamaOwnership.exact -eq $true -and $qwenListener.count -eq 0
-$active = if ($qwenLive) { "Qwen38" } elseif ($ollamaLive) { "Ollama" } elseif ($qwenListener.count -gt 0 -and $ollamaListener.count -gt 0) { "Conflict" } else { "None" }
+$qwenLive = $qwenTask.state -eq "Running" -and $qwenNativeTask.state -ne "Running" -and $qwenListener.exactIpv4Loopback -and $qwenHealth.status -eq "ready" -and $qwenOwnership.exact -eq $true -and $ollamaListener.count -eq 0
+$qwenNativeLive = $qwenNativeTask.state -eq "Running" -and $qwenTask.state -ne "Running" -and $qwenListener.exactIpv4Loopback -and $qwenNativeHealth.status -eq "ready" -and $qwenNativeOwnership.exact -eq $true -and $ollamaListener.count -eq 0
+$ollamaLive = $ollamaTask.state -eq "Running" -and $qwenTask.state -ne "Running" -and $qwenNativeTask.state -ne "Running" -and $ollamaListener.exactIpv4Loopback -and $ollamaHealth.status -eq "ready" -and $ollamaOwnership.exact -eq $true -and $qwenListener.count -eq 0
+$runningTaskCount = @(
+    @($qwenTask, $qwenNativeTask, $ollamaTask) |
+        Where-Object { $_.state -eq "Running" }
+).Count
+$active = if ($runningTaskCount -gt 1 -or ($qwenListener.count -gt 0 -and $ollamaListener.count -gt 0)) { "Conflict" } elseif ($qwenLive) { "Qwen38" } elseif ($qwenNativeLive) { "Qwen38Native" } elseif ($ollamaLive) { "Ollama" } else { "None" }
 
 $required = @($models | Where-Object { $_.name -in @("Qwen3.8 27B Q6", "Devstral Small 2 24B", "gpt-oss 20B alias") })
-$configured = $qwenTask.installed -and $ollamaTask.installed -and @($required | Where-Object { -not $_.installed }).Count -eq 0
+$configured = $qwenTask.installed -and $qwenNativeTask.installed -and $ollamaTask.installed -and @($required | Where-Object { -not $_.installed }).Count -eq 0
 $evidence = @(
     "runs\qwen3.8-q6-capped\powershell.run.json",
     "runs\cross-language\qwen-typescript.json",
@@ -287,10 +374,11 @@ $report = [pscustomobject]@{
     proofLevels = [pscustomobject]@{
         configured = [pscustomobject]@{ status = if ($configured) { "ready" } else { "incomplete" }; meaning = "Required tasks and core model artifacts exist." }
         tested = [pscustomobject]@{ status = if ($evidencePresent.Count -eq $evidence.Count) { "evidence-recorded" } else { "evidence-incomplete" }; evidence = $evidencePresent; meaning = "Historical real-task evidence; doctor does not rerun tests." }
-        live = [pscustomobject]@{ status = if ($active -in @("Qwen38", "Ollama")) { "ready" } else { "not-ready" }; meaning = "Exactly one owned loopback backend answers non-generating health checks now." }
+        live = [pscustomobject]@{ status = if ($active -in @("Qwen38", "Qwen38Native", "Ollama")) { "ready" } else { "not-ready" }; meaning = "Exactly one owned loopback backend answers non-generating health checks now." }
     }
     backends = [pscustomobject]@{
-        qwen38 = [pscustomobject]@{ task = $qwenTask; listener = $qwenListener; health = $qwenHealth; ownership = $qwenOwnership; liveReady = $qwenLive }
+        qwen38 = [pscustomobject]@{ profileName = "Bounded"; profile = "q6-text/medium/q8_0/32768/mtp3"; task = $qwenTask; listener = $qwenListener; health = $qwenHealth; ownership = $qwenOwnership; liveReady = $qwenLive }
+        qwen38Native = [pscustomobject]@{ profileName = "Native"; profile = "q6-text/medium/q4_0/262144/mtp-off"; task = $qwenNativeTask; listener = $qwenListener; health = $qwenNativeHealth; ownership = $qwenNativeOwnership; liveReady = $qwenNativeLive }
         ollama = [pscustomobject]@{ task = $ollamaTask; listener = $ollamaListener; health = $ollamaHealth; ownership = $ollamaOwnership; liveReady = $ollamaLive }
     }
     models = $models
@@ -312,9 +400,10 @@ if ($Json) {
     Write-Output "  Live:       $($report.proofLevels.live.status)"
     Write-Output ""
     Write-Output "Backends"
-    Write-Output "  Qwen38: task=$($qwenTask.state); listener=$($qwenListener.count) on 127.0.0.1:8818; health=$($qwenHealth.status); owner=$($qwenOwnership.status)"
+    Write-Output "  Qwen38 Bounded: task=$($qwenTask.state); listener=$($qwenListener.count) on 127.0.0.1:8818; health=$($qwenHealth.status); owner=$($qwenOwnership.status); profile=q6-text/medium/q8_0/32768/mtp3"
+    Write-Output "  Qwen38 Native: task=$($qwenNativeTask.state); listener=$($qwenListener.count) on 127.0.0.1:8818; health=$($qwenNativeHealth.status); owner=$($qwenNativeOwnership.status); profile=q6-text/medium/q4_0/262144/mtp-off"
     Write-Output "  Ollama: task=$($ollamaTask.state); listener=$($ollamaListener.count) on 127.0.0.1:11434; health=$($ollamaHealth.status); owner=$($ollamaOwnership.status)"
-    foreach ($item in @([pscustomobject]@{ name = "Qwen38"; value = $qwenListener }, [pscustomobject]@{ name = "Ollama"; value = $ollamaListener })) {
+    foreach ($item in @([pscustomobject]@{ name = "Qwen38 shared port"; value = $qwenListener }, [pscustomobject]@{ name = "Ollama"; value = $ollamaListener })) {
         foreach ($listener in @($item.value.listeners)) { Write-Output "    $($item.name) PID $($listener.processId): $($listener.executablePath)" }
     }
     Write-Output ""
