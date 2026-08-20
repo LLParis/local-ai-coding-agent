@@ -1,0 +1,844 @@
+{
+  "schema": "coding-intelligence-memory-eval-suite/v1",
+  "suite_id": "memory-v1-frozen-40",
+  "frozen_at": "2026-08-20T00:00:00Z",
+  "case_count": 40,
+  "tranches": [
+    "exact_identifier",
+    "paraphrase",
+    "multilingual",
+    "temporal_truth",
+    "scope_isolation",
+    "conflict_provenance_negative",
+    "compaction_retention",
+    "crash_replay_retention"
+  ],
+  "model_assisted_policy": {
+    "trials": 3,
+    "model_calls_per_trial": 1,
+    "automatic_retries": 0,
+    "status": "not_run"
+  },
+  "hard_gates": {
+    "exact_recall_at_10_minimum": "0.95",
+    "overall_recall_at_10_minimum": "0.90",
+    "scope_leakage_maximum": 0,
+    "fabricated_memory_maximum": 0,
+    "duplicate_side_effect_recommendations_maximum": 0,
+    "evidence_loss_maximum": 0,
+    "temporal_error_maximum": 0,
+    "state_invariant_loss_maximum": 0,
+    "provenance_coverage_minimum": "1.00"
+  },
+  "latency_corpus_sizes": [100, 1000, 10000, 100000],
+  "state_profiles": {
+    "baseline": {
+      "objective_text": "Preserve the frozen Memory v1 truth.",
+      "criteria": [{"id": "criterion-memory", "status": "open"}],
+      "constraints": ["constraint-preserve"],
+      "decisions": ["decision-jsonl"],
+      "completed": [],
+      "current_action": "Run the deterministic memory case.",
+      "next_actions": [{"id": "next-model-phase", "order": 1, "depends_on": []}],
+      "blockers": [{"id": "blocker-model-phase", "status": "active"}],
+      "open_tool_calls": [{"call_id": "call-inspect", "tool": "inspect_state", "outcome": "unknown"}],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": ["dispute-unresolved"]
+    },
+    "compaction_constraints": {
+      "objective_text": "Preserve every active constraint through repeated compaction.",
+      "criteria": [{"id": "criterion-memory", "status": "open"}, {"id": "criterion-replay", "status": "open"}],
+      "constraints": ["constraint-preserve", "constraint-no-delete", "constraint-no-retry", "constraint-cite"],
+      "decisions": ["decision-jsonl", "decision-fts"],
+      "completed": [],
+      "current_action": "Validate three compaction generations.",
+      "next_actions": [{"id": "next-validate", "order": 1, "depends_on": []}, {"id": "next-verify", "order": 2, "depends_on": ["next-validate"]}],
+      "blockers": [{"id": "blocker-model-phase", "status": "active"}],
+      "open_tool_calls": [{"call_id": "call-inspect", "tool": "inspect_state", "outcome": "unknown"}],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": ["dispute-unresolved"]
+    },
+    "compaction_criteria": {
+      "objective_text": "Preserve every open success criterion through repeated compaction.",
+      "criteria": [{"id": "criterion-memory", "status": "open"}, {"id": "criterion-replay", "status": "open"}, {"id": "criterion-provenance", "status": "open"}],
+      "constraints": ["constraint-preserve"],
+      "decisions": ["decision-jsonl"],
+      "completed": [],
+      "current_action": "Validate open-criterion retention.",
+      "next_actions": [{"id": "next-model-phase", "order": 1, "depends_on": []}],
+      "blockers": [{"id": "blocker-model-phase", "status": "active"}],
+      "open_tool_calls": [{"call_id": "call-inspect", "tool": "inspect_state", "outcome": "unknown"}],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": ["dispute-unresolved"]
+    },
+    "compaction_blockers": {
+      "objective_text": "Preserve blockers and unknown tool outcomes through repeated compaction.",
+      "criteria": [{"id": "criterion-memory", "status": "open"}],
+      "constraints": ["constraint-preserve", "constraint-inspect-first"],
+      "decisions": ["decision-jsonl"],
+      "completed": [],
+      "current_action": "Validate blocker retention.",
+      "next_actions": [{"id": "next-inspect", "order": 1, "depends_on": []}, {"id": "next-resolve", "order": 2, "depends_on": ["next-inspect"]}],
+      "blockers": [{"id": "blocker-model-phase", "status": "active"}, {"id": "blocker-effect-unknown", "status": "active"}, {"id": "blocker-artifact", "status": "active"}],
+      "open_tool_calls": [{"call_id": "call-copy", "tool": "copy_tree", "outcome": "unknown"}, {"call_id": "call-test", "tool": "run_test", "outcome": "not_started"}],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": ["dispute-unresolved"]
+    },
+    "compaction_artifacts": {
+      "objective_text": "Preserve artifact hashes and evidence through repeated compaction.",
+      "criteria": [{"id": "criterion-memory", "status": "open"}],
+      "constraints": ["constraint-preserve"],
+      "decisions": ["decision-jsonl"],
+      "completed": [],
+      "current_action": "Rehash every scoped artifact.",
+      "next_actions": [{"id": "next-rehash", "order": 1, "depends_on": []}],
+      "blockers": [{"id": "blocker-model-phase", "status": "active"}],
+      "open_tool_calls": [{"call_id": "call-inspect", "tool": "inspect_state", "outcome": "unknown"}],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}, {"path": "artifacts/memory-v1-copy.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": ["dispute-unresolved"]
+    },
+    "compaction_disputes": {
+      "objective_text": "Preserve unresolved disputes and action dependencies through compaction.",
+      "criteria": [{"id": "criterion-memory", "status": "open"}],
+      "constraints": ["constraint-preserve"],
+      "decisions": ["decision-jsonl", "decision-dispute"],
+      "completed": [],
+      "current_action": "Validate dispute retention.",
+      "next_actions": [{"id": "next-collect", "order": 1, "depends_on": []}, {"id": "next-resolve", "order": 2, "depends_on": ["next-collect"]}, {"id": "next-publish", "order": 3, "depends_on": ["next-resolve"]}],
+      "blockers": [{"id": "blocker-model-phase", "status": "active"}],
+      "open_tool_calls": [{"call_id": "call-inspect", "tool": "inspect_state", "outcome": "unknown"}],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": ["dispute-owner", "dispute-version", "dispute-unresolved"]
+    },
+    "crash_side_effect": {
+      "objective_text": "Resume without repeating a possibly completed side effect.",
+      "criteria": [{"id": "criterion-memory", "status": "open"}],
+      "constraints": ["constraint-no-duplicate-effect"],
+      "decisions": ["decision-jsonl"],
+      "completed": [],
+      "current_action": "Inspect the side effect before any retry.",
+      "next_actions": [{"id": "next-inspect-effect", "order": 1, "depends_on": []}],
+      "blockers": [{"id": "blocker-effect-unknown", "status": "active"}],
+      "open_tool_calls": [{"call_id": "call-copy", "tool": "copy_tree", "outcome": "unknown"}],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": ["dispute-unresolved"]
+    },
+    "verified": {
+      "objective_text": "Preserve authoritative verification through replay.",
+      "criteria": [{"id": "criterion-memory", "status": "met"}],
+      "constraints": ["constraint-preserve"],
+      "decisions": ["decision-jsonl"],
+      "completed": ["work-verified"],
+      "current_action": "Report the verified result once.",
+      "next_actions": [{"id": "next-report", "order": 1, "depends_on": []}],
+      "blockers": [],
+      "open_tool_calls": [],
+      "artifacts": [{"path": "artifacts/memory-v1.txt", "sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "disputes": []
+    }
+  },
+  "cases": [
+    {
+      "id": "exact-01-windows-path",
+      "tranche": "exact_identifier",
+      "description": "Recall four exact Windows paths and exclude no substituted path.",
+      "seed_events": [
+        {"key": "path-1", "type": "memory/committed", "memory_id": "exact-path-1", "claim": {"kind": "fact", "subject": "Start-Tunnel.ps1", "predicate": "path", "object": "D:\\Ops\\Owner\\Start-Tunnel.ps1", "searchable_text": "D:\\Ops\\Owner\\Start-Tunnel.ps1 canonical path"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:00Z", "evidence": {"evidence_id": "evd-exact-path-1", "source_kind": "event", "source_locator": "frozen://exact/path/1", "authority": "frozen-eval"}},
+        {"key": "path-2", "type": "memory/committed", "memory_id": "exact-path-2", "claim": {"kind": "fact", "subject": "memory_store.py", "predicate": "path", "object": "D:\\11_CS\\src\\memory_store.py", "searchable_text": "D:\\11_CS\\src\\memory_store.py canonical path"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:01Z", "evidence": {"evidence_id": "evd-exact-path-2", "source_kind": "event", "source_locator": "frozen://exact/path/2", "authority": "frozen-eval"}},
+        {"key": "path-3", "type": "memory/committed", "memory_id": "exact-path-3", "claim": {"kind": "fact", "subject": "state.json", "predicate": "path", "object": "C:\\Continuity\\state.json", "searchable_text": "C:\\Continuity\\state.json canonical path"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:02Z", "evidence": {"evidence_id": "evd-exact-path-3", "source_kind": "event", "source_locator": "frozen://exact/path/3", "authority": "frozen-eval"}},
+        {"key": "path-4", "type": "memory/committed", "memory_id": "exact-path-4", "claim": {"kind": "fact", "subject": "artifact.bin", "predicate": "path", "object": "D:\\Artifacts\\sha256\\artifact.bin", "searchable_text": "D:\\Artifacts\\sha256\\artifact.bin canonical path"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:03Z", "evidence": {"evidence_id": "evd-exact-path-4", "source_kind": "event", "source_locator": "frozen://exact/path/4", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "D:\\Ops\\Owner\\Start-Tunnel.ps1 D:\\11_CS\\src\\memory_store.py C:\\Continuity\\state.json D:\\Artifacts\\sha256\\artifact.bin", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["exact-path-1", "exact-path-2", "exact-path-3", "exact-path-4"],
+      "forbidden_memory_ids": [],
+      "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "exact-path-1", "value": "D:\\Ops\\Owner\\Start-Tunnel.ps1"}, {"memory_id": "exact-path-2", "value": "D:\\11_CS\\src\\memory_store.py"}, {"memory_id": "exact-path-3", "value": "C:\\Continuity\\state.json"}, {"memory_id": "exact-path-4", "value": "D:\\Artifacts\\sha256\\artifact.bin"}],
+      "action": {"kind": "retrieve_and_pack"},
+      "model_assisted_phase_required": true,
+      "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "exact-02-symbol-case",
+      "tranche": "exact_identifier",
+      "description": "Recall four exact symbols with case and punctuation preserved.",
+      "seed_events": [
+        {"key": "symbol-1", "type": "memory/committed", "memory_id": "exact-symbol-1", "claim": {"kind": "fact", "subject": "OwnerPID", "predicate": "identifier", "object": "OwnerPID", "searchable_text": "OwnerPID exact symbol"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-02T00:00:00Z", "evidence": {"evidence_id": "evd-exact-symbol-1", "source_kind": "event", "source_locator": "frozen://exact/symbol/1", "authority": "frozen-eval"}},
+        {"key": "symbol-2", "type": "memory/committed", "memory_id": "exact-symbol-2", "claim": {"kind": "fact", "subject": "listenerPID", "predicate": "identifier", "object": "listenerPID", "searchable_text": "listenerPID exact symbol"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-02T00:00:01Z", "evidence": {"evidence_id": "evd-exact-symbol-2", "source_kind": "event", "source_locator": "frozen://exact/symbol/2", "authority": "frozen-eval"}},
+        {"key": "symbol-3", "type": "memory/committed", "memory_id": "exact-symbol-3", "claim": {"kind": "fact", "subject": "Test-OwnedProcess", "predicate": "identifier", "object": "Test-OwnedProcess", "searchable_text": "Test-OwnedProcess exact symbol"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-02T00:00:02Z", "evidence": {"evidence_id": "evd-exact-symbol-3", "source_kind": "event", "source_locator": "frozen://exact/symbol/3", "authority": "frozen-eval"}},
+        {"key": "symbol-4", "type": "memory/committed", "memory_id": "exact-symbol-4", "claim": {"kind": "fact", "subject": "ERROR_X42", "predicate": "identifier", "object": "ERROR_X42", "searchable_text": "ERROR_X42 exact symbol"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-02T00:00:03Z", "evidence": {"evidence_id": "evd-exact-symbol-4", "source_kind": "event", "source_locator": "frozen://exact/symbol/4", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "OwnerPID listenerPID Test-OwnedProcess ERROR_X42", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["exact-symbol-1", "exact-symbol-2", "exact-symbol-3", "exact-symbol-4"],
+      "forbidden_memory_ids": [],
+      "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "exact-symbol-1", "value": "OwnerPID"}, {"memory_id": "exact-symbol-2", "value": "listenerPID"}, {"memory_id": "exact-symbol-3", "value": "Test-OwnedProcess"}, {"memory_id": "exact-symbol-4", "value": "ERROR_X42"}],
+      "action": {"kind": "retrieve_and_pack"},
+      "model_assisted_phase_required": true,
+      "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "exact-03-command-argv",
+      "tranche": "exact_identifier",
+      "description": "Recall four exact command fragments.",
+      "seed_events": [
+        {"key": "command-1", "type": "memory/committed", "memory_id": "exact-command-1", "claim": {"kind": "fact", "subject": "python-test", "predicate": "argv", "object": "py -3 -m unittest tests.test_memory_store", "searchable_text": "py -3 -m unittest tests.test_memory_store exact argv"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-03T00:00:00Z", "evidence": {"evidence_id": "evd-exact-command-1", "source_kind": "event", "source_locator": "frozen://exact/command/1", "authority": "frozen-eval"}},
+        {"key": "command-2", "type": "memory/committed", "memory_id": "exact-command-2", "claim": {"kind": "fact", "subject": "ruff", "predicate": "argv", "object": "ruff check evals/memory/v1", "searchable_text": "ruff check evals/memory/v1 exact argv"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-03T00:00:01Z", "evidence": {"evidence_id": "evd-exact-command-2", "source_kind": "event", "source_locator": "frozen://exact/command/2", "authority": "frozen-eval"}},
+        {"key": "command-3", "type": "memory/committed", "memory_id": "exact-command-3", "claim": {"kind": "fact", "subject": "pytest-node", "predicate": "argv", "object": "pytest tests/test_memory_eval.py::MemoryEvalTests", "searchable_text": "pytest tests/test_memory_eval.py::MemoryEvalTests exact argv"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-03T00:00:02Z", "evidence": {"evidence_id": "evd-exact-command-3", "source_kind": "event", "source_locator": "frozen://exact/command/3", "authority": "frozen-eval"}},
+        {"key": "command-4", "type": "memory/committed", "memory_id": "exact-command-4", "claim": {"kind": "fact", "subject": "filtered", "predicate": "argv", "object": "pytest -k not_slow", "searchable_text": "pytest -k not_slow exact argv"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-03T00:00:03Z", "evidence": {"evidence_id": "evd-exact-command-4", "source_kind": "event", "source_locator": "frozen://exact/command/4", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "tests.test_memory_store evals/memory/v1 tests/test_memory_eval.py::MemoryEvalTests not_slow", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["exact-command-1", "exact-command-2", "exact-command-3", "exact-command-4"],
+      "forbidden_memory_ids": [],
+      "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "exact-command-1", "value": "py -3 -m unittest tests.test_memory_store"}, {"memory_id": "exact-command-2", "value": "ruff check evals/memory/v1"}, {"memory_id": "exact-command-3", "value": "pytest tests/test_memory_eval.py::MemoryEvalTests"}, {"memory_id": "exact-command-4", "value": "pytest -k not_slow"}],
+      "action": {"kind": "retrieve_and_pack"},
+      "model_assisted_phase_required": true,
+      "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "exact-04-error-codes",
+      "tranche": "exact_identifier",
+      "description": "Recall four exact error codes.",
+      "seed_events": [
+        {"key": "error-1", "type": "memory/committed", "memory_id": "exact-error-1", "claim": {"kind": "fact", "subject": "access-denied", "predicate": "error", "object": "0x80070005", "searchable_text": "0x80070005 exact error access denied"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-04T00:00:00Z", "evidence": {"evidence_id": "evd-exact-error-1", "source_kind": "event", "source_locator": "frozen://exact/error/1", "authority": "frozen-eval"}},
+        {"key": "error-2", "type": "memory/committed", "memory_id": "exact-error-2", "claim": {"kind": "fact", "subject": "address-use", "predicate": "error", "object": "EADDRINUSE:7419", "searchable_text": "EADDRINUSE:7419 exact error"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-04T00:00:01Z", "evidence": {"evidence_id": "evd-exact-error-2", "source_kind": "event", "source_locator": "frozen://exact/error/2", "authority": "frozen-eval"}},
+        {"key": "error-3", "type": "memory/committed", "memory_id": "exact-error-3", "claim": {"kind": "fact", "subject": "memory-code", "predicate": "error", "object": "CI_MEM_0042", "searchable_text": "CI_MEM_0042 exact error"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-04T00:00:02Z", "evidence": {"evidence_id": "evd-exact-error-3", "source_kind": "event", "source_locator": "frozen://exact/error/3", "authority": "frozen-eval"}},
+        {"key": "error-4", "type": "memory/committed", "memory_id": "exact-error-4", "claim": {"kind": "fact", "subject": "conflict", "predicate": "error", "object": "HTTP 409", "searchable_text": "HTTP 409 exact conflict error"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-04T00:00:03Z", "evidence": {"evidence_id": "evd-exact-error-4", "source_kind": "event", "source_locator": "frozen://exact/error/4", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "0x80070005 EADDRINUSE:7419 CI_MEM_0042 HTTP 409", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["exact-error-1", "exact-error-2", "exact-error-3", "exact-error-4"],
+      "forbidden_memory_ids": [],
+      "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "exact-error-1", "value": "0x80070005"}, {"memory_id": "exact-error-2", "value": "EADDRINUSE:7419"}, {"memory_id": "exact-error-3", "value": "CI_MEM_0042"}, {"memory_id": "exact-error-4", "value": "HTTP 409"}],
+      "action": {"kind": "retrieve_and_pack"},
+      "model_assisted_phase_required": true,
+      "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "exact-05-task-artifact-ids",
+      "tranche": "exact_identifier",
+      "description": "Recall exact task, event, artifact, and side-effect identifiers.",
+      "seed_events": [
+        {"key": "id-1", "type": "memory/committed", "memory_id": "exact-id-1", "claim": {"kind": "fact", "subject": "task", "predicate": "identifier", "object": "11111111-1111-1111-1111-111111111111", "searchable_text": "task 11111111-1111-1111-1111-111111111111"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-05T00:00:00Z", "evidence": {"evidence_id": "evd-exact-id-1", "source_kind": "event", "source_locator": "frozen://exact/id/1", "authority": "frozen-eval"}},
+        {"key": "id-2", "type": "memory/committed", "memory_id": "exact-id-2", "claim": {"kind": "fact", "subject": "event", "predicate": "identifier", "object": "33333333-3333-3333-3333-333333333333", "searchable_text": "event 33333333-3333-3333-3333-333333333333"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-05T00:00:01Z", "evidence": {"evidence_id": "evd-exact-id-2", "source_kind": "event", "source_locator": "frozen://exact/id/2", "authority": "frozen-eval"}},
+        {"key": "id-3", "type": "memory/committed", "memory_id": "exact-id-3", "claim": {"kind": "fact", "subject": "artifact", "predicate": "sha256", "object": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439", "searchable_text": "artifact sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-05T00:00:02Z", "evidence": {"evidence_id": "evd-exact-id-3", "source_kind": "event", "source_locator": "frozen://exact/id/3", "authority": "frozen-eval"}},
+        {"key": "id-4", "type": "memory/committed", "memory_id": "exact-id-4", "claim": {"kind": "fact", "subject": "side-effect", "predicate": "identifier", "object": "effect-owner-fix-1", "searchable_text": "side effect effect-owner-fix-1"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-05T00:00:03Z", "evidence": {"evidence_id": "evd-exact-id-4", "source_kind": "event", "source_locator": "frozen://exact/id/4", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "11111111-1111-1111-1111-111111111111 33333333-3333-3333-3333-333333333333 sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439 effect-owner-fix-1", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["exact-id-1", "exact-id-2", "exact-id-3", "exact-id-4"],
+      "forbidden_memory_ids": [],
+      "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "exact-id-1", "value": "11111111-1111-1111-1111-111111111111"}, {"memory_id": "exact-id-2", "value": "33333333-3333-3333-3333-333333333333"}, {"memory_id": "exact-id-3", "value": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}, {"memory_id": "exact-id-4", "value": "effect-owner-fix-1"}],
+      "action": {"kind": "retrieve_and_pack"},
+      "model_assisted_phase_required": true,
+      "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "para-01-owned-process",
+      "tranche": "paraphrase",
+      "description": "Retrieve the exact-owner restriction from a reworded question.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "para-owned-process", "claim": {"kind": "constraint", "subject": "process termination", "predicate": "restricted_to", "object": "the exact owned child process", "searchable_text": "Terminate only the exact owned child process; broad process kills are forbidden."}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-06T00:00:00Z", "evidence": {"evidence_id": "evd-para-owned", "source_kind": "event", "source_locator": "frozen://para/owned", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "May I broadly kill every child process, or must termination target its exact owner?", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["constraint"], "top_k": 10},
+      "expected_memory_ids": ["para-owned-process"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "para-owned-process", "value": "the exact owned child process"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "para-02-checkpoint-before-write",
+      "tranche": "paraphrase",
+      "description": "Retrieve the checkpoint-before-mutation rule from different vocabulary.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "para-checkpoint", "claim": {"kind": "procedure_ref", "subject": "mutating tool", "predicate": "requires_before", "object": "a durable checkpoint", "searchable_text": "Create a durable checkpoint immediately before any mutating tool writes."}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-07T00:00:00Z", "evidence": {"evidence_id": "evd-para-checkpoint", "source_kind": "event", "source_locator": "frozen://para/checkpoint", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "What durable record must exist just ahead of a tool changing files?", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["procedure_ref"], "top_k": 10},
+      "expected_memory_ids": ["para-checkpoint"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "para-checkpoint", "value": "a durable checkpoint"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "para-03-code-over-handoff",
+      "tranche": "paraphrase",
+      "description": "Retrieve the current-code authority rule from a conflict question.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "para-code-authority", "claim": {"kind": "decision", "subject": "repository truth", "predicate": "authority", "object": "current code and tests", "searchable_text": "When an old handoff conflicts with current code, current code and applicable tests win."}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-08T00:00:00Z", "evidence": {"evidence_id": "evd-para-code", "source_kind": "event", "source_locator": "frozen://para/code", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "If stale documentation disagrees with the repository now, which source is authoritative?", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["decision"], "top_k": 10},
+      "expected_memory_ids": ["para-code-authority"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "para-code-authority", "value": "current code and tests"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "para-04-single-response",
+      "tranche": "paraphrase",
+      "description": "Retrieve the one-response qualification rule.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "para-one-response", "claim": {"kind": "constraint", "subject": "qualification trial", "predicate": "model_response_limit", "object": 1, "searchable_text": "One qualification trial receives one model response and zero automatic retries."}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-09T00:00:00Z", "evidence": {"evidence_id": "evd-para-one", "source_kind": "event", "source_locator": "frozen://para/one", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "Can a malformed qualification answer be regenerated automatically a second time?", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["constraint"], "top_k": 10},
+      "expected_memory_ids": ["para-one-response"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "para-one-response", "value": 1}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "para-05-derived-export",
+      "tranche": "paraphrase",
+      "description": "Retrieve the derived-export authority boundary.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "para-derived-export", "claim": {"kind": "decision", "subject": "generated Markdown export", "predicate": "authority", "object": "derived projection only", "searchable_text": "Generated Markdown and Obsidian pages are derived projections and never become canonical automatically."}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-10T00:00:00Z", "evidence": {"evidence_id": "evd-para-export", "source_kind": "event", "source_locator": "frozen://para/export", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "May an Obsidian export silently turn into the source of truth?", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["decision"], "top_k": 10},
+      "expected_memory_ids": ["para-derived-export"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "para-derived-export", "value": "derived projection only"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "multi-01-en-to-zh-owner",
+      "tranche": "multilingual",
+      "description": "English fact queried in Chinese with exact host, symbol, and port anchors.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "multi-owner", "claim": {"kind": "fact", "subject": "EXCALIBUR OwnerPID listener", "predicate": "port", "object": 7419, "searchable_text": "EXCALIBUR uses OwnerPID to own the listener on port 7419."}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-11T00:00:00Z", "evidence": {"evidence_id": "evd-multi-owner", "source_kind": "event", "source_locator": "frozen://multi/owner", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "EXCALIBUR 上的 OwnerPID 监听器使用哪个端口 7419？", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["multi-owner"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "multi-owner", "value": 7419}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "multi-02-zh-to-en-qwen",
+      "tranche": "multilingual",
+      "description": "Chinese fact queried in English with model and port anchors.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "multi-qwen", "claim": {"kind": "fact", "subject": "Qwen3.8-27B", "predicate": "服务端口", "object": 8081, "searchable_text": "Qwen3.8-27B 本地服务监听端口 8081。"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-12T00:00:00Z", "evidence": {"evidence_id": "evd-multi-qwen", "source_kind": "event", "source_locator": "frozen://multi/qwen", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "Which port does Qwen3.8-27B use: 8081?", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["multi-qwen"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "multi-qwen", "value": 8081}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "multi-03-en-to-zh-apple",
+      "tranche": "multilingual",
+      "description": "English Apple-edge fact queried in Chinese.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "multi-apple", "claim": {"kind": "fact", "subject": "HERMES-7", "predicate": "xcode_version", "object": "18.2", "searchable_text": "Apple edge HERMES-7 is qualified with Xcode 18.2."}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-13T00:00:00Z", "evidence": {"evidence_id": "evd-multi-apple", "source_kind": "event", "source_locator": "frozen://multi/apple", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "Apple 边缘设备 HERMES-7 使用哪个 Xcode 版本 18.2？", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["multi-apple"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "multi-apple", "value": "18.2"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "multi-04-zh-to-en-budget",
+      "tranche": "multilingual",
+      "description": "Chinese budget fact queried in English.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "multi-budget", "claim": {"kind": "fact", "subject": "内存上下文预算", "predicate": "令牌限制", "object": {"memory_tokens": 4096, "per_item_tokens": 512}, "searchable_text": "长期内存预算是 4096 个令牌，每条内存上限是 512。"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-14T00:00:00Z", "evidence": {"evidence_id": "evd-multi-budget", "source_kind": "event", "source_locator": "frozen://multi/budget", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "Is the memory budget 4096 tokens with a 512-token per-item cap?", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["multi-budget"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "multi-budget", "value": {"memory_tokens": 4096, "per_item_tokens": 512}}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "multi-05-bidirectional-device",
+      "tranche": "multilingual",
+      "description": "Mixed-language device identity keeps the proper name, numeric ID, and rate.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "multi-device", "claim": {"kind": "fact", "subject": "Apollo Twin X", "predicate": "设备配置", "object": {"device_id": "88890004", "sample_rate": "48 kHz"}, "searchable_text": "Apollo Twin X 设备编号 88890004，采样率 48 kHz。"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-15T00:00:00Z", "evidence": {"evidence_id": "evd-multi-device", "source_kind": "event", "source_locator": "frozen://multi/device", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "For Apollo Twin X 编号 88890004, confirm the 48 kHz rate.", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["multi-device"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "multi-device", "value": {"device_id": "88890004", "sample_rate": "48 kHz"}}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "drop_recall"
+    },
+    {
+      "id": "time-01-may-june-launch",
+      "tranche": "temporal_truth",
+      "description": "May launch truth is superseded in June without erasing history.",
+      "seed_events": [
+        {"key": "may", "type": "memory/committed", "memory_id": "launch-may", "claim": {"kind": "fact", "subject": "launch date", "predicate": "value", "object": "2026-05-20", "searchable_text": "Project Atlas launch date"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:00Z", "valid_from": "2026-05-01T00:00:00Z", "evidence": {"evidence_id": "evd-launch-may", "source_kind": "event", "source_locator": "frozen://time/launch/may", "authority": "frozen-eval"}},
+        {"key": "june", "type": "memory/committed", "memory_id": "launch-june", "supersedes_id": "launch-may", "claim": {"kind": "fact", "subject": "launch date", "predicate": "value", "object": "2026-06-20", "searchable_text": "Project Atlas launch date"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-01T00:00:00Z", "valid_from": "2026-06-01T00:00:00Z", "evidence": {"evidence_id": "evd-launch-june", "source_kind": "event", "source_locator": "frozen://time/launch/june", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "Project Atlas launch date", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["launch-june"], "forbidden_memory_ids": ["launch-may"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "launch-june", "value": "2026-06-20"}],
+      "action": {"kind": "temporal", "probes": [{"id": "may-history", "as_of": "2026-05-15T00:00:00Z", "expected_memory_ids": ["launch-may"], "forbidden_memory_ids": ["launch-june"]}]},
+      "model_assisted_phase_required": true, "negative_mutation": "temporal_wrong"
+    },
+    {
+      "id": "time-02-arrival-7-to-9",
+      "tranche": "temporal_truth",
+      "description": "Arrival changes from 7 PM to 9 PM at the effective boundary.",
+      "seed_events": [
+        {"key": "seven", "type": "memory/committed", "memory_id": "arrival-seven", "claim": {"kind": "fact", "subject": "arrival time", "predicate": "value", "object": "7 PM", "searchable_text": "Train Zephyr arrival time"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:00Z", "valid_from": "2026-05-01T00:00:00Z", "evidence": {"evidence_id": "evd-arrival-seven", "source_kind": "event", "source_locator": "frozen://time/arrival/7", "authority": "frozen-eval"}},
+        {"key": "nine", "type": "memory/committed", "memory_id": "arrival-nine", "supersedes_id": "arrival-seven", "claim": {"kind": "fact", "subject": "arrival time", "predicate": "value", "object": "9 PM", "searchable_text": "Train Zephyr arrival time"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-10T00:00:00Z", "valid_from": "2026-06-15T00:00:00Z", "evidence": {"evidence_id": "evd-arrival-nine", "source_kind": "event", "source_locator": "frozen://time/arrival/9", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "Train Zephyr arrival time", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": "2026-06-15T00:00:00Z", "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["arrival-nine"], "forbidden_memory_ids": ["arrival-seven"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "arrival-nine", "value": "9 PM"}],
+      "action": {"kind": "temporal", "probes": [{"id": "before-change", "as_of": "2026-06-14T23:59:59Z", "expected_memory_ids": ["arrival-seven"], "forbidden_memory_ids": ["arrival-nine"]}]},
+      "model_assisted_phase_required": true, "negative_mutation": "temporal_wrong"
+    },
+    {
+      "id": "time-03-current-and-as-of",
+      "tranche": "temporal_truth",
+      "description": "An explicit historical query returns the prior worker limit.",
+      "seed_events": [
+        {"key": "old", "type": "memory/committed", "memory_id": "workers-eight", "claim": {"kind": "decision", "subject": "max_workers", "predicate": "value", "object": 8, "searchable_text": "queue max_workers"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:00Z", "valid_from": "2026-05-01T00:00:00Z", "evidence": {"evidence_id": "evd-workers-eight", "source_kind": "event", "source_locator": "frozen://time/workers/8", "authority": "frozen-eval"}},
+        {"key": "new", "type": "memory/committed", "memory_id": "workers-three", "supersedes_id": "workers-eight", "claim": {"kind": "decision", "subject": "max_workers", "predicate": "value", "object": 3, "searchable_text": "queue max_workers"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-15T00:00:00Z", "valid_from": "2026-06-15T00:00:00Z", "evidence": {"evidence_id": "evd-workers-three", "source_kind": "event", "source_locator": "frozen://time/workers/3", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "queue max_workers", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": "2026-05-20T00:00:00Z", "kinds": ["decision"], "top_k": 10},
+      "expected_memory_ids": ["workers-eight"], "forbidden_memory_ids": ["workers-three"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "workers-eight", "value": 8}],
+      "action": {"kind": "temporal", "probes": [{"id": "current", "as_of": null, "expected_memory_ids": ["workers-three"], "forbidden_memory_ids": ["workers-eight"]}]},
+      "model_assisted_phase_required": true, "negative_mutation": "temporal_wrong"
+    },
+    {
+      "id": "time-04-retired-no-replacement",
+      "tranche": "temporal_truth",
+      "description": "Retirement yields no current fact while preserving historical truth.",
+      "seed_events": [
+        {"key": "rule", "type": "memory/committed", "memory_id": "retired-rule", "claim": {"kind": "constraint", "subject": "nightly job", "predicate": "enabled", "object": true, "searchable_text": "nightly reflection job enabled"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:00Z", "valid_from": "2026-05-01T00:00:00Z", "evidence": {"evidence_id": "evd-retired-rule", "source_kind": "event", "source_locator": "frozen://time/retired", "authority": "frozen-eval"}},
+        {"key": "retire", "type": "memory/retired", "memory_id": "retired-rule", "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-01T00:00:00Z"},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "nightly reflection job enabled", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["constraint"], "top_k": 10},
+      "expected_memory_ids": [], "forbidden_memory_ids": ["retired-rule"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"status": "no_current_memory"}],
+      "action": {"kind": "temporal", "probes": [{"id": "before-retirement", "as_of": "2026-05-15T00:00:00Z", "expected_memory_ids": ["retired-rule"], "forbidden_memory_ids": []}]},
+      "model_assisted_phase_required": true, "negative_mutation": "temporal_wrong"
+    },
+    {
+      "id": "time-05-validity-boundary",
+      "tranche": "temporal_truth",
+      "description": "Validity, not a later write-order guess, owns the exact boundary.",
+      "seed_events": [
+        {"key": "old", "type": "memory/committed", "memory_id": "policy-v1", "claim": {"kind": "decision", "subject": "retention days", "predicate": "value", "object": 90, "searchable_text": "bulk retention days"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-01T00:00:00Z", "valid_from": "2026-05-01T00:00:00Z", "evidence": {"evidence_id": "evd-policy-v1", "source_kind": "event", "source_locator": "frozen://time/policy/v1", "authority": "frozen-eval"}},
+        {"key": "new", "type": "memory/committed", "memory_id": "policy-v2", "supersedes_id": "policy-v1", "claim": {"kind": "decision", "subject": "retention days", "predicate": "value", "object": 30, "searchable_text": "bulk retention days"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-20T00:00:00Z", "valid_from": "2026-06-15T00:00:00Z", "evidence": {"evidence_id": "evd-policy-v2", "source_kind": "event", "source_locator": "frozen://time/policy/v2", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "bulk retention days", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": "2026-06-15T00:00:00Z", "kinds": ["decision"], "top_k": 10},
+      "expected_memory_ids": ["policy-v2"], "forbidden_memory_ids": ["policy-v1"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "policy-v2", "value": 30}],
+      "action": {"kind": "temporal", "probes": [{"id": "one-second-before", "as_of": "2026-06-14T23:59:59Z", "expected_memory_ids": ["policy-v1"], "forbidden_memory_ids": ["policy-v2"]}]},
+      "model_assisted_phase_required": true, "negative_mutation": "temporal_wrong"
+    },
+    {
+      "id": "scope-01-owner",
+      "tranche": "scope_isolation",
+      "description": "Identical text remains isolated between owners.",
+      "seed_events": [
+        {"key": "allowed", "type": "memory/committed", "memory_id": "scope-owner-a", "claim": {"kind": "fact", "subject": "recovery phrase", "predicate": "value", "object": "CEDAR-A", "searchable_text": "shared recovery phrase"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-16T00:00:00Z", "evidence": {"evidence_id": "evd-scope-owner-a", "source_kind": "event", "source_locator": "frozen://scope/owner/a", "authority": "frozen-eval"}},
+        {"key": "forbidden", "type": "memory/committed", "memory_id": "scope-owner-b", "claim": {"kind": "fact", "subject": "recovery phrase", "predicate": "value", "object": "CEDAR-B", "searchable_text": "shared recovery phrase"}, "scope": {"owner_id": "operator-b", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-16T00:00:01Z", "evidence": {"evidence_id": "evd-scope-owner-b", "source_kind": "event", "source_locator": "frozen://scope/owner/b", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "shared recovery phrase", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["scope-owner-a"], "forbidden_memory_ids": ["scope-owner-b"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "scope-owner-a", "value": "CEDAR-A"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "include_forbidden_scope"
+    },
+    {
+      "id": "scope-02-workspace-apple-python",
+      "tranche": "scope_isolation",
+      "description": "The same BackendState name remains isolated between Apple and Python workspaces.",
+      "seed_events": [
+        {"key": "allowed", "type": "memory/committed", "memory_id": "scope-apple", "claim": {"kind": "fact", "subject": "BackendState", "predicate": "language", "object": "Swift", "searchable_text": "BackendState current implementation"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-apple", "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-17T00:00:00Z", "evidence": {"evidence_id": "evd-scope-apple", "source_kind": "event", "source_locator": "frozen://scope/apple", "authority": "frozen-eval"}},
+        {"key": "forbidden", "type": "memory/committed", "memory_id": "scope-python", "claim": {"kind": "fact", "subject": "BackendState", "predicate": "language", "object": "Python", "searchable_text": "BackendState current implementation"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-python", "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-17T00:00:01Z", "evidence": {"evidence_id": "evd-scope-python", "source_kind": "event", "source_locator": "frozen://scope/python", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "BackendState current implementation", "scopes": [{"owner_id": "operator-a", "workspace_id": "workspace-apple", "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["scope-apple"], "forbidden_memory_ids": ["scope-python"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "scope-apple", "value": "Swift"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "include_forbidden_scope"
+    },
+    {
+      "id": "scope-03-task",
+      "tranche": "scope_isolation",
+      "description": "Colliding task memories remain isolated by exact task UUID.",
+      "seed_events": [
+        {"key": "allowed", "type": "memory/committed", "memory_id": "scope-task-a", "claim": {"kind": "fact", "subject": "next action", "predicate": "value", "object": "verify replay", "searchable_text": "shared next action"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": "11111111-1111-1111-1111-111111111111", "agent_role": null, "session_id": null}, "occurred_at": "2026-05-18T00:00:00Z", "evidence": {"evidence_id": "evd-scope-task-a", "source_kind": "event", "source_locator": "frozen://scope/task/a", "authority": "frozen-eval"}},
+        {"key": "forbidden", "type": "memory/committed", "memory_id": "scope-task-b", "claim": {"kind": "fact", "subject": "next action", "predicate": "value", "object": "delete cache", "searchable_text": "shared next action"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": "11111111-1111-1111-1111-111111111112", "agent_role": null, "session_id": null}, "occurred_at": "2026-05-18T00:00:01Z", "evidence": {"evidence_id": "evd-scope-task-b", "source_kind": "event", "source_locator": "frozen://scope/task/b", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "shared next action", "scopes": [{"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": "11111111-1111-1111-1111-111111111111", "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["scope-task-a"], "forbidden_memory_ids": ["scope-task-b"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "scope-task-a", "value": "verify replay"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "include_forbidden_scope"
+    },
+    {
+      "id": "scope-04-agent-role",
+      "tranche": "scope_isolation",
+      "description": "Implementer and verifier memories remain role-isolated.",
+      "seed_events": [
+        {"key": "allowed", "type": "memory/committed", "memory_id": "scope-implementer", "claim": {"kind": "procedure_ref", "subject": "shared workflow", "predicate": "role_action", "object": "implement patch", "searchable_text": "shared role workflow"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": null, "agent_role": "implementer", "session_id": null}, "occurred_at": "2026-05-19T00:00:00Z", "evidence": {"evidence_id": "evd-scope-implementer", "source_kind": "event", "source_locator": "frozen://scope/role/implementer", "authority": "frozen-eval"}},
+        {"key": "forbidden", "type": "memory/committed", "memory_id": "scope-verifier", "claim": {"kind": "procedure_ref", "subject": "shared workflow", "predicate": "role_action", "object": "judge patch", "searchable_text": "shared role workflow"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": null, "agent_role": "verifier", "session_id": null}, "occurred_at": "2026-05-19T00:00:01Z", "evidence": {"evidence_id": "evd-scope-verifier", "source_kind": "event", "source_locator": "frozen://scope/role/verifier", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "shared role workflow", "scopes": [{"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": null, "agent_role": "implementer", "session_id": null}], "as_of": null, "kinds": ["procedure_ref"], "top_k": 10},
+      "expected_memory_ids": ["scope-implementer"], "forbidden_memory_ids": ["scope-verifier"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "scope-implementer", "value": "implement patch"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "include_forbidden_scope"
+    },
+    {
+      "id": "scope-05-session",
+      "tranche": "scope_isolation",
+      "description": "Recovery identifiers remain isolated by exact session UUID.",
+      "seed_events": [
+        {"key": "allowed", "type": "memory/committed", "memory_id": "scope-session-a", "claim": {"kind": "episode", "subject": "session recovery", "predicate": "identifier", "object": "RECOVERY-A", "searchable_text": "shared session recovery"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": "11111111-1111-1111-1111-111111111111", "agent_role": null, "session_id": "22222222-2222-2222-2222-222222222222"}, "occurred_at": "2026-05-20T00:00:00Z", "evidence": {"evidence_id": "evd-scope-session-a", "source_kind": "event", "source_locator": "frozen://scope/session/a", "authority": "frozen-eval"}},
+        {"key": "forbidden", "type": "memory/committed", "memory_id": "scope-session-b", "claim": {"kind": "episode", "subject": "session recovery", "predicate": "identifier", "object": "RECOVERY-B", "searchable_text": "shared session recovery"}, "scope": {"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": "11111111-1111-1111-1111-111111111111", "agent_role": null, "session_id": "22222222-2222-2222-2222-222222222223"}, "occurred_at": "2026-05-20T00:00:01Z", "evidence": {"evidence_id": "evd-scope-session-b", "source_kind": "event", "source_locator": "frozen://scope/session/b", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "shared session recovery", "scopes": [{"owner_id": "operator-a", "workspace_id": "workspace-main", "task_id": "11111111-1111-1111-1111-111111111111", "agent_role": null, "session_id": "22222222-2222-2222-2222-222222222222"}], "as_of": null, "kinds": ["episode"], "top_k": 10},
+      "expected_memory_ids": ["scope-session-a"], "forbidden_memory_ids": ["scope-session-b"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "scope-session-a", "value": "RECOVERY-A"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "include_forbidden_scope"
+    },
+    {
+      "id": "conflict-01-equal-authority",
+      "tranche": "conflict_provenance_negative",
+      "description": "Equal-authority contradictory claims remain disputed with both evidence chains.",
+      "seed_events": [
+        {"key": "claim-a", "type": "memory/committed", "memory_id": "conflict-workers-4", "status": "disputed", "claim": {"kind": "fact", "subject": "max_workers", "predicate": "value", "object": 4, "searchable_text": "conflicted max_workers setting"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-21T00:00:00Z", "evidence": {"evidence_id": "evd-conflict-4", "source_kind": "event", "source_locator": "frozen://conflict/4", "authority": "equal-authority"}},
+        {"key": "claim-b", "type": "memory/committed", "memory_id": "conflict-workers-8", "status": "disputed", "claim": {"kind": "fact", "subject": "max_workers", "predicate": "value", "object": 8, "searchable_text": "conflicted max_workers setting"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-21T00:00:01Z", "evidence": {"evidence_id": "evd-conflict-8", "source_kind": "event", "source_locator": "frozen://conflict/8", "authority": "equal-authority"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "conflicted max_workers setting", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["conflict-workers-4", "conflict-workers-8"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["equal-authority"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"status": "disputed", "memory_ids": ["conflict-workers-4", "conflict-workers-8"]}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "remove_provenance"
+    },
+    {
+      "id": "conflict-02-authoritative-correction",
+      "tranche": "conflict_provenance_negative",
+      "description": "A user-authoritative correction supersedes an inference.",
+      "seed_events": [
+        {"key": "inference", "type": "memory/committed", "memory_id": "correction-inferred", "verification_status": "inferred", "claim": {"kind": "fact", "subject": "service port", "predicate": "value", "object": 7000, "searchable_text": "Orion service port"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-22T00:00:00Z", "valid_from": "2026-05-22T00:00:00Z", "evidence": {"evidence_id": "evd-correction-inferred", "source_kind": "model_inference", "source_locator": "frozen://correction/inferred", "authority": "model-inference"}},
+        {"key": "user", "type": "memory/committed", "memory_id": "correction-user", "supersedes_id": "correction-inferred", "verification_status": "user_authority", "claim": {"kind": "fact", "subject": "service port", "predicate": "value", "object": 7444, "searchable_text": "Orion service port"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-23T00:00:00Z", "valid_from": "2026-05-23T00:00:00Z", "evidence": {"evidence_id": "evd-correction-user", "source_kind": "user", "source_locator": "frozen://correction/user", "authority": "user"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "Orion service port", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["correction-user"], "forbidden_memory_ids": ["correction-inferred"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["user"], "required_authorities": ["user"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "correction-user", "value": 7444}],
+      "action": {"kind": "temporal", "probes": [{"id": "before-correction", "as_of": "2026-05-22T12:00:00Z", "expected_memory_ids": ["correction-inferred"], "forbidden_memory_ids": ["correction-user"]}]},
+      "model_assisted_phase_required": true, "negative_mutation": "remove_provenance"
+    },
+    {
+      "id": "negative-03-no-memory",
+      "tranche": "conflict_provenance_negative",
+      "description": "An unsupported identifier returns no memory and no fabricated fact.",
+      "seed_events": [
+        {"key": "support", "type": "memory/committed", "memory_id": "negative-unrelated", "claim": {"kind": "fact", "subject": "unrelated", "predicate": "value", "object": "known", "searchable_text": "completely unrelated support record"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-24T00:00:00Z", "evidence": {"evidence_id": "evd-negative-unrelated", "source_kind": "event", "source_locator": "frozen://negative/unrelated", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "ZZZ-NOT-RECORDED-991", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": [], "forbidden_memory_ids": ["negative-unrelated"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": [], "required_authorities": [], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"status": "no_memory"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "fabricate_negative"
+    },
+    {
+      "id": "provenance-04-complete-chain",
+      "tranche": "conflict_provenance_negative",
+      "description": "A retrieved artifact fact carries file and test provenance.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "provenance-complete", "claim": {"kind": "fact", "subject": "memory-v1 artifact", "predicate": "sha256", "object": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439", "searchable_text": "memory-v1 artifact provenance hash"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-25T00:00:00Z", "evidence": [{"evidence_id": "evd-provenance-file", "source_kind": "file", "source_locator": "artifacts/memory-v1.txt", "source_sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439", "authority": "frozen-file"}, {"evidence_id": "evd-provenance-test", "source_kind": "test", "source_locator": "memory-eval/provenance", "source_sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439", "authority": "frozen-test"}]},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "memory-v1 artifact provenance hash", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["provenance-complete"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 2, "required_source_kinds": ["file", "test"], "required_authorities": ["frozen-file", "frozen-test"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "provenance-complete", "value": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439"}],
+      "action": {"kind": "retrieve_and_pack"}, "model_assisted_phase_required": true, "negative_mutation": "remove_provenance"
+    },
+    {
+      "id": "negative-05-secret-rejection",
+      "tranche": "conflict_provenance_negative",
+      "description": "A fake secret-like candidate is rejected before semantic-memory append.",
+      "seed_events": [
+        {"key": "support", "type": "memory/committed", "memory_id": "secret-support", "claim": {"kind": "fact", "subject": "secret policy", "predicate": "value", "object": "reject before append", "searchable_text": "secret admission policy support"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-26T00:00:00Z", "evidence": {"evidence_id": "evd-secret-support", "source_kind": "event", "source_locator": "frozen://negative/secret/support", "authority": "frozen-eval"}},
+        {"key": "secret", "type": "memory/committed", "memory_id": "secret-forbidden", "expect_admission": "rejected_secret", "claim": {"kind": "fact", "subject": "credential", "predicate": "value", "object": "api_key = sk-test-not-a-real-credential-1234567890", "searchable_text": "SECRET-CANDIDATE-778"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-26T00:00:01Z", "evidence": {"evidence_id": "evd-secret-forbidden", "source_kind": "event", "source_locator": "frozen://negative/secret/forbidden", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1}
+      ],
+      "query": {"text": "SECRET-CANDIDATE-778", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": [], "forbidden_memory_ids": ["secret-forbidden"], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": [], "required_authorities": [], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"status": "secret_rejected"}],
+      "action": {"kind": "secret_admission"}, "model_assisted_phase_required": false, "negative_mutation": "fabricate_negative"
+    },
+    {
+      "id": "compact-01-many-constraints",
+      "tranche": "compaction_retention",
+      "description": "Three compaction generations preserve many active constraints.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "compact-constraints-memory", "claim": {"kind": "fact", "subject": "compaction constraints", "predicate": "status", "object": "active", "searchable_text": "compaction constraint retention"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-27T00:00:00Z", "evidence": {"evidence_id": "evd-compact-constraints", "source_kind": "event", "source_locator": "frozen://compact/constraints", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "compaction_constraints", "revision": 1}
+      ],
+      "query": {"text": "compaction constraint retention", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["compact-constraints-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "compaction_constraints", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "compact-constraints-memory", "value": "active"}],
+      "action": {"kind": "compaction", "rounds": 3}, "model_assisted_phase_required": true, "negative_mutation": "omit_compaction_invariant"
+    },
+    {
+      "id": "compact-02-open-criteria",
+      "tranche": "compaction_retention",
+      "description": "Repeated compaction preserves all open success criteria.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "compact-criteria-memory", "claim": {"kind": "fact", "subject": "open criteria", "predicate": "status", "object": "open", "searchable_text": "compaction open criteria retention"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-28T00:00:00Z", "evidence": {"evidence_id": "evd-compact-criteria", "source_kind": "event", "source_locator": "frozen://compact/criteria", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "compaction_criteria", "revision": 1}
+      ],
+      "query": {"text": "compaction open criteria retention", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["compact-criteria-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "compaction_criteria", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "compact-criteria-memory", "value": "open"}],
+      "action": {"kind": "compaction", "rounds": 3}, "model_assisted_phase_required": true, "negative_mutation": "omit_compaction_invariant"
+    },
+    {
+      "id": "compact-03-blockers-tools",
+      "tranche": "compaction_retention",
+      "description": "Repeated compaction preserves blockers and unknown tool outcomes.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "compact-blockers-memory", "claim": {"kind": "fact", "subject": "blockers", "predicate": "status", "object": "active", "searchable_text": "compaction blockers unknown tools"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-29T00:00:00Z", "evidence": {"evidence_id": "evd-compact-blockers", "source_kind": "event", "source_locator": "frozen://compact/blockers", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "compaction_blockers", "revision": 1}
+      ],
+      "query": {"text": "compaction blockers unknown tools", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["compact-blockers-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "compaction_blockers", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "compact-blockers-memory", "value": "active"}],
+      "action": {"kind": "compaction", "rounds": 3}, "model_assisted_phase_required": true, "negative_mutation": "omit_compaction_invariant"
+    },
+    {
+      "id": "compact-04-artifact-hashes",
+      "tranche": "compaction_retention",
+      "description": "Repeated compaction rehashes and preserves two artifacts.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "compact-artifacts-memory", "claim": {"kind": "fact", "subject": "artifact hashes", "predicate": "status", "object": "verified", "searchable_text": "compaction artifact hash retention"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-30T00:00:00Z", "evidence": {"evidence_id": "evd-compact-artifacts", "source_kind": "event", "source_locator": "frozen://compact/artifacts", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "compaction_artifacts", "revision": 1}
+      ],
+      "query": {"text": "compaction artifact hash retention", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["compact-artifacts-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "compaction_artifacts", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "compact-artifacts-memory", "value": "verified"}],
+      "action": {"kind": "compaction", "rounds": 3}, "model_assisted_phase_required": true, "negative_mutation": "omit_compaction_invariant"
+    },
+    {
+      "id": "compact-05-disputes-dependencies",
+      "tranche": "compaction_retention",
+      "description": "Repeated compaction preserves disputes and dependency-ordered actions.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "compact-disputes-memory", "claim": {"kind": "fact", "subject": "disputes", "predicate": "status", "object": "unresolved", "searchable_text": "compaction disputes dependencies"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-05-31T00:00:00Z", "evidence": {"evidence_id": "evd-compact-disputes", "source_kind": "event", "source_locator": "frozen://compact/disputes", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "compaction_disputes", "revision": 1}
+      ],
+      "query": {"text": "compaction disputes dependencies", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["compact-disputes-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "compaction_disputes", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "compact-disputes-memory", "value": "unresolved"}],
+      "action": {"kind": "compaction", "rounds": 3}, "model_assisted_phase_required": true, "negative_mutation": "omit_compaction_invariant"
+    },
+    {
+      "id": "crash-01-before-model",
+      "tranche": "crash_replay_retention",
+      "description": "A real child process dies after event fsync and before projection, before model dispatch.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "crash-before-model-memory", "claim": {"kind": "episode", "subject": "model dispatch", "predicate": "status", "object": "not_started", "searchable_text": "crash before model dispatch"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-01T00:00:00Z", "evidence": {"evidence_id": "evd-crash-before-model", "source_kind": "event", "source_locator": "frozen://crash/before-model", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1},
+        {"key": "crash-gap", "type": "run/model_dispatch_pending", "payload": {"model_called": false}, "occurred_at": "2026-06-01T00:00:02Z", "crash_after_durable_append": true}
+      ],
+      "query": {"text": "crash before model dispatch", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["episode"], "top_k": 10},
+      "expected_memory_ids": ["crash-before-model-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "crash-before-model-memory", "value": "not_started"}],
+      "action": {"kind": "crash_replay", "expected_projection_gap": 1, "duplicate_side_effect_recommendations": []}, "model_assisted_phase_required": false, "negative_mutation": "duplicate_side_effect"
+    },
+    {
+      "id": "crash-02-side-effect-unknown",
+      "tranche": "crash_replay_retention",
+      "description": "A real child process dies after a synthetic side effect and before its result.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "crash-side-effect-memory", "claim": {"kind": "episode", "subject": "effect-copy-1", "predicate": "outcome", "object": "unknown", "searchable_text": "effect-copy-1 outcome unknown"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-02T00:00:00Z", "evidence": {"evidence_id": "evd-crash-side-effect", "source_kind": "event", "source_locator": "frozen://crash/side-effect", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "crash_side_effect", "revision": 1},
+        {"key": "crash-gap", "type": "tool/side_effect_observed", "payload": {"effect_id": "effect-copy-1", "result_recorded": false}, "occurred_at": "2026-06-02T00:00:02Z", "crash_after_durable_append": true}
+      ],
+      "query": {"text": "effect-copy-1 outcome unknown", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["episode"], "top_k": 10},
+      "expected_memory_ids": ["crash-side-effect-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "crash_side_effect", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "crash-side-effect-memory", "value": "unknown"}],
+      "action": {"kind": "crash_replay", "expected_projection_gap": 1, "duplicate_side_effect_recommendations": []}, "model_assisted_phase_required": false, "negative_mutation": "duplicate_side_effect"
+    },
+    {
+      "id": "crash-03-after-verification",
+      "tranche": "crash_replay_retention",
+      "description": "A verified state revision survives a process death before projection.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "crash-verified-memory", "claim": {"kind": "episode", "subject": "verification", "predicate": "status", "object": "passed", "searchable_text": "authoritative verification passed"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-03T00:00:00Z", "evidence": {"evidence_id": "evd-crash-verified", "source_kind": "test", "source_locator": "frozen://crash/verified", "source_sha256": "sha256:a6e45fec4889cfec92d41c797b7d91ffd2fab46e8553e917054252e64a6f4439", "authority": "authoritative-test"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1},
+        {"key": "state-2", "type": "state/committed", "profile": "verified", "revision": 2, "occurred_at": "2026-06-03T00:00:02Z", "crash_after_durable_append": true}
+      ],
+      "query": {"text": "authoritative verification passed", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["episode"], "top_k": 10},
+      "expected_memory_ids": ["crash-verified-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "verified", "revision": 2},
+      "invariants": ["objective", "active_constraints", "met_criteria", "completed_claims", "next_actions", "artifact_hashes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["test"], "required_authorities": ["authoritative-test"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "crash-verified-memory", "value": "passed"}],
+      "action": {"kind": "crash_replay", "expected_projection_gap": 1, "duplicate_side_effect_recommendations": []}, "model_assisted_phase_required": false, "negative_mutation": "remove_provenance"
+    },
+    {
+      "id": "retention-04-protected-gc",
+      "tranche": "crash_replay_retention",
+      "description": "Protected evidence remains hot; executable GC is explicitly required but absent in v1.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "retention-protected-memory", "retention_class": "evidence", "claim": {"kind": "fact", "subject": "protected evidence blob", "predicate": "status", "object": "pinned", "searchable_text": "protected evidence blob pinned"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-04T00:00:00Z", "evidence": {"evidence_id": "evd-retention-protected", "source_kind": "event", "source_locator": "frozen://retention/protected", "authority": "frozen-eval"}, "padding_bytes": 2048},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1},
+        {"key": "crash-gap", "type": "retention/gc_requested", "retention_class": "core", "payload": {"target": "retention-protected-memory", "pressure_percent": 95}, "occurred_at": "2026-06-04T00:00:02Z", "crash_after_durable_append": true}
+      ],
+      "query": {"text": "protected evidence blob pinned", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["fact"], "top_k": 10},
+      "expected_memory_ids": ["retention-protected-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "retention-protected-memory", "value": "pinned"}],
+      "action": {"kind": "crash_replay", "expected_projection_gap": 1, "retention": {"required_operation": "refuse_protected_eviction", "implementation_required": true}, "duplicate_side_effect_recommendations": []},
+      "model_assisted_phase_required": false, "negative_mutation": "retention_claim_without_execution"
+    },
+    {
+      "id": "retention-05-eligible-gc",
+      "tranche": "crash_replay_retention",
+      "description": "Eligible bulk and scratch require archive or eviction while retaining a tombstone; executable GC is absent.",
+      "seed_events": [
+        {"key": "memory", "type": "memory/committed", "memory_id": "retention-eligible-memory", "claim": {"kind": "episode", "subject": "eligible payloads", "predicate": "status", "object": "terminal", "searchable_text": "eligible bulk scratch retention"}, "scope": {"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}, "occurred_at": "2026-06-05T00:00:00Z", "evidence": {"evidence_id": "evd-retention-eligible", "source_kind": "event", "source_locator": "frozen://retention/eligible", "authority": "frozen-eval"}},
+        {"key": "state-1", "type": "state/committed", "profile": "baseline", "revision": 1},
+        {"key": "bulk", "type": "retention/bulk_payload", "retention_class": "bulk", "payload": {"terminal": true, "age_days": 30}, "padding_bytes": 2048, "occurred_at": "2026-06-05T00:00:02Z"},
+        {"key": "scratch", "type": "retention/scratch_payload", "retention_class": "scratch", "payload": {"terminal": true, "age_hours": 48}, "padding_bytes": 2048, "occurred_at": "2026-06-05T00:00:03Z", "crash_after_durable_append": true}
+      ],
+      "query": {"text": "eligible bulk scratch retention", "scopes": [{"owner_id": "operator-a", "workspace_id": null, "task_id": null, "agent_role": null, "session_id": null}], "as_of": null, "kinds": ["episode"], "top_k": 10},
+      "expected_memory_ids": ["retention-eligible-memory"], "forbidden_memory_ids": [], "expected_state": {"profile": "baseline", "revision": 1},
+      "invariants": ["objective", "active_constraints", "open_criteria", "active_blockers", "unknown_tool_outcomes", "next_actions", "artifact_hashes", "unresolved_disputes"],
+      "evidence_requirements": {"minimum_rows_per_expected_memory": 1, "required_source_kinds": ["event"], "required_authorities": ["frozen-eval"], "require_source_event_ids": true},
+      "context_budget": {"state_tokens": 2048, "memory_tokens": 4096, "per_memory_tokens": 512, "max_memories": 8},
+      "expected_answer_facts": [{"memory_id": "retention-eligible-memory", "value": "terminal"}],
+      "action": {"kind": "crash_replay", "expected_projection_gap": 1, "retention": {"required_operation": "archive_bulk_and_evict_scratch_with_tombstones", "implementation_required": true}, "duplicate_side_effect_recommendations": []},
+      "model_assisted_phase_required": false, "negative_mutation": "retention_claim_without_execution"
+    }
+  ]
+}
