@@ -1,0 +1,19 @@
+{
+  "objective": "Resume this bounded coding task from its immutable capsule.",
+  "state": "in_progress",
+  "current_focus": "Verify that a fresh process recovers the exact task and workspace identity.",
+  "scope": [
+    "src"
+  ],
+  "completed": [
+    "Created the frozen resume fixture."
+  ],
+  "next": [
+    "Load and validate the capsule from a fresh process."
+  ],
+  "constraints": [
+    "Do not alter the source fixture during resume verification."
+  ],
+  "decisions": [],
+  "evidence": []
+}

@@ -1,0 +1,9 @@
+{
+  "language": "powershell",
+  "configuration": "visible_identity_contract_reasoning_budget_2048",
+  "model": "arm-qwen38-q6-text",
+  "command_exit": 0,
+  "model_calls": 1,
+  "automatic_retries": 0,
+  "output": "{\"diagnosis\":\"The function only compared ExecutablePath and CommandLine, omitting the required ProcessId, ParentProcessId, and StartTimeUtc fields.\",\"diff\":\"--- a/src/Test-OwnedProcess.ps1\\n+++ b/src/Test-OwnedProcess.ps1\\n@@ -9,6 +9,9 @@\\n     # Ownership records expose these exact fields on both objects:\\n     # ProcessId, ParentProcessId, StartTimeUtc, ExecutablePath, CommandLine.\\n     return (\\n+        [int]$Expected.ProcessId -eq [int]$Observed.ProcessId -and\\n+        [int]$Expected.ParentProcessId -eq [int]$Observed.ParentProcessId -and\\n+        [datetime]$Expected.StartTimeUtc -eq [datetime]$Observed.StartTimeUtc -and\\n         [string]$Expected.ExecutablePath -eq [string]$Observed.ExecutablePath -and\\n         [string]$Expected.CommandLine -eq [string]$Observed.CommandLine\\n     )\\n\",\"inference_seconds\":6.91,\"model\":\"arm-qwen38-q6-text\",\"model_calls\":1,\"stage\":\"C:\\\\Users\\\\sirlo\\\\AppData\\\\Local\\\\Temp\\\\continuity-local-s801q6ll\",\"status\":\"verified\",\"test_command\":[\"powershell.exe\",\"-NoLogo\",\"-NoProfile\",\"-ExecutionPolicy\",\"Bypass\",\"-File\",\"verify/test_hidden.ps1\"],\"test_exit\":0,\"test_output\":\"PASS exact process ownership\\n\",\"test_seconds\":0.18,\"trajectory\":\"C:\\\\Users\\\\sirlo\\\\AppData\\\\Local\\\\Temp\\\\continuity-local-s801q6ll\\\\continuity-trajectory.json\"}"
+}

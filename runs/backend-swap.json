@@ -1,0 +1,21 @@
+{
+  "capturedAtUtc": "2026-08-20T10:51:50.5334661Z",
+  "toOllama": {
+    "status": "ready",
+    "backend": "Ollama",
+    "port": 11434,
+    "swapSeconds": 8.12,
+    "qwenTaskState": "Ready",
+    "ollamaTaskState": "Running",
+    "uacPrompt": false
+  },
+  "toQwen": {
+    "status": "ready",
+    "backend": "Qwen38",
+    "port": 8818,
+    "swapSeconds": 14.687,
+    "qwenTaskState": "Running",
+    "ollamaTaskState": "Ready",
+    "uacPrompt": false
+  }
+}

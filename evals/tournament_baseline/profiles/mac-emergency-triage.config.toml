@@ -1,0 +1,24 @@
+# Install as $CODEX_HOME/mac-emergency-triage.config.toml. Never use for autonomous implementation.
+model_provider = "mac_ollama"
+model = "qwen3.5:4b"
+model_reasoning_effort = "medium"
+approval_policy = "never"
+sandbox_mode = "read-only"
+web_search = "disabled"
+
+[model_providers.mac_ollama]
+name = "Mac emergency Ollama"
+base_url = "http://127.0.0.1:11434/v1"
+wire_api = "responses"
+
+[features]
+apps = false
+plugins = false
+multi_agent = false
+browser_use = false
+browser_use_external = false
+computer_use = false
+image_generation = false
+in_app_browser = false
+goals = false
+workspace_dependencies = false

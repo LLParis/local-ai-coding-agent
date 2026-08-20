@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "createdProcess": "fresh-cli-1",
+  "resumedProcess": "fresh-cli-2",
+  "digest": "sha256:e3db65baca07ab0aa84c5f5f30faa3646b4696e62191e8ae9c3a556a7d733703",
+  "sourceFixture": "continuity-state-v1",
+  "created": {
+    "checkpoint": "D:\\11_CS\\00_REPOS\\coding-intelligence-command-center\\runs\\resume\\checkpoint.json",
+    "digest": "sha256:e3db65baca07ab0aa84c5f5f30faa3646b4696e62191e8ae9c3a556a7d733703",
+    "status": "created"
+  },
+  "validated": {
+    "digest": "sha256:e3db65baca07ab0aa84c5f5f30faa3646b4696e62191e8ae9c3a556a7d733703",
+    "status": "valid"
+  },
+  "capturedAtUtc": "2026-08-20T10:53:31.3427512Z"
+}

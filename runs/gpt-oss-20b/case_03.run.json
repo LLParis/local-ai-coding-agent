@@ -1,0 +1,8 @@
+{
+  "case": "case_03",
+  "model": "gpt-oss-20b:latest",
+  "command_exit": 0,
+  "model_calls": 1,
+  "automatic_retries": 0,
+  "output": "continuity: local model HTTP 500: b'{\"error\":{\"message\":\"error parsing tool call: raw=\\'{\\\\\"patch\\\\\": \\\\\"*** Begin Patch\\\\\\\\n*** Update File: src/agent_continuity/tunnel.py\\\\\\\\n@@\\\\\\\\n     with lock_path.open(\\\\\\\\\\\\\"a+\\\\\\\\\\\\\") as lock:\\\\\\\\n         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)\\\\\\\\n-        existing = listener_names(spec.local_port)\\\\\\\\n-        if existing:\\\\\\\\n-            listener = require_loopback_listener(spec.local_port)\\\\\\\\n-            endpoint = check_endpoint(f\\\\\\\\\\\\\"http://127.0.0.1:{spec.local_port}/v1\\\\\\\\\\\\\", model, timeout=timeout)\\\\\\\\n-            return TunnelReport(\\\\\\\\\\\\\"reused\\\\\\\\\\\\\", endpoint, listener)\\\\\\\\n+        existing = listener_names(spec.local_port)\\\\\\\\n+        if existing:\\\\\\\\n+            # Verify that the existing listener is backed by an alive ControlMaster\\\\\\\\n+            # for the requested host. If the master is dead, we refuse to reuse\\\\\\\\n+            # the listener and fail closed before probing the endpoint.\\\\\\\\n+            master_check = _run([_SSH, \\\\\\\\\\\\\"-S\\\\\\\\\\\\\", str(control), \\\\\\\\\\\\\"-O\\\\\\\\\\\\\", \\\\\\\\\\\\\"check\\\\\\\\\\\\\", spec.host])\\\\\\\\n'"
+}

@@ -1,0 +1,9 @@
+{
+  "case": "case_01",
+  "model": "arm-qwen38-q6-text",
+  "status": "contract_failed",
+  "model_calls": 1,
+  "automatic_retries": 0,
+  "error": "local model returned empty non-JSON text after consuming the response budget",
+  "source_workspace_mutated": false
+}

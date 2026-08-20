@@ -1,0 +1,17 @@
+{
+  "objective": "Continue the current Anime Frontier implementation without losing task state.",
+  "state": "in_progress",
+  "current_focus": "Describe the exact feature slice currently being implemented.",
+  "scope": [
+    "infra/agent-continuity"
+  ],
+  "completed": [],
+  "next": [
+    "Inspect the checkpoint and current files before editing."
+  ],
+  "constraints": [
+    "Never auto-commit or overwrite unrelated user work."
+  ],
+  "decisions": [],
+  "evidence": []
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "backend": "Qwen38",
+  "workspace": "D:\\11_CS\\00_REPOS\\coding-intelligence-command-center\\evals\\resume_fixture",
+  "objective": "Preserve the resumed continuity state.",
+  "mutable": [
+    "src/state.txt"
+  ],
+  "context": [
+    "src"
+  ],
+  "verify_context": [
+    "task.json"
+  ],
+  "test_command": [
+    "powershell.exe",
+    "-NoProfile",
+    "-Command",
+    "exit 0"
+  ],
+  "timeout": 60
+}

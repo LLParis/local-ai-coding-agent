@@ -1,0 +1,10 @@
+{
+  "case": "case_02",
+  "model": "arm-qwen38-q6-text",
+  "status": "verified",
+  "model_calls": 1,
+  "automatic_retries": 0,
+  "verifier_rerun_reason": "staged package initially lacked __init__.py and imported the source package; no second model call",
+  "stage": "C:\\Users\\sirlo\\AppData\\Local\\Temp\\continuity-local-5oe5hu_f",
+  "test_exit": 0
+}

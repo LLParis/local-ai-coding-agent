@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "backend": "Qwen38",
+  "workspace": "D:\\path\\to\\project",
+  "objective": "Diagnose and fix the stated defect with the smallest complete edit.",
+  "mutable": [
+    "src/package/module.py"
+  ],
+  "context": [
+    "src/package",
+    "AGENTS.md"
+  ],
+  "verify_context": [
+    "tests"
+  ],
+  "test_command": [
+    "py",
+    "-3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-v"
+  ],
+  "timeout": 180
+}

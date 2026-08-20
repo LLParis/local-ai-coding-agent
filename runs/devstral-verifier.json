@@ -1,0 +1,52 @@
+{
+  "status": "qualified",
+  "model": "devstral-small-2:24b",
+  "results": [
+    {
+      "case": "known-good-path",
+      "expected": "accept",
+      "observed": "accept",
+      "passed": true,
+      "response": {
+        "risks": [],
+        "verdict": "accept",
+        "reason": "The patch correctly rejects Windows drive prefixes, rooted/UNC prefixes, and traversal forms. It also canonicalizes safe relative paths by replacing backslashes with slashes and using PurePosixPath for parsing."
+      },
+      "seconds": 8.254,
+      "modelCalls": 1,
+      "automaticRetries": 0
+    },
+    {
+      "case": "known-bad-path",
+      "expected": "reject",
+      "observed": "reject",
+      "passed": true,
+      "response": {
+        "risks": [
+          "Windows drive paths (e.g., 'C:/path') and UNC paths (e.g., '\\\\server\\share') are not rejected, violating the objective.",
+          "The patch does not include checks for rooted paths (e.g., '/path') or path traversal (e.g., '../path')."
+        ],
+        "verdict": "reject",
+        "reason": "The patch only replaces backslashes with slashes, which does not meet the objective of rejecting Windows drive, UNC, rooted, and traversal forms."
+      },
+      "seconds": 1.607,
+      "modelCalls": 1,
+      "automaticRetries": 0
+    },
+    {
+      "case": "real-qwen-typescript",
+      "expected": "accept",
+      "observed": "accept",
+      "passed": true,
+      "response": {
+        "risks": [],
+        "verdict": "accept",
+        "reason": "The patch correctly adds the PID equality check to the existing conjunction, and the hidden test confirms it behaves as expected for both matching and mismatched PIDs."
+      },
+      "seconds": 0.858,
+      "modelCalls": 1,
+      "automaticRetries": 0
+    }
+  ],
+  "capturedAtUtc": "2026-08-20T11:25:53.6023050Z"
+}

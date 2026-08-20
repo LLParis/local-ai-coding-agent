@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+PACKAGE_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+if [ -n "${PYTHONPATH:-}" ]; then
+  export PYTHONPATH="$PACKAGE_ROOT/src:$PYTHONPATH"
+else
+  export PYTHONPATH="$PACKAGE_ROOT/src"
+fi
+if [ -n "${CODING_INTELLIGENCE_PYTHON:-}" ]; then
+  exec "$CODING_INTELLIGENCE_PYTHON" -m agent_continuity.cli "$@"
+fi
+exec /usr/bin/env python3 -m agent_continuity.cli "$@"

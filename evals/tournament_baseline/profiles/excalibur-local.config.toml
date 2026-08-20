@@ -1,0 +1,24 @@
+# Install as $CODEX_HOME/excalibur-local.config.toml. This repository copy is non-secret.
+model_provider = "pc_ollama"
+# Codex-safe alias for the same Ollama digest served as gpt-oss:20b.
+model = "gpt-oss-20b"
+model_reasoning_effort = "medium"
+approval_policy = "never"
+web_search = "disabled"
+
+[model_providers.pc_ollama]
+name = "EXCALIBUR Ollama"
+base_url = "http://127.0.0.1:12434/v1"
+wire_api = "responses"
+
+[features]
+apps = false
+plugins = false
+multi_agent = false
+browser_use = false
+browser_use_external = false
+computer_use = false
+image_generation = false
+in_app_browser = false
+goals = false
+workspace_dependencies = false

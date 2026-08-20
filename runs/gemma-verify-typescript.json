@@ -1,0 +1,17 @@
+{
+  "status": "failed",
+  "implementer": "arm-qwen38-q6-text",
+  "verifier": "hf.co/google/gemma-4-31B-it-qat-q4_0-gguf:latest",
+  "language": "typescript",
+  "result": {
+    "reason": "The objective requires that the loopback listener PID must match the owner PID for backend readiness. However, the test results indicate that the stage passed even when the listener PID was mismatched. This demonstrates that the proposed condition is either not being correctly evaluated or is not being enforced, failing to meet the core requirement.",
+    "risks": [
+      "Backend readiness could be falsely reported as true even when the listener process is orphaned or incorrect."
+    ],
+    "verdict": "reject"
+  },
+  "raw": "{\n  \"reason\": \"The objective requires that the loopback listener PID must match the owner PID for backend readiness. However, the test results indicate that the stage passed even when the listener PID was mismatched. This demonstrates that the proposed condition is either not being correctly evaluated or is not being enforced, failing to meet the core requirement.\",\n  \"risks\": [\n    \"Backend readiness could be falsely reported as true even when the listener process is orphaned or incorrect.\"\n  ],\n  \"verdict\": \"reject\"\n}",
+  "seconds": 16.337,
+  "modelCalls": 1,
+  "automaticRetries": 0
+}

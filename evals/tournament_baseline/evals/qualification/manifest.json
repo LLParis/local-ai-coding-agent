@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "policy": {
+    "model_calls_per_case": 1,
+    "automatic_retries": 0,
+    "source_workspace_mutated": false,
+    "verifier_files_hidden_from_model": true
+  },
+  "cases": [
+    {
+      "id": "model-readiness-identity",
+      "objective": "Make the readiness probe verify the exact model identifier that the validated Codex profile will launch.",
+      "mutable": ["src/agent_continuity/launcher.py", "src/agent_continuity/endpoint.py"]
+    },
+    {
+      "id": "canonical-cross-platform-paths",
+      "objective": "Canonicalize safe Windows-style relative scope paths and reject drive, UNC, rooted, and traversal forms before filesystem access.",
+      "mutable": ["src/agent_continuity/checkpoint.py"]
+    },
+    {
+      "id": "tunnel-controlmaster-ownership",
+      "objective": "Reuse an existing SSH tunnel only when the dedicated ControlMaster is alive; fail closed before endpoint probing when ownership cannot be established.",
+      "mutable": ["src/agent_continuity/tunnel.py"]
+    }
+  ]
+}

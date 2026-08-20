@@ -1,0 +1,8 @@
+{
+  "case": "case_02",
+  "model": "gpt-oss-20b:latest",
+  "command_exit": 0,
+  "model_calls": 1,
+  "automatic_retries": 0,
+  "output": "continuity: local model returned non-JSON text: ''"
+}

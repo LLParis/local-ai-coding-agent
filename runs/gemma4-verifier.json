@@ -1,0 +1,40 @@
+{
+  "status": "qualified",
+  "model": "hf.co/google/gemma-4-31B-it-qat-q4_0-gguf:latest",
+  "results": [
+    {
+      "case": "known-good",
+      "expected": "accept",
+      "observed": "accept",
+      "passed": true,
+      "response": {
+        "reason": "The proposed patch systematically addresses all constraints: it prevents absolute paths (drive-qualified, UNC, and rooted) and directory traversal ('..') using string-level and path-object validation before any filesystem interaction. By normalizing backslashes to forward slashes and utilizing PurePosixPath, it ensures the resulting relative paths are portable across both Windows and macOS.",
+        "risks": [],
+        "verdict": "accept"
+      },
+      "raw": "{\n  \"reason\": \"The proposed patch systematically addresses all constraints: it prevents absolute paths (drive-qualified, UNC, and rooted) and directory traversal ('..') using string-level and path-object validation before any filesystem interaction. By normalizing backslashes to forward slashes and utilizing PurePosixPath, it ensures the resulting relative paths are portable across both Windows and macOS.\",\n  \"risks\": [],\n  \"verdict\": \"accept\"\n}",
+      "seconds": 11.793,
+      "modelCalls": 1,
+      "automaticRetries": 0
+    },
+    {
+      "case": "known-incomplete",
+      "expected": "reject",
+      "observed": "reject",
+      "passed": true,
+      "response": {
+        "reason": "The proposed patch fails to meet the objective because it explicitly omits validation for Windows drive-prefixes and UNC paths. Replacing backslashes with forward slashes does not make a drive-qualified path (e.g., 'C:/path') or a UNC path (e.g., '//server/share') absolute according to PurePosixPath logic, allowing these forbidden forms to bypass the existing checks.",
+        "risks": [
+          "Path traversal/Arbitrary file access via Windows drive letters",
+          "Unauthorized network access via UNC paths"
+        ],
+        "verdict": "reject"
+      },
+      "raw": "{\n  \"reason\": \"The proposed patch fails to meet the objective because it explicitly omits validation for Windows drive-prefixes and UNC paths. Replacing backslashes with forward slashes does not make a drive-qualified path (e.g., 'C:/path') or a UNC path (e.g., '//server/share') absolute according to PurePosixPath logic, allowing these forbidden forms to bypass the existing checks.\",\n  \"risks\": [\n    \"Path traversal/Arbitrary file access via Windows drive letters\",\n    \"Unauthorized network access via UNC paths\"\n  ],\n  \"verdict\": \"reject\"\n}",
+      "seconds": 8.333,
+      "modelCalls": 1,
+      "automaticRetries": 0
+    }
+  ],
+  "capturedAtUtc": "2026-08-20T11:09:43.0174169Z"
+}

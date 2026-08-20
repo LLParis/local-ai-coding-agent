@@ -1,0 +1,17 @@
+{
+  "swap": {
+    "status": "ready",
+    "backend": "Qwen38",
+    "port": 8818,
+    "swapSeconds": 15.166,
+    "qwenTaskState": "Running",
+    "ollamaTaskState": "Ready",
+    "uacPrompt": false
+  },
+  "health": "ok",
+  "wrapperPid": 13136,
+  "serverPid": 4692,
+  "reasoningBudget": 2048,
+  "ollamaPortCount": 0,
+  "qwenPortOwner": 4692
+}
