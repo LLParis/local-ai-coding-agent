@@ -94,6 +94,10 @@ were not converted into successes.
   FTS5 projections, typed state, temporal supersession, provenance, and
   loss-checked compaction. That memory plane is designed but not implemented or
   production-proven. See `docs/MEMORY_ARCHITECTURE_DECISION.md`.
+- The 32K Qwen profile remains the bounded edit lane. The required interactive
+  baseline is separately defined as Q6 at native 262,144 context, Q4 KV, one
+  text slot, and MTP off. Allocation has passed once; real 50/75/90%-fill agent
+  qualification has not. See `docs/LONG_CONTEXT_DECISION.md`.
 
 ## Not yet production-proven
 

@@ -2,7 +2,7 @@
 
 Date: 2026-08-20
 
-This synthesis preserves the useful content from the six user research packets
+This synthesis preserves the useful content from the eight user research packets
 without treating video claims as verified facts.
 
 ## Source packets
@@ -19,6 +19,10 @@ without treating video claims as verified facts.
   `5fa7a8b0068f5e9b6f7c08f786ef2425071c7c4eb2f5bd1f837c6b8ec6a85e26`
 - Hindsight/Obsidian/retention packet: SHA-256
   `cdc0986939c8cec5074ac5095ae91e06bc8f5e9e100494837c572828dbfc85f5`
+- Qwen long-context/harness packet: SHA-256
+  `85826c0f56e68c58914fce83c56fcfee636520e5800d8ef057d8c6ddac7f9364`
+- Qwen parametric-knowledge packet: SHA-256
+  `992c13f0fa8ecc2a54d41e34bce6c856eed1be5ec9a47d9ad852fab23e173c14`
 
 ## Adopted now
 
@@ -55,6 +59,10 @@ without treating video claims as verified facts.
     protected evidence survive; scratch and bulky model/tool payloads have
     explicit TTL/archive classes and deterministic GC. Storage is finite, and
     GC may never erase active state or evidence supporting a production claim.
+11. **Two context lanes.** Q6 32K remains the bounded production executor. The
+    required interactive baseline is Q6 at native 262,144 context with Q4 KV
+    and MTP off; MTP, lower/dynamic weight quants, NVFP4, and YaRN are measured
+    challengers. See [`LONG_CONTEXT_DECISION.md`](LONG_CONTEXT_DECISION.md).
 
 ## Evaluated, but not promoted
 
@@ -80,6 +88,10 @@ without treating video claims as verified facts.
 - Obsidian Headless is an open-beta client for paid Obsidian Sync, not a
   sovereign database. It is not installed or required. A regenerable local
   Markdown export may be offered later as an optional operator view.
+- Q6/native-262K/Q4-KV passed one short allocation smoke at 56.63 tok/s and
+  30,163 MiB used with MTP off. MTP-on reached 141.92 tok/s but used 31,918 MiB
+  and left only 270–331 MiB observed free. Neither result proves long-context
+  retrieval, synthesis, agent reliability, or production readiness.
 
 ## Test later
 
@@ -93,6 +105,11 @@ without treating video claims as verified facts.
   meaningful set of repeated, independently classified failure examples.
 - Hindsight as a read-only derived-memory adapter after local JSONL/SQLite v1
   passes its hard replay, scope, provenance, compaction, and retention gates.
+- Native Q6 long-context trials at 50/75/90% fill, then matched MTP,
+  dynamic-Q5/Q4, Blackwell-NVFP4, and approximately 1.01M YaRN challengers.
+- Closed-book recall, calibrated abstention, tool selection, and grounded-answer
+  scoring for Qwen3.8; Qwen3.6/Gemma knowledge specialists and a local ZIM/FTS
+  corpus only if the same suite demonstrates a role-specific gain.
 - A plugin API after two genuinely different consumers need it; no self-writing
   plugin or UI mechanism enters the execution path merely because it is novel.
 
@@ -113,6 +130,9 @@ without treating video claims as verified facts.
   anxiety; measure skipped steps and premature stopping as outcomes instead.
 - Knowledge Pages and Markdown notes are derived views, not source-of-truth
   substitutes for raw events, hashes, provenance, and verified task state.
+- Reddit claims that 128K, 150K, 200K, or 262K is universally required, or that
+  Qwen3.8 lost parametric knowledge versus Qwen3.6, remain anecdotal until the
+  frozen local suite reproduces them. Allocation and token speed are not quality.
 
 ## Primary references checked
 
@@ -133,6 +153,10 @@ without treating video claims as verified facts.
   https://hindsight.vectorize.io/blog/2026/08/06/hindsight-0-9-0
 - Obsidian Headless Sync: https://obsidian.md/help/sync/headless
 - Obsidian pricing: https://obsidian.md/pricing
+- llama.cpp RTX 5090 CUDA-graph hang report:
+  https://github.com/ggml-org/llama.cpp/issues/27330
+- llama.cpp long-prompt MTP synchronization fix:
+  https://github.com/ggml-org/llama.cpp/pull/26827
 
 ## Measurable quality target
 

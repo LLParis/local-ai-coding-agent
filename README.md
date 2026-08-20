@@ -21,6 +21,7 @@ Current evidence and research:
 - [`research-to-architecture synthesis`](docs/RESEARCH_SYNTHESIS.md)
 - [`harness fusion decision`](docs/HARNESS_FUSION_DECISION.md)
 - [`memory architecture decision`](docs/MEMORY_ARCHITECTURE_DECISION.md)
+- [`long-context and knowledge decision`](docs/LONG_CONTEXT_DECISION.md)
 - [`DeepSeek Harness audit`](docs/DEEPSEEK_HARNESS_AUDIT.md)
 - [`bounded model tournament`](docs/TOURNAMENT_V1.md)
 

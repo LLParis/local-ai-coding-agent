@@ -151,9 +151,13 @@ DeepSeek remains the richer substrate candidate. Its adapter should use a pinned
 
 ### Long-context Qwen lane
 
-The user packet reports Qwen3.8-27B Q4_K_S on one RTX 3090 with Q8 KV, MTP disabled, 150K context, Pi/pi-web, Brave search, CLI access, and an 80-tool schedule-retrieval run (`pasted-text.txt:1-12,485,513-538,608-616,746,880`). Treat all outcome claims as unverified. The actionable hypothesis is that avoiding compaction with a longer working context may outweigh one quantization step for long agentic tasks.
+Reddit packets claim that longer context can matter more than weight quantization for agentic tasks; those claims remain anecdotal. Local evidence is stronger: Q6 weights already allocated the native 262,144-token window with Q4 KV and MTP off, using 30,163 MiB after a short smoke. Therefore the required interactive baseline is Q6/native/Q4-KV/MTP-off, not a lower weight quant.
 
-Do not change the current Qwen3.8 Q6 32K coding winner. Add a separate research profile—Q4 long context, Q8 KV, MTP on/off measured—not a promotion. Compare it against Q6 on held-out long-horizon tasks with identical harness, memory, tool-call cap, verifier, and elapsed-time accounting. Measure completion quality, constraint retention, tool errors, latency, VRAM, compaction count, and resume accuracy. Eighty calls are evidence of activity, not quality; the default remains a small explicit call budget.
+Do not change the Q6 32K bounded production lane. Qualify the full native Q6 lane at 50/75/90% prompt fill with loss-checked compaction; then test MTP, dynamic Q5/Q4, Blackwell NVFP4, and approximately 1.01M YaRN as challengers on the same tasks. Exact evidence, thresholds, RAM implications, and recent llama.cpp reliability risks are in [`LONG_CONTEXT_DECISION.md`](LONG_CONTEXT_DECISION.md).
+
+### Knowledge grounding
+
+Claims that Qwen3.8 has weaker parametric recall than Qwen3.6 are unverified until the frozen local suite separates closed-book recall, calibrated abstention, tool selection, and grounded synthesis. Prefer code/artifacts and primary official sources. Broad research runs in bounded child/subsessions and returns only cited findings to the orchestrator; Qwen3.6, Gemma, and local ZIM/FTS corpora are candidate specialist lanes, not assumed upgrades.
 
 ## Promotion order
 
@@ -161,7 +165,7 @@ Do not change the current Qwen3.8 Q6 32K coding winner. Add a separate research 
 2. Add the append-only event and typed-state memory core beneath it.
 3. Prove loss-checked compaction and fresh-process replay under the current 32K Q6 lane.
 4. A/B Pi and DeepSeek adapters on the same bounded coding and continuity suite.
-5. A/B Q6 32K against the long-context Q4 profile without changing the production default.
+5. Qualify Q6 at native 262,144/Q4-KV/MTP-off; only then compare MTP and lower/dynamic weight quants without changing the production default.
 6. Promote one interactive adapter only after repeated diagnosis, scoped edit, authoritative verification, resume, and compaction wins.
 7. Add Claude-style parallel tools or subagent orchestration only for workloads that measurably benefit.
 
