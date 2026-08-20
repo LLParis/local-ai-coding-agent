@@ -1,0 +1,97 @@
+# This is deliberately non-mutating and is not a qualified tournament profile.
+# It proves the exact local provider and disables known autonomous/broad rows,
+# but rc.8 headless has no stable live event seam or reviewed four-tool plugin.
+- id: agent-default-model
+  config:
+    provider: ci-loopback
+    model: !!js process.env.CI_ADAPTER_MODEL
+- id: llm-pi-ai
+  config:
+    providers:
+      ci-loopback:
+        displayName: Coding Intelligence Loopback
+        api: openai-completions
+        baseURL: !!js process.env.CI_ADAPTER_ENDPOINT
+        retryPolicy:
+          mode: normal
+          maxRetries: 0
+          backoff:
+            initialDelayMs: 1
+            maxDelayMs: 1
+            jitterRatio: 0
+        compat:
+          supportsDeveloperRole: false
+        models:
+          - id: !!js process.env.CI_ADAPTER_MODEL
+            name: Local Qwen
+            contextWindow: 32768
+            maxTokens: 8192
+            reasoningEfforts: false
+- id: llm-retry
+  disabled: true
+- id: compaction-basic
+  disabled: true
+- id: command-compact
+  disabled: true
+- id: tool-result-pruner
+  disabled: true
+- id: tool-ralph
+  disabled: true
+- id: tool-bash
+  disabled: true
+- id: tool-pwsh
+  disabled: true
+- id: tool-jobs
+  disabled: true
+- id: tool-fs
+  disabled: true
+- id: tool-fs-search
+  disabled: true
+- id: tool-str-replace-editor
+  disabled: true
+- id: tool-skill
+  disabled: true
+- id: tool-web
+  disabled: true
+- id: tool-todo
+  disabled: true
+- id: tool-goal
+  disabled: true
+- id: tool-subagent-control
+  disabled: true
+- id: tool-subagent-list-agents
+  disabled: true
+- id: tool-subagent
+  disabled: true
+- id: tool-subagent-fork
+  disabled: true
+- id: tool-subagent-report
+  disabled: true
+- id: tool-workflow
+  disabled: true
+- id: subagent
+  disabled: true
+- id: subagent-spawn-in-process
+  disabled: true
+- id: subagent-fork-in-process
+  disabled: true
+- id: workflow-worker-thread
+  disabled: true
+- id: skill
+  disabled: true
+- id: skill-filesystem
+  disabled: true
+- id: commands
+  disabled: true
+- id: goal
+  disabled: true
+- id: goal-round-driver
+  disabled: true
+- id: command-goal
+  disabled: true
+- id: plan-mode
+  disabled: true
+- id: web
+  disabled: true
+- id: web-search-deepseek
+  disabled: true

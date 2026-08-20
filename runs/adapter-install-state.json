@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-08-20T14:49:02.0731254Z",
+  "scope": "Pi-vs-DeepSeek harness adapter substrate; fake endpoint/process proof only; no live model inference",
+  "install_policy": {
+    "global_install": false,
+    "uac_required": false,
+    "install_scripts_enabled": false,
+    "cache_root": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\adapters",
+    "node": "v24.18.0",
+    "npm": "11.16.0"
+  },
+  "pi": {
+    "status": "qualification_adapter_ready",
+    "package": "@earendil-works/pi-coding-agent",
+    "version": "0.84.2",
+    "source_repository": "https://github.com/earendil-works/pi.git",
+    "source_branch": "main",
+    "source_commit": "5cd93f688aaab89dbb6dfa4aca535f21796ae185",
+    "registry_tag": "latest",
+    "tarball": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-0.84.2.tgz",
+    "registry_integrity": "sha512-l4E+B7hgXKWddRo8bC/eSue2aWZjEgJ9xIpf5p0Og+lq8a2TArCwJ0HCoCPCgaBP/tN4zbYH/wOwvx9pJpeLCA==",
+    "registry_shasum": "e4d4c1e769963c816959f5cea02a0a10ccc0495a",
+    "cache": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\adapters\\pi\\0.84.2",
+    "install_command_contract": "npm install --prefix <cache> --ignore-scripts --no-audit --no-fund --save-exact @earendil-works/pi-coding-agent@0.84.2",
+    "package_json_sha256": "AFE7402E48F35F41157F5237F5913A2C1FC2D79BE05F91527CF2D45C0F0798E9",
+    "package_lock_sha256": "2D2A053167A2777D1BD2281B362CF2DEE2A540A40FA0D5BFB47E6E95FAAE7CAA",
+    "installed_manifest_sha256": "820F4ADC6D61F2CEFBC29CE17E9DFD9AA482248D54BE5D0DFA2A868CA000C7B0",
+    "cli_sha256": "840D1E8E689ED9E4937BCB00B9A810E02A8567D9AFB10A47097F11CA93EA1521",
+    "npm_ls_depth_zero": "clean",
+    "runtime_contract": {
+      "provider": "ci-loopback",
+      "endpoint": "literal 127.0.0.1 or ::1, explicit port, exact /v1 path",
+      "tools": [
+        "read",
+        "search",
+        "edit",
+        "test"
+      ],
+      "automatic_retries": 0,
+      "automatic_compaction": false,
+      "session_persistence": false,
+      "discovered_extensions": false,
+      "project_trust": "never",
+      "source_workspace_mutation": false
+    }
+  },
+  "deepseek": {
+    "status": "installed_but_tournament_blocked",
+    "package": "@deepseek-ai/dsh",
+    "version": "0.1.0-rc.8",
+    "source_repository": "https://github.com/deepseek-ai/deepseek-harness.git",
+    "source_branch": "master",
+    "source_commit": "141eb6fef83422698aef7a981029e843e8161534",
+    "registry_tags": {
+      "latest": "0.1.0-rc.7",
+      "next": "0.1.0-rc.8"
+    },
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.1.0-rc.8.tgz",
+    "registry_integrity": "sha512-VQU5NlomrKLRgcXuOf+sxWFvqxPA8q9vMhrKPlPPXiOJEhGlGlAdiyxZvZxkCVI+v0zbhe21cY3/luLyxpSzzA==",
+    "registry_shasum": "61bb2c44f1279329b128d47068240c36b32afa05",
+    "cache": "C:\\Users\\sirlo\\AppData\\Local\\CodingIntelligence\\adapters\\deepseek-harness\\0.1.0-rc.8",
+    "install_command_contract": "npm install --prefix <cache> --ignore-scripts --no-audit --no-fund --save-exact --legacy-peer-deps @deepseek-ai/dsh@0.1.0-rc.8 plus exact rc.8 headless runtime peers",
+    "explicit_headless_runtime_peers": [
+      "@cfworker/json-schema@4.1.1",
+      "@deepseek-ai/cordis-plugin-group@1.0.1",
+      "@deepseek-ai/dsh-anonymous-user-id@0.1.0-rc.8",
+      "@deepseek-ai/dsh-atomic-write@0.1.0-rc.8",
+      "@deepseek-ai/dsh-bash-local@0.1.0-rc.8",
+      "@deepseek-ai/dsh-code-runtime@0.1.0-rc.8",
+      "@deepseek-ai/dsh-compaction@0.1.0-rc.8",
+      "@deepseek-ai/dsh-fs@0.1.0-rc.8",
+      "@deepseek-ai/dsh-invariants@0.1.0-rc.8",
+      "@deepseek-ai/dsh-output-retention@0.1.0-rc.8",
+      "@deepseek-ai/dsh-sandbox@0.1.0-rc.8",
+      "@deepseek-ai/dsh-scope@0.1.0-rc.8",
+      "@deepseek-ai/dsh-session-telemetry@0.1.0-rc.8",
+      "@deepseek-ai/dsh-session-title-llm@0.1.0-rc.8",
+      "@deepseek-ai/dsh-shell@0.1.0-rc.8",
+      "@deepseek-ai/dsh-spill@0.1.0-rc.8",
+      "@deepseek-ai/dsh-subagent-in-process-driver@0.1.0-rc.8",
+      "@deepseek-ai/dsh-timeout@0.1.0-rc.8",
+      "@deepseek-ai/dsh-workflow@0.1.0-rc.8"
+    ],
+    "package_json_sha256": "DF5AFCE39BD7367922C2D3FC618DED0827D76409AD9B01185091EDFDA25435E4",
+    "package_lock_sha256": "22B379A26A108F2D92D6142806AE8645BD1514768BC305B28473A9605C260DFB",
+    "installed_manifest_sha256": "5AE28BA7D9606711D35FA0D76CB279F3CFF66DE667B800322C0B0C4B29771E43",
+    "cli_sha256": "C0226687BB20F45C603EC6FE50F3DE16D1C3510C3A803304EC575EF9BC366C62",
+    "npm_ls_depth_zero": "clean",
+    "headless_default_config_dump": {
+      "verified": true,
+      "lines": 334,
+      "sha256": "7295AF4268BF8E7ECC15F890B09549DC6CD8F06AD96E47AB6DB55242E55050B2",
+      "model_inference": false
+    },
+    "blocker": "DeepSeek Harness 0.1.0-rc.8 headless prints only final assistant text and exposes no stable live NDJSON/tool-interception seam. Its shipped base+headless composition mounts broad filesystem, PowerShell, subagent, workflow, compaction, retry, Ralph, skill, and web rows. The adapter therefore emits a truthful blocked terminal without starting a child until a reviewed four-tool DSH plugin can enforce per-call scope and live budgets."
+  },
+  "adapter_artifacts": {
+    "adapters/__init__.py": "7A8EB79D452F0330B41D39BD6FBC8094EBE9A59BDDE4372B04A4F796ADB26854",
+    "adapters/protocol.py": "6707678ABFEE6F5D48A6CE6111B2BEC5884B65ECA632B40FB8C7F690BBC3A325",
+    "adapters/runner.py": "F4EDC021E18FB54494B4EB354D055314A85FE6DBB5FB28E66CD30430A13F502F",
+    "adapters/pi/__init__.py": "7DF9212D9AE685D6E2D014B3CE23679D83AB8DC2C0600797E8AF170DA38B5FFE",
+    "adapters/pi/__main__.py": "3DFE7F97EA2875E6B49976467B4DB8AC48049EF7D7268A3EFB257B79D00F18DE",
+    "adapters/pi/adapter.py": "CB8BE95F39F7739C2D663533CBEDBCE0516FECFB06950B498DDB3D7B61078AF9",
+    "adapters/pi/scoped_tools.ts": "2E40D1E03376FE5FC0AEA905535295A88CFB64A838CFCF55C29A82C4E723F42B",
+    "adapters/deepseek/__init__.py": "AB8A96CE7C6BA766490F7DA8515B88FAB76D97EBAB45E9EB73F78B0A7E8087A2",
+    "adapters/deepseek/__main__.py": "574A1260608E1395123585002EB60BF974E82BB2774AA33D8B2631F28046F381",
+    "adapters/deepseek/adapter.py": "313D746F5E702CB58678E2B1F9CA774552C52F7DDBDA4C280A8AF0476A6107EC",
+    "adapters/deepseek/non_mutating_candidate.patch.yml": "81F76DE1E27EE357F2877E664137C512B5D63B276B941ECCF92A92F08C3E674F",
+    "tests/test_harness_adapters.py": "ABF5D4D95B2B891793B49AFD0EC4222DE8F1CE265A9D8EE9074D4C99625AD472"
+  },
+  "focused_test_proof": {
+    "command": "py -3 -m unittest tests.test_harness_adapters -v",
+    "tests": 11,
+    "passed": 11,
+    "failed": 0,
+    "duration_seconds": 8.274,
+    "proves": [
+      "Pi fake OpenAI endpoint success",
+      "Pi exact scoped edit then frozen test then final response",
+      "independent post-harness verification",
+      "one request on provider failure and zero automatic retry",
+      "out-of-scope tool call blocked without write",
+      "repeated edit anti-loop stop",
+      "protocol-clean adapter stdout with one terminal event",
+      "timeout and owned grandchild cleanup",
+      "source workspace preservation",
+      "DeepSeek blocked contract starts no child"
+    ]
+  },
+  "production_authority": false,
+  "real_model_tournament_started": false
+}
