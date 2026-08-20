@@ -121,6 +121,7 @@ class QwenProfileTests(unittest.TestCase):
         self.assertIn("Assert-OtherBackendsStopped", text)
         self.assertIn("exact previous backend", text)
         self.assertIn("mutualExclusionProven = $true", text)
+        self.assertIn("$ownedProcessIds = @(\n", text)
         self.assertNotIn("Stop-Process -Name", text)
 
     def test_doctor_names_all_three_backends_and_both_profiles(self) -> None:

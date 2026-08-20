@@ -228,7 +228,7 @@ def _model_response_schema() -> dict[str, Any]:
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "value": {},
+            "value": {"type": ["string", "number", "boolean", "null"]},
             "source_ids": {
                 "type": "array",
                 "items": {"type": "string"},
@@ -364,8 +364,13 @@ def _preflight(client: LlamaClient, model: str, manifest: Mapping[str, Any]) -> 
     mismatches: dict[str, Any] = {}
     if defaults.get("n_ctx") != manifest["context_window_tokens"]:
         mismatches["context_tokens"] = defaults.get("n_ctx")
-    if defaults.get("speculative") is not baseline["mtp"]:
-        mismatches["speculative"] = defaults.get("speculative")
+    params = defaults.get("params")
+    speculative_value = defaults.get("speculative")
+    if isinstance(params, dict) and "speculative.types" in params:
+        speculative_value = params["speculative.types"]
+    speculative_enabled = speculative_value not in {False, "none"}
+    if speculative_enabled is not baseline["mtp"]:
+        mismatches["speculative"] = speculative_value
     if props.get("total_slots") != 1:
         mismatches["total_slots"] = props.get("total_slots")
     build_info = props.get("build_info")
@@ -393,6 +398,44 @@ def _preflight(client: LlamaClient, model: str, manifest: Mapping[str, Any]) -> 
             "source": "suite expectation; llama.cpp /props does not expose KV type",
         },
     }
+
+
+def _recorded_preflight(preflight: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep exact runtime evidence without copying the full chat template per trial."""
+
+    props = preflight["props"]
+    defaults = props.get("default_generation_settings", {})
+    params = defaults.get("params", {}) if isinstance(defaults, dict) else {}
+    chat_template = str(props.get("chat_template", ""))
+    return {
+        "health": preflight["health"],
+        "model_ids": preflight["model_ids"],
+        "props_sha256": preflight["props_sha256"],
+        "kv_cache_evidence": preflight["kv_cache_evidence"],
+        "props": {
+            "build_info": props.get("build_info"),
+            "model_alias": props.get("model_alias"),
+            "model_ftype": props.get("model_ftype"),
+            "model_path": props.get("model_path"),
+            "total_slots": props.get("total_slots"),
+            "modalities": props.get("modalities"),
+            "n_ctx": defaults.get("n_ctx") if isinstance(defaults, dict) else None,
+            "speculative_types": (
+                params.get("speculative.types") if isinstance(params, dict) else None
+            ),
+            "chat_template_sha256": _sha256(chat_template.encode()),
+        },
+    }
+
+
+def _recorded_runner_input(runner_input: Mapping[str, Any]) -> dict[str, Any]:
+    """Record reproducible prompt identity without duplicating megabytes of filler."""
+
+    recorded = json.loads(json.dumps(runner_input))
+    prompt = recorded["prompt"]
+    prompt.pop("text", None)
+    prompt["text_stored"] = False
+    return recorded
 
 
 def _hardware_sample() -> dict[str, int | None]:
@@ -585,9 +628,20 @@ def execute_live_case(
             raise RunnerError("invalid_configuration", "phase and trial_index do not agree")
         manifest = load_manifest()
         client = LlamaClient(base_url, timeout)
-        trace["preflight"] = _preflight(client, model, manifest)
+        preflight = _preflight(client, model, manifest)
+        trace["preflight"] = _recorded_preflight(preflight)
         system_prompt, harness = _safe_harness(harness_file)
+        isolation_marker = hashlib.sha256(
+            f"{family}|{target_tokens}|{phase}|{trial_index}".encode()
+        ).hexdigest()
+        system_prompt = (
+            "Run-isolation marker (non-semantic; do not cite): "
+            f"{isolation_marker}\n{system_prompt}"
+        )
         trace["harness"] = harness
+        trace["configuration"]["isolation_marker_sha256"] = _sha256(
+            isolation_marker.encode("ascii")
+        )
         max_tokens = manifest["reserved_completion_tokens"]
 
         def exact_count(prompt: str) -> int:
@@ -595,9 +649,9 @@ def execute_live_case(
 
         tokenizer_id = "|".join(
             (
-                str(trace["preflight"]["props"].get("build_info")),
-                str(trace["preflight"]["props"].get("model_path")),
-                _sha256(str(trace["preflight"]["props"].get("chat_template", "")).encode()),
+                str(preflight["props"].get("build_info")),
+                str(preflight["props"].get("model_path")),
+                _sha256(str(preflight["props"].get("chat_template", "")).encode()),
             )
         )
         case = build_case(
@@ -627,7 +681,7 @@ def execute_live_case(
             "tokenizer_id": tokenizer_id,
             "exact_prompt_tokens": final_count,
         }
-        trace["runner_input"] = case.runner_input
+        trace["runner_input"] = _recorded_runner_input(case.runner_input)
         request_bytes = _json_bytes(request)
         trace["request"] = {
             "sha256": _sha256(request_bytes),
@@ -825,7 +879,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     manifest = load_manifest()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8818")
-    parser.add_argument("--model", default="arm-qwen38-q6-text")
+    parser.add_argument("--model", default="arm-qwen38-q6-native-262k")
     parser.add_argument(
         "--family", choices=[item["id"] for item in manifest["families"]], required=True
     )

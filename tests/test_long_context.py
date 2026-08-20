@@ -106,7 +106,11 @@ class FakeLlamaHandler(http.server.BaseHTTPRequestHandler):
                 {
                     "default_generation_settings": {
                         "n_ctx": state["n_ctx"],
-                        "speculative": state["speculative"],
+                        "params": {
+                            "speculative.types": (
+                                "draft-mtp" if state["speculative"] else "none"
+                            )
+                        },
                     },
                     "total_slots": 1,
                     "model_path": "D:/models/Qwen3.8-27B-Q6_K.gguf",
@@ -196,7 +200,7 @@ class FakeLlamaHandler(http.server.BaseHTTPRequestHandler):
 
 class FakeLlamaServer:
     def __init__(self, **overrides: object) -> None:
-        model = "arm-qwen38-q6-text"
+        model = "arm-qwen38-q6-native-262k"
         self.state = {
             "listed_model": model,
             "response_model": model,
@@ -358,6 +362,7 @@ class GenerationTests(unittest.TestCase):
                     self.assertEqual(
                         whitespace_token_count(prompt["text"]), target["prompt_tokens"]
                     )
+                    self.assertIn(f"TASK REQUEST: {family['request']}", prompt["text"])
                     for source_id, position in source_positions.items():
                         start = prompt["needle_positions"][source_id]["start_token"]
                         fraction = start / target["prompt_tokens"]
@@ -510,7 +515,7 @@ class LiveRunnerTests(unittest.TestCase):
     def _execute(self, server: FakeLlamaServer, **overrides: object) -> dict:
         options = {
             "base_url": server.base_url,
-            "model": "arm-qwen38-q6-text",
+            "model": "arm-qwen38-q6-native-262k",
             "family": "depth_retrieval",
             "target_tokens": 131072,
             "phase": "measured",
@@ -556,6 +561,10 @@ class LiveRunnerTests(unittest.TestCase):
             self.assertTrue(summary["passed"])
             self.assertTrue(record["score"]["passed"])
             self.assertEqual(record["model_calls"], 1)
+            self.assertNotIn("text", record["runner_input"]["prompt"])
+            self.assertFalse(record["runner_input"]["prompt"]["text_stored"])
+            self.assertNotIn("chat_template", record["preflight"]["props"])
+            self.assertLess(output.stat().st_size, 100_000)
             self.assertEqual(server.state["completion_calls"], 1)
             self.assertGreater(server.state["token_count_calls"], 1)
             self.assertGreater(server.state["tokenize_calls"], 1)

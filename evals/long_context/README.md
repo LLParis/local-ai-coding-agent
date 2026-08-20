@@ -79,7 +79,7 @@ loopback llama.cpp server. It never starts, stops, or switches a backend:
 ```powershell
 py -3 evals\long_context\live_runner.py `
   --base-url http://127.0.0.1:8818 `
-  --model arm-qwen38-q6-text `
+  --model arm-qwen38-q6-native-262k `
   --family depth_retrieval `
   --target 131072 `
   --phase warmup `

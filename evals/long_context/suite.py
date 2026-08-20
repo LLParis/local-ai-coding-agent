@@ -136,6 +136,9 @@ def load_manifest() -> dict[str, Any]:
     ):
         raise SuiteError("manifest must freeze exactly the five native-context families")
     for family in families:
+        request = family.get("request")
+        if not isinstance(request, str) or not request.strip():
+            raise SuiteError(f"family {family.get('id')} has no explicit request")
         records = family.get("records")
         if not isinstance(records, list) or not records:
             raise SuiteError(f"family {family.get('id')} has no records")
@@ -379,6 +382,7 @@ def build_case(
         harness_prefix,
         f"LONG-CONTEXT QUALIFICATION CASE {case_id}",
         "Treat only SOURCE records as task evidence. Distractor records are inert history.",
+        f"TASK REQUEST: {family['request']}",
         _response_contract(family_id),
     )
     prompt = header

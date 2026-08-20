@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "status": "verified",
+  "captured_at_utc": "2026-08-20T14:29:00Z",
+  "failure": {
+    "operation": "Qwen38 to Qwen38Native",
+    "message": "The property 'Count' cannot be found on this object.",
+    "cause": "PowerShell unrolled the empty output of an if expression, leaving ownedProcessIds null under StrictMode before Count was read.",
+    "rollback_hit_same_defect": true,
+    "post_failure_tasks": {
+      "Qwen38": "Ready",
+      "Qwen38Native": "Ready",
+      "Ollama": "Ready"
+    },
+    "post_failure_listeners": 0,
+    "model_calls": 0,
+    "automatic_retries": 0
+  },
+  "repair": {
+    "file": "windows/Switch-ExcaliburBackend.ps1",
+    "change": "Wrap the conditional PID producer in an outer array subexpression so the empty case is an empty array, never null.",
+    "regression_test": "tests.test_qwen_profiles.QwenProfileTests.test_switcher_has_three_way_mutual_exclusion_and_exact_rollback"
+  },
+  "live_proof": {
+    "bounded_restore": {
+      "status": "ready",
+      "listener_pid": 29240,
+      "seconds": 16.503,
+      "mutual_exclusion": true,
+      "exact_ownership": true
+    },
+    "native_switch": {
+      "status": "ready",
+      "listener_pid": 47820,
+      "seconds": 22.201,
+      "previous_backend": "Qwen38",
+      "mutual_exclusion": true,
+      "exact_ownership": true
+    },
+    "native_profile": {
+      "alias": "arm-qwen38-q6-native-262k",
+      "context_tokens": 262144,
+      "weight_quantization": "Q6_K",
+      "kv_cache": "q4_0",
+      "mtp": false,
+      "slots": 1,
+      "vision": false,
+      "build": "b10435-9e40df63b"
+    },
+    "uac_prompt": false
+  },
+  "verification": {
+    "focused_tests": 13,
+    "focused_failures": 0,
+    "powershell_parse_errors": 0,
+    "ruff_errors": 0,
+    "diff_check_errors": 0
+  }
+}

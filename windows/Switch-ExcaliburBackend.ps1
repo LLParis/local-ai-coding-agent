@@ -101,11 +101,12 @@ function Stop-Backend {
             throw "$Name has an unrecognized owner record; refusing teardown."
         }
     }
-    $ownedProcessIds = if ($null -eq $owner) {
-        @()
-    } else {
-        @([int]$owner.wrapperPid, [int]$owner.serverPid)
-    }
+    $ownedProcessIds = @(
+        if ($null -ne $owner) {
+            [int]$owner.wrapperPid
+            [int]$owner.serverPid
+        }
+    )
     if ((Get-TaskState -Name ([string]$definition.task)) -eq "Running") {
         Stop-ScheduledTask -TaskName ([string]$definition.task)
         Wait-BackendStopped -Name $Name -TimeoutSeconds 45 -ProcessIds $ownedProcessIds

@@ -19,6 +19,7 @@
   "families": [
     {
       "id": "depth_retrieval",
+      "request": "Return exactly these facts in facts: continuity_codename, routing_manifest_sha256, and recovery_phrase. Put every contradicted source ID in rejected_claim_ids.",
       "records": [
         {
           "position": "early",
@@ -53,6 +54,7 @@
     },
     {
       "id": "temporal_decision",
+      "request": "Return temporal_answers with exactly these keys: as_of_2026-05-20 for max_workers on 2026-05-20, as_of_2026-07-01 for max_workers on 2026-07-01, and current_max_workers for the current value. Also return the active constraint IDs and the ordered next-action IDs.",
       "records": [
         {
           "position": "early",
@@ -88,6 +90,7 @@
     },
     {
       "id": "repository_diagnosis",
+      "request": "Diagnose the readiness-identity contract violation in the supplied current file. Return a concise diagnosis_code and one complete full-file replacement for only src/model_identity.py. Do not invent or modify tests; the runner owns the hidden verifier.",
       "fixture": "fixtures/repository_diagnosis",
       "records": [
         {
@@ -116,6 +119,7 @@
     },
     {
       "id": "tool_contract",
+      "request": "Return tool_trace for exactly the four ordered operations described by the SOURCE records. Execute each once in the trace, use unique call_id values, preserve the exact arguments and side-effect ID, and give every call terminal outcome=success.",
       "records": [
         {
           "position": "early",
@@ -145,6 +149,7 @@
     },
     {
       "id": "resume_compaction",
+      "request": "Reconstruct resume_state with exactly these fields: objective_id, open_success_criteria_ids, active_constraint_ids, active_blocker_ids, open_tool_calls, artifacts, and next_action_id. Preserve the unknown tool outcome and do not recommend replaying it. duplicate_effect_ids must be empty.",
       "records": [
         {
           "position": "early",
