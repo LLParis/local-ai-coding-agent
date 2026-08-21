@@ -1,0 +1,82 @@
+{
+  "schema": "coding-intelligence-qwen-on-demand-headroom/v1",
+  "status": "accepted",
+  "captured_at_utc": "2026-08-21T03:00:33.8021306Z",
+  "cause": {
+    "classification": "idle GPU-memory and desktop-compositor pressure",
+    "qwen_requests_since_launch": 0,
+    "qwen_prompt_tokens_since_launch": 0,
+    "qwen_predicted_tokens_since_launch": 0,
+    "cpu_saturated": false,
+    "ram_saturated": false,
+    "dpc_saturated": false,
+    "uad_handle_leak_active": false
+  },
+  "before": {
+    "profile": "q6-text/medium/q4_0/262144/mtp-off",
+    "gpu_layers": "999",
+    "fit_mode": "off",
+    "gpu_total_mib": 32607,
+    "gpu_used_mib": 30917,
+    "gpu_free_mib": 1271,
+    "qwen_dedicated_mib": 27096.4
+  },
+  "implemented": {
+    "idle_backend": "Off",
+    "start_policy": "on-demand",
+    "post_run_policy": "return-to-Off",
+    "native_profile": "q6-text/medium/q4_0/262144/mtp-off",
+    "model_alias": "arm-qwen38-q6-native-262k",
+    "context_tokens": 262144,
+    "model_type": "Q6_K",
+    "cache_type": "q4_0",
+    "mtp": false,
+    "reasoning_effort": "medium",
+    "reasoning_budget": 16384,
+    "gpu_layers": "auto",
+    "fit_mode": "on",
+    "fit_target_mib": 8192,
+    "uac_prompt": false
+  },
+  "active_observation": {
+    "gpu_total_mib": 32607,
+    "gpu_used_mib": 26192,
+    "gpu_free_mib": 5996,
+    "qwen_dedicated_mib": 22892.4,
+    "listener": "127.0.0.1:8818",
+    "exact_ownership": true,
+    "mutual_exclusion": true,
+    "startup_seconds": 18.192
+  },
+  "final_idle_observation": {
+    "gpu_total_mib": 32607,
+    "gpu_used_mib": 3270,
+    "gpu_free_mib": 28918,
+    "listener_count": 0,
+    "doctor_overall": "ready",
+    "doctor_active_backend": "Off",
+    "doctor_live_status": "idle-ready",
+    "bounded_task_state": "Ready",
+    "native_task_state": "Ready",
+    "ollama_task_state": "Ready"
+  },
+  "source_sha256": {
+    "windows/Start-ExcaliburQwen38.ps1": "sha256:c7034c73c97c5ec89addbcb406b48a0cad64bb4cdf3a46089b37c23571ef1d7b",
+    "windows/Install-ExcaliburQwen38.ps1": "sha256:b9f9981e2d5a39d9f2df8887470b99a62d9c5645c35b7bd5547ebd25451dbf83",
+    "windows/Switch-ExcaliburBackend.ps1": "sha256:1b7afc13e32ed836ffeb423cdc931a34313a9f78c44eefc831e8b226948a3aba",
+    "bin/doctor.ps1": "sha256:2479d85c1a8ca8e9fe39a52f71fc53c9314de0ed9f8094d14b196d1a067413a1",
+    "src/agent_continuity/production_worker.py": "sha256:b3537f923fefa629fae3d28e4fad82290a7f29133771b5b6fbbf55dc7d1c15a3",
+    "src/agent_continuity/production_routing.py": "sha256:3fe608b83a9cc34d9ca973e323e296afe1b40f9b84da520b315a0f1b1306d5cb"
+  },
+  "deployed_runtime_sha256": {
+    "Bounded": "sha256:c7034c73c97c5ec89addbcb406b48a0cad64bb4cdf3a46089b37c23571ef1d7b",
+    "Native": "sha256:c7034c73c97c5ec89addbcb406b48a0cad64bb4cdf3a46089b37c23571ef1d7b"
+  },
+  "truth_boundary": {
+    "full_q6_262k_profile_preserved": true,
+    "active_headroom_observed": true,
+    "idle_unload_observed": true,
+    "real_model_inference_called": false,
+    "benchmark_run": false
+  }
+}

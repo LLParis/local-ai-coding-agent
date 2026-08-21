@@ -18,6 +18,9 @@ $profiles = @{
         cacheType = "q8_0"
         reasoningBudget = 2048
         mtp = $true
+        gpuLayers = "999"
+        fitMode = "off"
+        fitTargetMiB = $null
         jobNamespace = "Qwen38"
         backendId = "qwen38-bounded"
     }
@@ -31,6 +34,9 @@ $profiles = @{
         cacheType = "q4_0"
         reasoningBudget = 16384
         mtp = $false
+        gpuLayers = "auto"
+        fitMode = "on"
+        fitTargetMiB = 8192
         jobNamespace = "Qwen38Native"
         backendId = "qwen38-native"
     }
@@ -64,11 +70,16 @@ $serverArguments = @(
     "--alias", ([string]$selectedProfile.modelAlias),
     "--ctx-size", ([string]$selectedProfile.contextTokens),
     "--parallel", "1",
-    "--gpu-layers", "999",
+    "--gpu-layers", ([string]$selectedProfile.gpuLayers),
     "--flash-attn", "on",
     "--cache-type-k", ([string]$selectedProfile.cacheType),
     "--cache-type-v", ([string]$selectedProfile.cacheType),
-    "--fit", "off",
+    "--fit", ([string]$selectedProfile.fitMode)
+)
+if ($null -ne $selectedProfile.fitTargetMiB) {
+    $serverArguments += @("--fit-target", ([string]$selectedProfile.fitTargetMiB))
+}
+$serverArguments += @(
     "--jinja",
     "--reasoning-format", "deepseek",
     "--host", $localAddress,
@@ -314,6 +325,9 @@ if ($ValidateOnly) {
         contextTokens = [int]$selectedProfile.contextTokens
         cacheType = [string]$selectedProfile.cacheType
         mtp = [bool]$selectedProfile.mtp
+        gpuLayers = [string]$selectedProfile.gpuLayers
+        fitMode = [string]$selectedProfile.fitMode
+        fitTargetMiB = $selectedProfile.fitTargetMiB
         reasoningEffort = "medium"
         reasoningBudget = [int]$selectedProfile.reasoningBudget
         endpoint = $endpoint
@@ -557,6 +571,9 @@ try {
             contextTokens = [int]$selectedProfile.contextTokens
             cacheType = [string]$selectedProfile.cacheType
             mtp = [bool]$selectedProfile.mtp
+            gpuLayers = [string]$selectedProfile.gpuLayers
+            fitMode = [string]$selectedProfile.fitMode
+            fitTargetMiB = $selectedProfile.fitTargetMiB
             reasoningEffort = "medium"
             reasoningBudget = [int]$selectedProfile.reasoningBudget
             modelPath = $modelPath

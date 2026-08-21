@@ -193,7 +193,10 @@ function Get-OwnershipState {
         [string]$ExpectedAlias,
         [int]$ExpectedContextTokens,
         [string]$ExpectedCacheType,
-        [bool]$ExpectedMtp
+        [bool]$ExpectedMtp,
+        [string]$ExpectedGpuLayers = "",
+        [string]$ExpectedFitMode = "",
+        [Nullable[int]]$ExpectedFitTargetMiB = $null
     )
     if ($Task.state -ne "Running") {
         return [pscustomobject]@{
@@ -230,6 +233,12 @@ function Get-OwnershipState {
                 if ([int]$owner.contextTokens -ne $ExpectedContextTokens) { $failures += "context mismatch" }
                 if ([string]$owner.cacheType -ne $ExpectedCacheType) { $failures += "KV cache mismatch" }
                 if ([bool]$owner.mtp -ne $ExpectedMtp) { $failures += "MTP mismatch" }
+                if (-not [string]::IsNullOrWhiteSpace($ExpectedGpuLayers)) {
+                    if ([string]$owner.gpuLayers -ne $ExpectedGpuLayers) { $failures += "GPU layer policy mismatch" }
+                    if ([string]$owner.fitMode -ne $ExpectedFitMode) { $failures += "GPU fit mode mismatch" }
+                    $observedFitTarget = if ($null -eq $owner.fitTargetMiB) { $null } else { [int]$owner.fitTargetMiB }
+                    if ($observedFitTarget -ne $ExpectedFitTargetMiB) { $failures += "GPU fit target mismatch" }
+                }
             } elseif (
                 $ExpectedProfileName -ne "Bounded" -or
                 [string]$owner.profile -ne $ExpectedProfile -or
@@ -321,7 +330,8 @@ $qwenOwnership = Get-OwnershipState `
 $qwenNativeOwnership = Get-OwnershipState `
     (Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38Native\qwen38-owner.json") `
     $qwenNativeTaskName $qwenUrl $qwenListener $qwenNativeTask `
-    "Native" "q6-text/medium/q4_0/262144/mtp-off" "arm-qwen38-q6-native-262k" 262144 "q4_0" $false
+    "Native" "q6-text/medium/q4_0/262144/mtp-off" "arm-qwen38-q6-native-262k" 262144 "q4_0" $false `
+    "auto" "on" 8192
 $ollamaOwnership = Get-OwnershipState `
     (Join-Path $env:LOCALAPPDATA "AnimeFrontier\AgentContinuity\service-owner.json") `
     $ollamaTaskName $ollamaUrl $ollamaListener $ollamaTask "" "" "" 0 "" $false
@@ -343,7 +353,19 @@ $runningTaskCount = @(
     @($qwenTask, $qwenNativeTask, $ollamaTask) |
         Where-Object { $_.state -eq "Running" }
 ).Count
-$active = if ($runningTaskCount -gt 1 -or ($qwenListener.count -gt 0 -and $ollamaListener.count -gt 0)) { "Conflict" } elseif ($qwenLive) { "Qwen38" } elseif ($qwenNativeLive) { "Qwen38Native" } elseif ($ollamaLive) { "Ollama" } else { "None" }
+$active = if ($runningTaskCount -gt 1 -or ($qwenListener.count -gt 0 -and $ollamaListener.count -gt 0)) {
+    "Conflict"
+} elseif ($qwenLive) {
+    "Qwen38"
+} elseif ($qwenNativeLive) {
+    "Qwen38Native"
+} elseif ($ollamaLive) {
+    "Ollama"
+} elseif ($runningTaskCount -eq 0 -and $qwenListener.count -eq 0 -and $ollamaListener.count -eq 0) {
+    "Off"
+} else {
+    "None"
+}
 $catalogReady = (
     $catalogTask.installed -and
     $catalogTask.runLevel -eq "Limited" -and
@@ -386,11 +408,14 @@ $report = [pscustomobject]@{
     proofLevels = [pscustomobject]@{
         configured = [pscustomobject]@{ status = if ($configured) { "ready" } else { "incomplete" }; meaning = "Required tasks and core model artifacts exist." }
         tested = [pscustomobject]@{ status = if ($evidencePresent.Count -eq $evidence.Count) { "evidence-recorded" } else { "evidence-incomplete" }; evidence = $evidencePresent; meaning = "Historical real-task evidence; doctor does not rerun tests." }
-        live = [pscustomobject]@{ status = if ($active -in @("Qwen38", "Qwen38Native", "Ollama")) { "ready" } else { "not-ready" }; meaning = "Exactly one owned loopback backend answers non-generating health checks now." }
+        live = [pscustomobject]@{
+            status = if ($active -eq "Off") { "idle-ready" } elseif ($active -in @("Qwen38", "Qwen38Native", "Ollama")) { "ready" } else { "not-ready" }
+            meaning = if ($active -eq "Off") { "Inference is intentionally unloaded and the on-demand tasks are ready." } else { "Exactly one owned loopback backend answers non-generating health checks now." }
+        }
     }
     backends = [pscustomobject]@{
-        qwen38 = [pscustomobject]@{ profileName = "Bounded"; profile = "q6-text/medium/q8_0/32768/mtp3"; task = $qwenTask; listener = $qwenListener; health = $qwenHealth; ownership = $qwenOwnership; liveReady = $qwenLive }
-        qwen38Native = [pscustomobject]@{ profileName = "Native"; profile = "q6-text/medium/q4_0/262144/mtp-off"; task = $qwenNativeTask; listener = $qwenListener; health = $qwenNativeHealth; ownership = $qwenNativeOwnership; liveReady = $qwenNativeLive }
+        qwen38 = [pscustomobject]@{ profileName = "Bounded"; profile = "q6-text/medium/q8_0/32768/mtp3"; gpuPlacement = [pscustomobject]@{ gpuLayers = "999"; fitMode = "off"; fitTargetMiB = $null }; task = $qwenTask; listener = $qwenListener; health = $qwenHealth; ownership = $qwenOwnership; liveReady = $qwenLive }
+        qwen38Native = [pscustomobject]@{ profileName = "Native"; profile = "q6-text/medium/q4_0/262144/mtp-off"; gpuPlacement = [pscustomobject]@{ gpuLayers = "auto"; fitMode = "on"; fitTargetMiB = 8192 }; task = $qwenNativeTask; listener = $qwenListener; health = $qwenNativeHealth; ownership = $qwenNativeOwnership; liveReady = $qwenNativeLive }
         ollama = [pscustomobject]@{ task = $ollamaTask; listener = $ollamaListener; health = $ollamaHealth; ownership = $ollamaOwnership; liveReady = $ollamaLive }
     }
     maintenance = [pscustomobject]@{

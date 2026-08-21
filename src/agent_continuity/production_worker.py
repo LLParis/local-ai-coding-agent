@@ -847,10 +847,15 @@ def run(
             review = {"status": "unavailable", "error": str(error)}
         finally:
             try:
-                restore = _switch(Path(__file__).resolve().parents[2], target_backend)
+                restore = _switch(Path(__file__).resolve().parents[2], "Off")
             except Exception as error:
                 restore_error = str(error)[:2000]
                 implementation_ok = False
+    else:
+        try:
+            restore = _switch(Path(__file__).resolve().parents[2], "Off")
+        except Exception as error:
+            restore_error = str(error)[:2000]
     deepseek_continuity: dict[str, Any] | None = None
     if selected_harness == "deepseek":
         if journal.deepseek is None:
@@ -1141,12 +1146,18 @@ def main(argv: list[str] | None = None) -> int:
             ),
         )
     except Exception as error:
+        idle_cleanup_error = None
+        try:
+            _switch(Path(__file__).resolve().parents[2], "Off")
+        except Exception as cleanup_error:
+            idle_cleanup_error = str(cleanup_error)[:2000]
         print(
             json.dumps(
                 {
                     "schema": "coding-intelligence-production-worker/v1",
                     "status": "failed",
                     "error": str(error),
+                    "backend_idle_cleanup_error": idle_cleanup_error,
                 },
                 sort_keys=True,
             )

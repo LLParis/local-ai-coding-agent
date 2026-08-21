@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("Qwen38", "Qwen38Native", "Ollama")]
+    [ValidateSet("Off", "Qwen38", "Qwen38Native", "Ollama")]
     [string]$Backend
 )
 
@@ -20,6 +20,9 @@ $backendDefinitions = @{
         cacheType = "q8_0"
         reasoningBudget = 2048
         mtp = $true
+        gpuLayers = "999"
+        fitMode = "off"
+        fitTargetMiB = $null
         ownerPath = Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38\qwen38-owner.json"
     }
     Qwen38Native = [ordered]@{
@@ -32,6 +35,9 @@ $backendDefinitions = @{
         cacheType = "q4_0"
         reasoningBudget = 16384
         mtp = $false
+        gpuLayers = "auto"
+        fitMode = "on"
+        fitTargetMiB = 8192
         ownerPath = Join-Path $env:LOCALAPPDATA "CodingIntelligence\Qwen38Native\qwen38-owner.json"
     }
     Ollama = [ordered]@{
@@ -166,7 +172,16 @@ function Assert-QwenReady {
         [int]$owner.contextTokens -eq [int]$definition.contextTokens -and
         [string]$owner.cacheType -eq [string]$definition.cacheType -and
         [bool]$owner.mtp -eq [bool]$definition.mtp -and
-        [int]$owner.reasoningBudget -eq [int]$definition.reasoningBudget
+        [int]$owner.reasoningBudget -eq [int]$definition.reasoningBudget -and
+        [string]$owner.gpuLayers -eq [string]$definition.gpuLayers -and
+        [string]$owner.fitMode -eq [string]$definition.fitMode -and
+        $(
+            if ($null -eq $definition.fitTargetMiB) {
+                $null -eq $owner.fitTargetMiB
+            } else {
+                [int]$owner.fitTargetMiB -eq [int]$definition.fitTargetMiB
+            }
+        )
     } else {
         $Name -eq "Qwen38" -and
         [string]$owner.profile -eq [string]$definition.profile -and
@@ -202,8 +217,10 @@ function Assert-QwenReady {
         "--alias $($definition.alias)",
         "--ctx-size $($definition.contextTokens)",
         "--parallel 1",
+        "--gpu-layers $($definition.gpuLayers)",
         "--cache-type-k $($definition.cacheType)",
         "--cache-type-v $($definition.cacheType)",
+        "--fit $($definition.fitMode)",
         "--reasoning-effort medium",
         "--reasoning-budget $($definition.reasoningBudget)"
     )
@@ -211,6 +228,12 @@ function Assert-QwenReady {
         if ($command.IndexOf($fragment, [StringComparison]::Ordinal) -lt 0) {
             throw "$Name command line is missing exact fragment: $fragment"
         }
+    }
+    if (
+        $null -ne $definition.fitTargetMiB -and
+        $command.IndexOf("--fit-target $($definition.fitTargetMiB)", [StringComparison]::Ordinal) -lt 0
+    ) {
+        throw "$Name command line is missing exact fit target: $($definition.fitTargetMiB) MiB"
     }
     if ([bool]$definition.mtp) {
         if (
@@ -312,7 +335,14 @@ function Assert-OtherBackendsStopped {
             throw "$name remained Running after selecting $Selected."
         }
     }
-    if ($Selected -eq "Ollama") {
+    if ($Selected -eq "Off") {
+        if (
+            @(Get-PortListeners -Port 8818).Count -ne 0 -or
+            @(Get-PortListeners -Port 11434).Count -ne 0
+        ) {
+            throw "An inference listener remained after selecting Off."
+        }
+    } elseif ($Selected -eq "Ollama") {
         if (@(Get-PortListeners -Port 8818).Count -ne 0) {
             throw "A Qwen listener remained after selecting Ollama."
         }
@@ -359,11 +389,15 @@ $proof = $null
 
 try {
     foreach ($name in @("Qwen38", "Qwen38Native", "Ollama")) {
-        if ($name -ne $Backend) {
+        if ($Backend -eq "Off" -or $name -ne $Backend) {
             Stop-Backend -Name $name
         }
     }
-    $proof = Start-AndProveBackend -Name $Backend
+    if ($Backend -eq "Off") {
+        Assert-OtherBackendsStopped -Selected "Off"
+    } else {
+        $proof = Start-AndProveBackend -Name $Backend
+    }
 } catch {
     $switchError = $_
     try {
@@ -380,15 +414,15 @@ try {
 }
 
 $started.Stop()
-$definition = $backendDefinitions[$Backend]
+$definition = if ($Backend -eq "Off") { $null } else { $backendDefinitions[$Backend] }
 [pscustomobject]@{
-    status = "ready"
+    status = if ($Backend -eq "Off") { "idle" } else { "ready" }
     backend = $Backend
-    profileName = if ($Backend -eq "Ollama") { $null } else { [string]$definition.profileName }
-    profile = if ($Backend -eq "Ollama") { $null } else { [string]$definition.profile }
-    modelAlias = if ($Backend -eq "Ollama") { $null } else { [string]$definition.alias }
-    port = [int]$definition.port
-    listenerPid = [int]$proof.listenerPid
+    profileName = if ($Backend -in @("Off", "Ollama")) { $null } else { [string]$definition.profileName }
+    profile = if ($Backend -in @("Off", "Ollama")) { $null } else { [string]$definition.profile }
+    modelAlias = if ($Backend -in @("Off", "Ollama")) { $null } else { [string]$definition.alias }
+    port = if ($Backend -eq "Off") { $null } else { [int]$definition.port }
+    listenerPid = if ($Backend -eq "Off") { $null } else { [int]$proof.listenerPid }
     swapSeconds = [math]::Round($started.Elapsed.TotalSeconds, 3)
     previousBackend = $previous
     qwenTaskState = Get-TaskState -Name ([string]$backendDefinitions.Qwen38.task)

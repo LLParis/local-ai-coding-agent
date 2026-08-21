@@ -123,7 +123,8 @@ result is applied to the source by default and its stage is cleaned;
 `--stage-only` retains the stage without touching the workspace. After a passing run the
 worker switches to Ollama and sends the objective and diff to
 `devstral-small-2:24b` exactly once as an advisory reviewer; deterministic
-execution remains final authority. The backend is then restored.
+execution remains final authority. All inference backends are then unloaded so
+idle Coding Intelligence does not consume workstation VRAM.
 
 Repeat `--scope` to focus a job on named repository-relative paths; without it
 the job covers the full repository:
@@ -298,6 +299,8 @@ command explicitly when hosted access is unavailable.
 | `Configured: ready` | Required Scheduled Tasks and core artifacts exist |
 | `Tested: evidence-recorded` | Historical real-task evidence exists; doctor did not rerun it |
 | `Live: ready` | Exactly one owned loopback backend satisfies current non-generating health checks |
+| `Live: idle-ready` | Inference is intentionally unloaded; the on-demand tasks are installed and ready |
+| `Active backend: Off` | Normal idle state; no model owns GPU memory or a loopback inference port |
 | `Active backend: Qwen38` | Normal bounded Qwen is serving on `127.0.0.1:8818` |
 | `Active backend: Qwen38Native` | The qualified 262K profile is serving, normally only for explicit work |
 | `Active backend: Ollama` | The alternate model/verifier backend is serving on `127.0.0.1:11434` |
@@ -306,8 +309,9 @@ command explicitly when hosted access is unavailable.
 | `Conflict` | More than one backend/task/listener claims active ownership |
 | `stopped-or-unhealthy` | No backend passed task, listener, health, model, and owner checks together |
 
-The normal idle-ready state is one running backend and the other model tasks in
-standby. Raw inference endpoints are loopback-only.
+The normal idle-ready state is `Off`, with all model tasks in standby. A coding
+command starts its selected backend without UAC and unloads it again when the
+run ends. Raw inference endpoints are loopback-only while active.
 
 ## Exact troubleshooting without UAC or broad kills
 
@@ -315,7 +319,7 @@ Normal repair uses the already-installed current-user Scheduled Tasks:
 
 ```powershell
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
-  -File .\windows\Switch-ExcaliburBackend.ps1 -Backend Qwen38
+  -File .\windows\Switch-ExcaliburBackend.ps1 -Backend Off
 bin\doctor.cmd -Json | Tee-Object .\doctor-after-switch.json
 ```
 

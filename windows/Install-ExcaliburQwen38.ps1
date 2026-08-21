@@ -21,6 +21,9 @@ $profiles = @{
         cacheType = "q8_0"
         reasoningBudget = 2048
         mtp = $true
+        gpuLayers = "999"
+        fitMode = "off"
+        fitTargetMiB = $null
         jobNamespace = "Qwen38"
     }
     Native = [ordered]@{
@@ -33,6 +36,9 @@ $profiles = @{
         cacheType = "q4_0"
         reasoningBudget = 16384
         mtp = $false
+        gpuLayers = "auto"
+        fitMode = "on"
+        fitTargetMiB = 8192
         jobNamespace = "Qwen38Native"
     }
 }
@@ -67,11 +73,16 @@ $fixedServerArguments = @(
     "--alias", ([string]$selectedProfile.modelAlias),
     "--ctx-size", ([string]$selectedProfile.contextTokens),
     "--parallel", "1",
-    "--gpu-layers", "999",
+    "--gpu-layers", ([string]$selectedProfile.gpuLayers),
     "--flash-attn", "on",
     "--cache-type-k", ([string]$selectedProfile.cacheType),
     "--cache-type-v", ([string]$selectedProfile.cacheType),
-    "--fit", "off",
+    "--fit", ([string]$selectedProfile.fitMode)
+)
+if ($null -ne $selectedProfile.fitTargetMiB) {
+    $fixedServerArguments += @("--fit-target", ([string]$selectedProfile.fitTargetMiB))
+}
+$fixedServerArguments += @(
     "--jinja",
     "--reasoning-format", "deepseek",
     "--host", "127.0.0.1",
@@ -454,7 +465,31 @@ function Assert-OwnerMatchesLiveService {
     if (-not [Guid]::TryParse([string]$Owner.instanceId, [ref]$parsedInstance)) {
         throw "The live Qwen3.8 owner record has an invalid instance ID."
     }
-    $hasTypedProfile = $Owner.PSObject.Properties.Name -contains "profileName"
+    $ownerPropertyNames = @($Owner.PSObject.Properties.Name)
+    $hasTypedProfile = $ownerPropertyNames -contains "profileName"
+    $hasFitTelemetry = (
+        $ownerPropertyNames -contains "gpuLayers" -and
+        $ownerPropertyNames -contains "fitMode" -and
+        $ownerPropertyNames -contains "fitTargetMiB"
+    )
+    $fitTelemetryMatches = $false
+    if ($hasFitTelemetry) {
+        $fitTargetMatches = if ($null -eq $selectedProfile.fitTargetMiB) {
+            $null -eq $Owner.fitTargetMiB
+        } else {
+            $null -ne $Owner.fitTargetMiB -and
+            [int]$Owner.fitTargetMiB -eq [int]$selectedProfile.fitTargetMiB
+        }
+        $fitTelemetryMatches = (
+            [string]$Owner.gpuLayers -eq [string]$selectedProfile.gpuLayers -and
+            [string]$Owner.fitMode -eq [string]$selectedProfile.fitMode -and
+            $fitTargetMatches
+        )
+    } elseif ($Profile -eq "Bounded") {
+        # Preserve reconciliation compatibility with existing Bounded owners;
+        # newly written owners always carry explicit fit telemetry.
+        $fitTelemetryMatches = $true
+    }
     $profileMatches = if ($hasTypedProfile) {
         [string]$Owner.profileName -eq $Profile -and
         [string]$Owner.profile -eq [string]$selectedProfile.profileId -and
@@ -462,7 +497,8 @@ function Assert-OwnerMatchesLiveService {
         [int]$Owner.contextTokens -eq [int]$selectedProfile.contextTokens -and
         [string]$Owner.cacheType -eq [string]$selectedProfile.cacheType -and
         [bool]$Owner.mtp -eq [bool]$selectedProfile.mtp -and
-        [int]$Owner.reasoningBudget -eq [int]$selectedProfile.reasoningBudget
+        [int]$Owner.reasoningBudget -eq [int]$selectedProfile.reasoningBudget -and
+        $fitTelemetryMatches
     } else {
         $Profile -eq "Bounded" -and
         [string]$Owner.profile -eq "q6-text/medium/q8_0/32768/mtp3" -and
@@ -670,6 +706,9 @@ if ($ValidateOnly) {
         contextTokens = [int]$selectedProfile.contextTokens
         cacheType = [string]$selectedProfile.cacheType
         mtp = [bool]$selectedProfile.mtp
+        gpuLayers = [string]$selectedProfile.gpuLayers
+        fitMode = [string]$selectedProfile.fitMode
+        fitTargetMiB = $selectedProfile.fitTargetMiB
         reasoningBudget = [int]$selectedProfile.reasoningBudget
         onDemand = $true
         triggerCount = 0
@@ -935,6 +974,9 @@ Assert-OwnedTaskDefinition -Task $finalTask
     contextTokens = [int]$selectedProfile.contextTokens
     cacheType = [string]$selectedProfile.cacheType
     mtp = [bool]$selectedProfile.mtp
+    gpuLayers = [string]$selectedProfile.gpuLayers
+    fitMode = [string]$selectedProfile.fitMode
+    fitTargetMiB = $selectedProfile.fitTargetMiB
     reasoningBudget = [int]$selectedProfile.reasoningBudget
     priorOwnership = $ownershipKind
     unmanagedReconciled = $unmanagedStopped

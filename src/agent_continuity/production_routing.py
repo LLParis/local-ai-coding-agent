@@ -687,6 +687,8 @@ def capture_runtime_state(
     active_backend = doctor.get("activeBackend")
     if not isinstance(active_backend, str):
         active_backend = None
+    elif active_backend in {"None", "Idle", "Off"}:
+        active_backend = None
     native_live = _native_is_live(native)
     native_health = _mapping(native.get("health"))
     observed_model = native_health.get("modelAlias") if native_live else None

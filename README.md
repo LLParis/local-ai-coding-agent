@@ -70,7 +70,7 @@ and cleanup happens only after success; `--stage-only` retains the stage without
 touching the workspace. After a passing run the worker switches to Ollama and
 sends the objective and diff to `devstral-small-2:24b` exactly once as an
 advisory reviewer; deterministic execution remains final authority. The backend
-is restored afterward.
+is unloaded afterward so an idle coding agent does not occupy workstation VRAM.
 
 Repeat `--scope` to focus a job on named repository-relative paths; without it
 the job covers the full repository:
@@ -109,8 +109,10 @@ scoped edits; it is no longer the everyday entrypoint.
 ## Native context and harness candidates
 
 The everyday production loop runs on the frozen Q6/native-262K/Q4-KV/MTP-off
-profile: DeepSeek Harness switches to `Qwen38Native` for the job and restores
-the idle default afterward. The bounded task-file lane keeps the 32K `Qwen38`
+profile: DeepSeek Harness switches to `Qwen38Native` for the job and returns all
+inference backends to `Off` afterward. Native launch keeps the full 262K context
+and Q6 weights while llama.cpp adaptive fitting targets an 8 GiB GPU margin for
+real display headroom. The bounded task-file lane keeps the 32K `Qwen38`
 profile. Operators can also switch backends manually:
 
 ```powershell
@@ -118,7 +120,7 @@ powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass `
   -File windows\Switch-ExcaliburBackend.ps1 -Backend Qwen38Native
 ```
 
-Restore normal operation with `-Backend Qwen38`. Both paths are current-user,
+Return to the normal idle state with `-Backend Off`. All paths are current-user,
 loopback-only, exact-owner Scheduled Tasks and do not display UAC.
 
 Pi 0.84.2 remains the qualification-ready lightweight interactive adapter.
