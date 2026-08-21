@@ -6,6 +6,10 @@ media-tool execution edge. Product work from Anime Frontier or any other
 project stays outside this repository unless it is supplied as a frozen
 qualification fixture or explicitly delegated.
 
+GitHub/mobile home: [LLParis/local-ai-coding-agent](https://github.com/LLParis/local-ai-coding-agent).
+See the [2026 research-to-implementation map](docs/RESEARCH_TO_IMPLEMENTATION_2026.md)
+for the current arXiv sweep and the exact mechanisms adopted or parked.
+
 The everyday production loop is focused and truthful: DeepSeek Harness drives
 the local Qwen3.8-27B Q6 Native 262K model through an inspect/edit/test loop in
 an isolated stage, the repository's real command verifies the staged
@@ -51,16 +55,22 @@ The everyday command takes a repository and a plain objective:
 bin\coding.cmd D:\path\to\project "Fix the described defect without changing tests."
 ```
 
-DeepSeek Harness is the default loop. It switches to the owned `Qwen38Native`
-backend (Qwen3.8-27B Q6, native 262K) without UAC and drives the model through
-an inspect/edit/test loop in an isolated stage. The repository's real
-command verifies the staged result; materially new failure evidence allows at
-most two targeted repairs, and an identical failure stops the run. A verified
-result is applied to the source by default and its stage is cleaned;
-`--stage-only` retains the stage without touching the workspace. After a passing run the
-worker switches to Ollama and sends the objective and diff to
-`devstral-small-2:24b` exactly once as an advisory reviewer; deterministic
-execution remains final authority. The backend is restored afterward.
+The evidence-bound router selects the default DeepSeek route and exact owned
+`Qwen38Native` backend (Qwen3.8-27B Q6, native 262K) without UAC. Before the
+first model call, the worker retrieves bounded workspace Memory and starts a
+fresh-stage DeepSeek continuation under the selected `--task-key`. Full-repository
+jobs give the agent dedicated file tools plus workspace-write PowerShell for staged Git,
+builds, and diagnostics; focused `--scope` jobs use only the dedicated scoped
+tools without PowerShell. Qwen Code's pinned `basedpyright` and `tsc` commands
+are on the diagnostic path. The repository's real command verifies the staged
+result; materially new failure evidence allows at most two targeted repairs, and
+an identical failure stops the run. Promotion is transactional: an external backup is
+written, one apply runs, the manifest is compared, failure triggers rollback,
+and cleanup happens only after success; `--stage-only` retains the stage without
+touching the workspace. After a passing run the worker switches to Ollama and
+sends the objective and diff to `devstral-small-2:24b` exactly once as an
+advisory reviewer; deterministic execution remains final authority. The backend
+is restored afterward.
 
 Repeat `--scope` to focus a job on named repository-relative paths; without it
 the job covers the full repository:
@@ -70,15 +80,29 @@ bin\coding.cmd D:\path\to\project "Finish the focused production job" `
   --scope src\agent_continuity\production_worker.py --scope docs --stage-only
 ```
 
-The effective requested scope is recorded in the durable model request and the
-final JSON result, so operators can see whether a job was focused or
-full-repository. `--harness qwen-code` selects the model-aligned Qwen Code
-alternate; DeepSeek Harness remains the production default. There are no
-automatic retries.
+The effective requested scope, route decision, retrieved memories, session
+lineage, and execution edge are recorded in the final JSON. `--task-key`
+continues one durable workspace workstream. `--harness qwen-code` remains an
+explicit model-aligned alternate; Qwen Code never claims DeepSeek session
+lineage. For unusual repositories, pass a UTF-8 JSON argv array with
+`--verify-command-file`; ordinary projects use automatic Python/Node/Rust/Go/.NET
+detection. Automatic Apple execution supports Swift package test/build, one
+unambiguous shared-scheme Xcode build, and plain Swift typecheck; Swift packages
+route to the trusted Mac while Qwen stays on EXCALIBUR. Xcode and plain-Swift
+modes are source-supported but not yet live-proven until matching real projects
+exercise them. The verified Qwen3.8/DeepSeek/Mac Swift repair run
+`404f6f14-c535-4f5d-ae4d-541f98b7a536` is live Swift-package evidence. There
+are no automatic model retries.
+
+The paired live foundation record—including the applied Memory/continuity run
+`c72309f7-edc3-4fc9-9423-f2af7506e334`—is
+[`runs/live-foundation-completion.json`](runs/live-foundation-completion.json).
 
 The same command records a durable task intent before model dispatch and a
-terminal evidence-backed state afterward. Active memory keeps hashes and
-locators rather than duplicating prompts, model output, diffs, or test logs.
+terminal evidence-backed state afterward. Production Memory compacts complete
+claims plus cryptographic provenance under the per-memory token cap; it keeps
+hashes and locators rather than duplicating prompts, model output, diffs, or
+test logs.
 The task-file lane `bin\coding-task.cmd` remains available for one-response
 scoped edits; it is no longer the everyday entrypoint.
 

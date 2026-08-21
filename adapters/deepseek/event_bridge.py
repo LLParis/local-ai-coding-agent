@@ -10,7 +10,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any
 
-ALLOWED_TOOLS = frozenset(("list", "read", "search", "edit", "test"))
+ALLOWED_TOOLS = frozenset(("list", "read", "search", "edit", "pwsh", "test"))
 MAX_LINE_BYTES = 2_097_152
 MAX_STREAM_BYTES = 33_554_432
 
@@ -125,7 +125,7 @@ class EventAudit:
         intent = event.get("intent")
         if not isinstance(intent, dict) or intent.get("recorded") is not True:
             raise EventProtocolError("tool start lacks recorded pre-dispatch intent")
-        side_effect = name in ("edit", "test")
+        side_effect = name in ("edit", "pwsh", "test")
         if intent.get("side_effect") is not side_effect:
             raise EventProtocolError("side-effect classification is incorrect")
         effect_id = event.get("effectId")

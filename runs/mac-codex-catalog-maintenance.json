@@ -8,8 +8,9 @@
     "unarchive": "codex unarchive <SESSION_UUID>",
     "archive_help_observed": "Archive a saved session by id or session name",
     "unarchive_help_observed": "Unarchive a saved session by id or session name",
-    "database_access": "SQLite URI mode=ro plus PRAGMA query_only=ON; selection only",
+    "database_access": "SQLite URI mode=rw for an existing database plus PRAGMA query_only=ON; selection only; permits SQLite-managed transient WAL sidecars",
     "database_or_rollout_mutation_by_maintenance_code": false,
+    "sqlite_managed_sidecar_activity": "SQLite may create, recover, or remove the standard -wal/-shm coordination files required by live WAL semantics; the maintenance connection issues no SQL writes.",
     "session_mutation_owner": "supported Codex archive command only"
   },
   "prior_batch_diagnosis": {
@@ -227,7 +228,7 @@
     "preserved_launchagent_run_files": 8
   },
   "artifacts": {
-    "ops/codex_catalog_maintenance.py": "sha256:995e2a4f883c2c8bc138b2e88f20509a12598c0bc64264aa6cdebad1a2acee1d",
+    "ops/codex_catalog_maintenance.py": "sha256:30e6dcdd4452c6d474ce154c7e75605557c65f2f160d18f0abbcf63164e22e12",
     "mac/com.ggen5.coding-intelligence.codex-catalog-maintenance.plist": "sha256:825125ede78dbdf2936b948b112fa66a7388c0d627424ededc84c6554361776a",
     "mac/install-codex-catalog-maintenance.sh": "sha256:2fcdfe61abe7afeb9a9226c4add0fb0366a941544f9ce000e4e9936f4aa56a88"
   },
@@ -260,6 +261,75 @@
     "doctor_state_paths": "ok",
     "last_run_sha256": "9fcc69cac3e14229252bdc190ace4b54d02924e30294a27d5adea10357319406",
     "last_probe_sha256": "04eacf177159a3e1ecf124983edc4cdfd67f05a7ffe0258f5e1ed4d547bb5020"
+  },
+  "wal_sidecarless_reliability_repair": {
+    "recorded_at": "2026-08-20T23:34:20Z",
+    "observed_failure": {
+      "state_db": "/Users/pro/.codex/state_5.sqlite",
+      "journal_mode": "wal",
+      "sidecars_at_audited_failure": "absent",
+      "error": "unable to open database file",
+      "latest_failed_run_at": "2026-08-20T22:37:43Z",
+      "failed_runs_in_six_recent_hourly_attempts": 5
+    },
+    "root_cause": "mode=ro could not reliably open the live WAL database when the transient -wal/-shm files were absent. immutable=1 is invalid because Codex changes the database concurrently.",
+    "implementation": {
+      "function": "open_query_only",
+      "uri_mode": "rw",
+      "database_must_already_exist": true,
+      "query_only": true,
+      "open_retry_loop": false,
+      "canonical_source_sha256": "30e6dcdd4452c6d474ce154c7e75605557c65f2f160d18f0abbcf63164e22e12"
+    },
+    "deployment": {
+      "installed_program": "/Users/pro/.local/libexec/coding-intelligence/codex-catalog-maintenance.py",
+      "installed_program_sha256": "30e6dcdd4452c6d474ce154c7e75605557c65f2f160d18f0abbcf63164e22e12",
+      "installed_plist_sha256": "825125ede78dbdf2936b948b112fa66a7388c0d627424ededc84c6554361776a",
+      "installer_sha256": "2fcdfe61abe7afeb9a9226c4add0fb0366a941544f9ce000e4e9936f4aa56a88"
+    },
+    "live_launchagent_invocation": {
+      "launchagent_runs_after_reinstall": 1,
+      "launchagent_last_exit_code": 0,
+      "state_after_run": "not running between intervals",
+      "selected": 0,
+      "archived": 0,
+      "failure": null,
+      "elapsed_seconds": 0.357,
+      "counts_before_and_after": {
+        "active": 91,
+        "active_subagents": 84,
+        "active_vscode": 7,
+        "archived": 416
+      },
+      "last_run_sha256": "87289f1219da90af8943beb1b681855445fde9d9d07cc98e5ec8048e58cdd51c",
+      "active_maintenance_processes_after_run": 0,
+      "active_archive_processes_after_run": 0
+    },
+    "legacy_swift_residue_cleanup": {
+      "path": "/private/tmp/coding-intelligence-swift.xw6ZnR",
+      "resolved_exactly_under_private_tmp": true,
+      "uid": 501,
+      "user": "pro",
+      "mode": "0700",
+      "entries": 1251,
+      "files": 744,
+      "directories": 506,
+      "symlinks": 1,
+      "kilobytes": 49252,
+      "open_handles_before_removal": 0,
+      "fingerprints": {
+        "Package.swift": "9f7c692eb1cf6215148d358c0c32bcd22cd9de27137f0a9926a93fe168130e5d",
+        "Sources/ContinuityFixture/BackendState.swift": "032b0e3718d1c18e4c07d769cb26de8b20a9615c06f72906b6fd5ac1db0560da",
+        "Tests/ContinuityFixtureTests/BackendStateTests.swift": "aa76b357e8ab62690471e924a46c0415b0b36da33488c630a3bb039970c25d5e",
+        "continuity-trajectory.json": "0316265d066b97fe0dc267b28e8f5c60fd64ce7072882409051f6d60fffb3015"
+      },
+      "retained_evidence": "runs/swift-mac-edge.json",
+      "removed": true,
+      "post_exists": false,
+      "approved_verifier_root": "/private/tmp/coding-intelligence-swift-verifier",
+      "approved_verifier_root_mode": "0700",
+      "approved_verifier_root_children_after_cleanup": 0
+    }
   },
   "truth_status": {
     "configured": "Hourly per-user LaunchAgent loaded with a 25-item sequential cap.",

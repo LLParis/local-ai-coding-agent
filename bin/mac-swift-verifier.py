@@ -81,6 +81,33 @@ SENSITIVE_NAMES = {
 }
 SENSITIVE_SUFFIXES = {".key", ".mobileprovision", ".p12", ".pem", ".pfx"}
 SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+XCODE_SCHEME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._-]{0,127}$")
+XCODE_SDKS = {
+    "appletvos",
+    "appletvsimulator",
+    "driverkit",
+    "iphoneos",
+    "iphonesimulator",
+    "macosx",
+    "watchos",
+    "watchsimulator",
+    "xros",
+    "xrsimulator",
+}
+HIDDEN_CONTROL_PATH = "__ci_hidden_verifier__/command-plan.json"
+TRANSFERABLE_BINARY_SUFFIXES = {
+    ".gif",
+    ".heic",
+    ".icns",
+    ".jpeg",
+    ".jpg",
+    ".otf",
+    ".pdf",
+    ".png",
+    ".tif",
+    ".tiff",
+    ".ttf",
+}
 
 
 class MacVerifierError(RuntimeError):
@@ -174,22 +201,48 @@ def _load_task(path: Path, expected_sha256: str) -> tuple[dict[str, Any], str]:
         raise MacVerifierError("task manifest contains fields outside schema v1")
     if value.get("schema_version") != 1 or value.get("execution_verifier") != VERIFIER_ID:
         raise MacVerifierError("task does not select the trusted mac-swift verifier")
-    for field in ("mutable", "context", "verify_context", "test_command"):
+    for field in ("mutable", "context", "test_command"):
         if not isinstance(value.get(field), list) or not value[field]:
             raise MacVerifierError(f"task.{field} must be a non-empty array")
+    if not isinstance(value.get("verify_context"), list):
+        raise MacVerifierError("task.verify_context must be an array")
     return value, expected_sha256
 
 
 def _command(value: object) -> list[str]:
     if (
         not isinstance(value, list)
-        or not 2 <= len(value) <= 32
-        or value[:2] != ["swift", "test"]
+        or not 2 <= len(value) <= 260
         or any(not isinstance(arg, str) or not arg or len(arg) > 4096 for arg in value)
     ):
-        raise MacVerifierError("mac-swift test_command must begin with separate swift, test argv")
+        raise MacVerifierError("mac-swift test_command is not a bounded argv array")
     if any("\x00" in arg or "\n" in arg or "\r" in arg for arg in value):
         raise MacVerifierError("mac-swift test_command contains control characters")
+    if sum(len(arg.encode("utf-8")) + 1 for arg in value) > 64 * 1024:
+        raise MacVerifierError("mac-swift test_command exceeds the argv byte bound")
+    if value[:2] in (["swift", "test"], ["swift", "build"]):
+        _swift_package_command(value)
+    elif value[0] == "xcodebuild":
+        _xcode_command(value)
+    elif value[:3] == ["xcrun", "swiftc", "-typecheck"]:
+        _swift_typecheck_command(value)
+    else:
+        raise MacVerifierError("mac-swift test_command mode is unsupported")
+    return list(value)
+
+
+def _command_mode(value: object) -> str:
+    command = _command(value)
+    if command[:2] == ["swift", "test"]:
+        return "swift-package-test"
+    if command[:2] == ["swift", "build"]:
+        return "swift-package-build"
+    if command[0] == "xcodebuild":
+        return "xcode-shared-scheme-build"
+    return "swift-typecheck"
+
+
+def _swift_package_command(value: list[str]) -> None:
     allowed_flags = {
         "--parallel",
         "--no-parallel",
@@ -206,7 +259,7 @@ def _command(value: object) -> list[str]:
             index += 1
             continue
         if item not in pair_flags or index + 1 >= len(value):
-            raise MacVerifierError(f"mac-swift test argument is outside the argv contract: {item}")
+            raise MacVerifierError(f"Swift package argument is outside the argv contract: {item}")
         argument = value[index + 1]
         if item == "--configuration" and argument not in {"debug", "release"}:
             raise MacVerifierError("Swift configuration must be debug or release")
@@ -216,8 +269,53 @@ def _command(value: object) -> list[str]:
             "/" in argument or "\\" in argument or ".." in argument
         ):
             raise MacVerifierError("Swift test filter is not a bounded identifier")
+        if value[1] == "build" and item in {"--filter", "--skip"}:
+            raise MacVerifierError("Swift build cannot carry a test filter")
         index += 2
-    return list(value)
+
+
+def _xcode_command(value: list[str]) -> None:
+    if (
+        len(value) != 13
+        or value[1] not in {"-workspace", "-project"}
+        or value[3] != "-scheme"
+        or value[5] != "-sdk"
+        or value[7:13]
+        != [
+            "-derivedDataPath",
+            ".ci-derived-data",
+            "-quiet",
+            "CODE_SIGNING_ALLOWED=NO",
+            "CODE_SIGNING_REQUIRED=NO",
+            "build",
+        ]
+    ):
+        raise MacVerifierError("xcodebuild command shape is outside the contract")
+    container = _relative(value[2], "xcode container")
+    suffix = ".xcworkspace" if value[1] == "-workspace" else ".xcodeproj"
+    if len(PurePosixPath(container).parts) != 1 or not container.endswith(suffix):
+        raise MacVerifierError("xcodebuild container must be one root Apple container")
+    if XCODE_SCHEME_RE.fullmatch(value[4]) is None:
+        raise MacVerifierError("xcodebuild scheme is outside the bounded name contract")
+    if value[6] not in XCODE_SDKS:
+        raise MacVerifierError("xcodebuild SDK is outside the source-derived allowlist")
+
+
+def _swift_typecheck_command(value: list[str]) -> None:
+    files = [_relative(item, "swiftc source") for item in value[3:]]
+    if (
+        not files
+        or len(files) > 128
+        or files != sorted(files)
+        or len(files) != len(set(files))
+        or sum(len(item.encode("utf-8")) + 1 for item in files) > 32 * 1024
+    ):
+        raise MacVerifierError("swiftc typecheck requires 1..128 unique explicit files")
+    if any(
+        not item.endswith(".swift") or PurePosixPath(item).name.startswith("-")
+        for item in files
+    ):
+        raise MacVerifierError("swiftc typecheck accepts only explicit Swift files")
 
 
 def _array_paths(task: dict[str, Any], field: str) -> list[str]:
@@ -268,8 +366,11 @@ def _collect(
     mutable = _array_paths(task, "mutable")
     context = _array_paths(task, "context")
     hidden = _array_paths(task, "verify_context")
-    if any(any(_is_within(path, verifier) for verifier in hidden) for path in mutable):
-        raise MacVerifierError("hidden verifier scope overlaps a mutable path")
+    if any(
+        any(_is_within(path, verifier) or _is_within(verifier, path) for verifier in hidden)
+        for path in (*mutable, *context)
+    ):
+        raise MacVerifierError("hidden verifier scope overlaps a model-readable path")
 
     found: dict[str, Path] = {}
     for relative in sorted(set(mutable + context + hidden)):
@@ -303,7 +404,9 @@ def _collect(
                         f"explicit tree contains a symlink or reparse point: {nested_relative}"
                     )
                 found[nested_relative] = path
-    if not found or len(found) > MAX_FILES:
+    if HIDDEN_CONTROL_PATH in found:
+        raise MacVerifierError("source collides with the reserved hidden verifier path")
+    if not found or len(found) >= MAX_FILES:
         raise MacVerifierError("explicit transfer file count is outside the bound")
 
     entries: list[dict[str, object]] = []
@@ -320,14 +423,32 @@ def _collect(
         try:
             text = raw.decode("utf-8")
         except UnicodeError as exc:
-            raise MacVerifierError(f"non-UTF-8 file is not transferable: {relative}") from exc
-        try:
-            _reject_secrets(text)
-            ensure_secret_free({"path": relative, "content": text})
-        except (CheckpointError, RunMemoryError) as exc:
-            raise MacVerifierError(
-                f"secret-like material refused before transfer: {relative}"
-            ) from exc
+            if raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+                try:
+                    text = raw.decode("utf-16")
+                except UnicodeError as utf16_error:
+                    raise MacVerifierError(
+                        f"text file encoding is not transferable: {relative}"
+                    ) from utf16_error
+                try:
+                    _reject_secrets(text)
+                    ensure_secret_free({"path": relative, "content": text})
+                except (CheckpointError, RunMemoryError) as secret_error:
+                    raise MacVerifierError(
+                        f"secret-like material refused before transfer: {relative}"
+                    ) from secret_error
+            elif path.suffix.lower() not in TRANSFERABLE_BINARY_SUFFIXES:
+                raise MacVerifierError(
+                    f"non-UTF-8 file is outside the asset allowlist: {relative}"
+                ) from exc
+        else:
+            try:
+                _reject_secrets(text)
+                ensure_secret_free({"path": relative, "content": text})
+            except (CheckpointError, RunMemoryError) as exc:
+                raise MacVerifierError(
+                    f"secret-like material refused before transfer: {relative}"
+                ) from exc
         role = (
             "hidden_verifier"
             if any(_is_within(relative, verifier) for verifier in hidden)
@@ -342,8 +463,25 @@ def _collect(
             }
         )
         payload[relative] = raw
-    if not any(item["role"] == "hidden_verifier" for item in entries):
-        raise MacVerifierError("no hidden verifier file was selected")
+    control = _canonical(
+        {
+            "schema": "coding-intelligence.mac-command-plan/v1",
+            "command_mode": _command_mode(task["test_command"]),
+            "command": _command(task["test_command"]),
+        }
+    )
+    if total + len(control) > MAX_TOTAL_BYTES:
+        raise MacVerifierError("explicit transfer exceeds the total byte bound")
+    entries.append(
+        {
+            "path": HIDDEN_CONTROL_PATH,
+            "role": "hidden_verifier",
+            "sha256": _sha256(control),
+            "size_bytes": len(control),
+        }
+    )
+    payload[HIDDEN_CONTROL_PATH] = control
+    entries.sort(key=lambda item: str(item["path"]))
     return entries, payload
 
 
@@ -504,11 +642,12 @@ def _invoke_ssh(archive: bytes, timeout_seconds: int) -> dict[str, object]:
     configuration = _ssh_configuration(resolved_ssh)
     remote_program = (PACKAGE / "mac" / "swift-verifier-remote.py").read_bytes()
     remote_sha256 = _sha256(remote_program)
-    encoded = base64.b64encode(remote_program).decode("ascii")
     digest = remote_sha256.removeprefix("sha256:")
     loader = (
-        "import base64,hashlib;"
-        f"d=base64.b64decode('{encoded}');"
+        "import hashlib,sys;"
+        f"n={len(remote_program)};"
+        "d=sys.stdin.buffer.read(n);"
+        "assert len(d)==n;"
         f"assert hashlib.sha256(d).hexdigest()=='{digest}';"
         "exec(compile(d,'<coding-intelligence-mac-swift-verifier>','exec'))"
     )
@@ -571,7 +710,11 @@ def _invoke_ssh(archive: bytes, timeout_seconds: int) -> dict[str, object]:
         stderr=subprocess.PIPE,
     )
     try:
-        stdout, stderr = process.communicate(archive, timeout=timeout_seconds + 20)
+        # Keep Windows argv bounded: stream the hash-pinned verifier first, then
+        # leave stdin positioned at the ZIP bytes consumed by the verifier itself.
+        stdout, stderr = process.communicate(
+            remote_program + archive, timeout=timeout_seconds + 20
+        )
     except subprocess.TimeoutExpired as exc:
         process.kill()
         stdout, stderr = process.communicate(timeout=5)
@@ -616,6 +759,10 @@ def _validate_remote(
         raise MacVerifierError("Mac result schema differs")
     if remote.get("automatic_retries") != 0:
         raise MacVerifierError("Mac result reported a retry")
+    if remote.get("command_mode", _command_mode(manifest["command"])) != _command_mode(
+        manifest["command"]
+    ):
+        raise MacVerifierError("Mac result command mode differs")
     for field, expected in (
         ("archive_sha256", archive_sha256),
         ("manifest_sha256", manifest_sha256),
@@ -648,7 +795,7 @@ def _validate_remote(
             or test.get("owned_process_group_residual") is not False
         ):
             raise MacVerifierError("verified Mac result did not pass its bounded Swift test")
-        if test.get("argv") != [EXPECTED_MAC["swift_path"], *manifest["command"][1:]]:
+        if test.get("argv") != _remote_argv(manifest):
             raise MacVerifierError("verified Mac result command differs")
         for channel in ("stdout", "stderr"):
             evidence = test.get(channel)
@@ -660,6 +807,16 @@ def _validate_remote(
     elif remote.get("status") != "failed":
         raise MacVerifierError("Mac result status differs")
     return remote
+
+
+def _remote_argv(manifest: dict[str, object]) -> list[str]:
+    command = _command(manifest["command"])
+    mode = _command_mode(command)
+    if mode in {"swift-package-test", "swift-package-build"}:
+        return [str(EXPECTED_MAC["swift_path"]), *command[1:]]
+    if mode == "xcode-shared-scheme-build":
+        return ["/usr/bin/xcodebuild", *command[1:]]
+    return ["/usr/bin/xcrun", *command[1:]]
 
 
 def run_verification(
@@ -690,6 +847,7 @@ def run_verification(
     )
     intent = {
         "host_alias": SSH_ALIAS,
+        "command_mode": _command_mode(manifest["command"]),
         "manifest_sha256": manifest_sha256,
         "archive_sha256": _sha256(archive),
         "remote_command_sha256": _sha256(_canonical(manifest["command"])),
@@ -715,6 +873,7 @@ def run_verification(
         "schema": RESULT_SCHEMA,
         "status": status,
         "captured_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "command_mode": _command_mode(manifest["command"]),
         "checkpoint": {
             "task_sha256": task_sha256,
             "source_snapshot_before_sha256": source_before["manifest_sha256"],

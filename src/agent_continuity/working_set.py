@@ -450,23 +450,66 @@ def _provenance(candidate: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _memory_block(candidate: Mapping[str, Any], *, include_excerpts: bool) -> str:
-    evidence = []
-    for item in candidate["evidence"]:
+    if not include_excerpts:
+        # A production episode's full display metadata can exceed the fixed
+        # 512-token per-memory contract even when its actual claim is small.
+        # Preserve the complete claim and cryptographic attribution, while
+        # leaving redundant display/temporal fields in the immutable store.
         value = {
-            key: item.get(key)
-            for key in (
-                "evidence_id",
-                "source_kind",
-                "source_locator",
-                "source_event_id",
-                "source_sha256",
-                "observed_at",
-                "authority",
-            )
+            "memory_id": candidate["memory_id"],
+            "claim": {
+                "subject": candidate["subject"],
+                "predicate": candidate["predicate"],
+                "object": candidate["object"],
+            },
+            "verification_status": candidate["verification_status"],
+            "provenance": {
+                "source_event_ids": sorted(
+                    {
+                        candidate["source_event_id"],
+                        *(
+                            item.get("source_event_id")
+                            for item in candidate["evidence"]
+                            if item.get("source_event_id")
+                        ),
+                    }
+                ),
+                "source_sha256": sorted(
+                    {
+                        item.get("source_sha256")
+                        for item in candidate["evidence"]
+                        if item.get("source_sha256")
+                    }
+                ),
+                "authorities": sorted(
+                    {
+                        item.get("authority")
+                        for item in candidate["evidence"]
+                        if item.get("authority")
+                    }
+                ),
+            },
         }
-        if include_excerpts:
-            value["excerpt"] = item.get("excerpt")
-        evidence.append(value)
+        return "### MEMORY\n" + _canonical_text(value) + "\n"
+
+    evidence = [
+        {
+            **{
+                key: item.get(key)
+                for key in (
+                    "evidence_id",
+                    "source_kind",
+                    "source_locator",
+                    "source_event_id",
+                    "source_sha256",
+                    "observed_at",
+                    "authority",
+                )
+            },
+            "excerpt": item.get("excerpt"),
+        }
+        for item in candidate["evidence"]
+    ]
     value = {
         "memory_id": candidate["memory_id"],
         "kind": candidate["kind"],

@@ -59,8 +59,8 @@
     },
     {
       "id": "deepseek-live-production",
-      "path": "runs/deepseek-four-tool-production.json",
-      "sha256": "sha256:787df9284ee70b971c69aca7f4d1b65b3fe1079fc5c13d7eb79dd333ad5bd918"
+      "path": "runs/live-foundation-completion.json",
+      "sha256": "sha256:bda5818a5319dde5c2af990eff1e3f2d1e1cef90527175eac1e449d36523d515"
     }
   ],
   "components": {
@@ -81,7 +81,7 @@
         "provider": "llama-cpp",
         "locality": "local",
         "roles": ["implement", "inspect"],
-        "languages": ["powershell", "python", "swift", "typescript"],
+        "languages": ["*"],
         "max_context_tokens": 262144,
         "evidence_ids": ["tournament-v1", "production-handoff-v1", "swift-mac-edge-proof", "qwen-native-long-context-proof", "deepseek-live-production"]
       },
@@ -184,7 +184,7 @@
         "name": "DeepSeek full-strength production coding harness",
         "locality": "local",
         "mode": "interactive",
-        "tools": ["edit", "list", "read", "search", "test"],
+        "tools": ["edit", "list", "pwsh", "read", "search", "test"],
         "evidence_ids": ["adapter-install-proof", "harness-fusion-decision", "deepseek-live-production"]
       }
     ],
@@ -411,12 +411,34 @@
       "execution_edge_id": "excalibur",
       "roles": ["implement", "inspect"],
       "capabilities": ["interactive_agent", "long_context", "scoped_edit"],
-      "languages": ["powershell", "python", "typescript"],
-      "tool_needs": ["edit", "list", "read", "search", "test"],
+      "languages": ["*"],
+      "tool_needs": ["edit", "list", "pwsh", "read", "search", "test"],
       "max_context_tokens": 262144,
       "priority": 19,
       "required_runtime_tags": [],
       "evidence_ids": ["adapter-install-proof", "harness-fusion-decision", "qwen-native-long-context-proof", "deepseek-live-production"],
+      "baseline_route_id": null,
+      "team_gain_basis_points": null,
+      "comparison_evidence_ids": []
+    },
+    {
+      "id": "candidate-qwen38-deepseek-apple",
+      "name": "Qwen3.8 Q6 Native through DeepSeek with authoritative Mac Swift verification",
+      "qualification_status": "accepted",
+      "composition": "single",
+      "model_ids": ["qwen3.8-27b-q6"],
+      "harness_id": "deepseek-four-tool-adapter",
+      "verifier_id": "devstral-local-verifier",
+      "inference_edge_id": "excalibur",
+      "execution_edge_id": "mac-apple",
+      "roles": ["implement", "inspect"],
+      "capabilities": ["interactive_agent", "long_context", "scoped_edit"],
+      "languages": ["swift"],
+      "tool_needs": ["edit", "list", "pwsh", "read", "search", "swift_toolchain", "test", "xcode"],
+      "max_context_tokens": 262144,
+      "priority": 18,
+      "required_runtime_tags": [],
+      "evidence_ids": ["adapter-install-proof", "deepseek-live-production", "harness-fusion-decision", "qwen-native-long-context-proof", "swift-mac-edge-proof", "tournament-v1"],
       "baseline_route_id": null,
       "team_gain_basis_points": null,
       "comparison_evidence_ids": []
@@ -558,6 +580,7 @@
     "cloud_primary_route_id": "cloud-codex-primary",
     "sovereign_route_ids": [
       "candidate-qwen38-deepseek",
+      "candidate-qwen38-deepseek-apple",
       "local-qwen38-q6-bounded",
       "local-qwen38-q6-apple",
       "local-devstral-verification",

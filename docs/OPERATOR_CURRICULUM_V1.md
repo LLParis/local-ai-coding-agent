@@ -7,6 +7,10 @@ platform. Start with **Level 0** and the everyday workflow. The later levels
 teach enough of the implementation to evaluate models, harnesses, memory, and
 research ideas instead of trusting product names or benchmark claims.
 
+Mobile source: [LLParis/local-ai-coding-agent](https://github.com/LLParis/local-ai-coding-agent).
+The [2026 research-to-implementation map](RESEARCH_TO_IMPLEMENTATION_2026.md)
+shows which current papers changed the live system and which remain post-live.
+
 The repository is currently version `0.1.0`. The title "v1" names this
 operator contract; it is not a claim that every candidate route has completed
 the final tournament.
@@ -106,10 +110,14 @@ file is required:
 bin\coding.cmd D:\11_CS\00_REPOS\my-project "Fix the described defect without changing tests."
 ```
 
-DeepSeek Harness is the default loop. It switches to the owned `Qwen38Native`
-backend (Qwen3.8-27B Q6, native 262K) without UAC and drives the model through
-an inspect/edit/test loop in an isolated stage. The repository's real
-command verifies the staged result; materially new failure evidence allows at
+The evidence-bound router selects DeepSeek Harness and the exact owned
+`Qwen38Native` backend (Qwen3.8-27B Q6, native 262K) without UAC. The worker
+retrieves relevant workspace Memory, continues the selected `--task-key` in a
+fresh stage, and supplies dedicated file tools plus workspace-write PowerShell
+for staged Git/build/diagnostic commands on full-repository jobs. Focused
+`--scope` jobs use only dedicated scoped tools without PowerShell. The
+repository's real command verifies
+the staged result; materially new failure evidence allows at
 most two targeted repairs, and an identical failure stops the run. A verified
 result is applied to the source by default and its stage is cleaned;
 `--stage-only` retains the stage without touching the workspace. After a passing run the
@@ -125,10 +133,15 @@ bin\coding.cmd D:\11_CS\00_REPOS\my-project "Finish the focused production job" 
   --scope src\parser.py --scope docs --stage-only
 ```
 
-The effective requested scope is recorded in the durable model request and the
-final JSON result, so you can see whether a job was focused or full-repository.
-`--harness qwen-code` selects the model-aligned Qwen Code alternate; DeepSeek
-Harness remains the production default. There are no automatic retries.
+The final JSON records scope, route, retrieved Memory, DeepSeek parent lineage,
+and execution edge. Reuse `--task-key feature-name` for one continuing work
+stream. `--harness qwen-code` is an explicit alternate. A UTF-8 JSON argv file
+passed with `--verify-command-file` overrides verification for an unusual
+project without batch-shell quoting problems. Automatic Apple execution routes
+Swift package test/build, one unambiguous shared-scheme Xcode build, and plain
+Swift typecheck to the trusted Mac. Swift-package execution is live-proven;
+Xcode and plain-Swift modes are source-supported pending matching real projects.
+There are no automatic model retries.
 
 ### Describe one task
 
@@ -440,9 +453,9 @@ bin\continuity.cmd compaction-commit `
   --output .\state-revisions\revision-0002.json
 ```
 
-This CLI writes one immutable state file after both approvals. Automatic
-session compaction and general routing integration are still pending; do not
-describe them as active merely because the validator exists.
+This CLI writes one immutable state file after both approvals. The everyday
+worker separately uses live routing, workspace Memory retrieval, DeepSeek
+compaction, and fresh-stage session lineage automatically.
 
 ### Retention and rehydration
 
@@ -537,11 +550,11 @@ The Mac is the execution edge for Xcode, SwiftUI, signing, simulators, and Apple
 tools; EXCALIBUR remains the inference command center. One sovereign Swift
 fixture has proven this composition in `runs/swift-mac-edge.json`.
 
-For Swift/Xcode work, use a schema-v1 task capsule with
-`execution_verifier: "mac-swift"` and a `test_command` beginning with
-`["swift", "test"]`, then run `bin\coding-task.cmd`. That path packages the
-stage once, uses the pinned Mac/Xcode/SSH identities, returns bound output and
-source hashes, cleans its exact remote temporary root, and then performs the
+For ordinary Swift packages, use `bin\coding.cmd` normally; `Package.swift`
+selects the accepted DeepSeek+Mac route automatically. The exact task-file
+`execution_verifier: "mac-swift"` lane remains available for manually bounded
+capsules. Both paths use pinned Mac/Xcode/SSH identities, return bound output
+and source hashes, clean the exact remote temporary root, and then perform the
 normal Devstral/final-Memory steps.
 
 ## Failure and verdict language
@@ -579,11 +592,11 @@ an unexpected success for leakage and weak tests with equal seriousness.
 | What did one everyday `coding.cmd` run see/change/test? | `trajectory`, `stage`, `scope`, and `focused` fields from its JSON result |
 | What was durably recorded? | `%LOCALAPPDATA%\CodingIntelligence\MemoryV1\events`, `memory.sqlite3`, and `memory-verify` |
 | Did native Qwen pass long context? | `runs/qwen38-q6-native-long-context-qualification.json` |
-| Did the Mac Swift route pass? | `runs/swift-mac-edge.json` |
+| Did the Mac Swift route pass? | `runs/live-foundation-completion.json` and `runs/swift-mac-edge.json` |
 | Is memory maintenance healthy? | newest `%LOCALAPPDATA%\CodingIntelligence\MemoryV1\maintenance\runs\*.json` |
 | Is Radar current? | `%LOCALAPPDATA%\CodingIntelligence\ResearchRadarRuntime\last-run.json` |
 | What routes are presently authorized? | `config/routing-v1.json` plus every pinned evidence hash |
-| What proved the production DeepSeek harness? | `runs/deepseek-four-tool-production.json` |
+| What proved the production DeepSeek harness? | `runs/live-foundation-completion.json` |
 
 Treat repository docs as claims until their cited artifact, process, listener,
 hash, and task state agree.

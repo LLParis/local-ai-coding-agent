@@ -13,10 +13,11 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 ADAPTER_SCHEMA_VERSION = 1
-ALLOWED_TOOLS = ("list", "read", "search", "edit", "test")
+ALLOWED_TOOLS = ("list", "read", "search", "edit", "pwsh", "test")
 GENERATED_DIRECTORIES = frozenset(
     {
         "__pycache__",
+        ".git",
         ".pytest_cache",
         ".ruff_cache",
         ".mypy_cache",
@@ -139,6 +140,7 @@ class TaskCapsule:
     verify_context: tuple[str, ...]
     test_command: tuple[str, ...]
     timeout: int
+    tool_timeout_seconds: int = 300
 
     @classmethod
     def load(cls, path: Path | str) -> TaskCapsule:
@@ -204,6 +206,15 @@ class TaskCapsule:
         timeout = raw["timeout"]
         if not isinstance(timeout, int) or not 10 <= timeout <= 1800:
             raise AdapterContractError("timeout must be an integer from 10 through 1800 seconds")
+        tool_timeout_seconds = raw.get("tool_timeout_seconds", 300)
+        if (
+            not isinstance(tool_timeout_seconds, int)
+            or isinstance(tool_timeout_seconds, bool)
+            or not 10 <= tool_timeout_seconds <= 1800
+        ):
+            raise AdapterContractError(
+                "tool_timeout_seconds must be an integer from 10 through 1800 seconds"
+            )
         backend = raw["backend"]
         if not isinstance(backend, str) or not backend:
             raise AdapterContractError("backend must be a non-empty string")
@@ -217,6 +228,7 @@ class TaskCapsule:
             verify_context=verify_context,
             test_command=tuple(command),
             timeout=timeout,
+            tool_timeout_seconds=tool_timeout_seconds,
         )
 
     @property

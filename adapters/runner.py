@@ -355,6 +355,8 @@ def run_harness_process(
         raise AdapterContractError("edit-call budget is outside production bounds")
     if not 1 <= spec.max_test_calls <= spec.max_tool_calls:
         raise AdapterContractError("test-call budget is outside production bounds")
+    if not 10.0 <= float(spec.timeout_seconds) <= 3600.0:
+        raise AdapterContractError("overall harness timeout is outside the 10..3600s bound")
     start = time.monotonic()
     run_id = str(uuid.uuid4())
     source_before = snapshot_selected(capsule.workspace, capsule.scoped_source_paths)
@@ -398,7 +400,7 @@ def run_harness_process(
     timed_out = False
     protocol_error: str | None = None
     stop = "child_exit"
-    deadline = start + min(float(capsule.timeout), float(spec.timeout_seconds))
+    deadline = start + float(spec.timeout_seconds)
     stdout_done = False
     raw_stdout_bytes = 0
 
@@ -480,10 +482,14 @@ def run_harness_process(
                         "call_id": call_id,
                         "tool": name,
                         "input": args,
+                        "denied": event.get("denied"),
                     }
                 )
                 violation = _validate_tool_call(capsule, name, args)
-                if violation is not None:
+                typed_denial = event.get("denied")
+                if violation is not None and not (
+                    isinstance(typed_denial, str) and typed_denial
+                ):
                     protocol_error = violation
                     stop = "scope_violation"
                     owner.terminate_tree()
@@ -535,6 +541,11 @@ def run_harness_process(
                     summary["exit_code"] = details.get("exitCode", details.get("exit_code"))
                     summary["passed"] = details.get("passed")
                     summary["path"] = details.get("path")
+                    summary["timed_out"] = details.get("timedOut")
+                    summary["sandbox_mode"] = details.get("sandboxMode")
+                    summary["sandbox_denied"] = details.get("sandboxDenied")
+                    summary["sandbox_enforcement"] = details.get("sandboxEnforcement")
+                    summary["sandbox_runner_failed"] = details.get("sandboxRunnerFailed")
                     if name == "test" and summary["passed"] is False:
                         summary["is_error"] = True
                 tool_results.append(summary)
@@ -611,7 +622,9 @@ def run_harness_process(
             capsule.test_command,
             cwd=stage,
             env=verifier_env,
-            timeout_seconds=min(float(capsule.timeout), 300.0),
+            timeout_seconds=min(
+                float(capsule.timeout), float(capsule.tool_timeout_seconds)
+            ),
         )
         verifier["not_run"] = False
         if not verifier["passed"]:
@@ -624,6 +637,9 @@ def run_harness_process(
     if not source_preserved:
         protocol_error = "source workspace changed during staged harness execution"
         stop = "source_modified"
+    if os.name == "nt" and not owner.job_assigned and protocol_error is None:
+        protocol_error = "DeepSeek child tree lacks exact Windows Job Object ownership"
+        stop = "ownership_unproven"
 
     mutable_after = _read_text_for_diff(stage, capsule.mutable)
     unified = _unified_diff(mutable_before, mutable_after)
@@ -642,6 +658,7 @@ def run_harness_process(
         and verifier.get("passed") is True
         and source_preserved
         and not out_of_scope
+        and (os.name != "nt" or owner.job_assigned)
     )
     if passed:
         stop = "verified"

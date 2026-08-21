@@ -2,10 +2,11 @@
  * Coding Intelligence's bounded DeepSeek Harness plugin.
  *
  * This replaces the shipped final-text-only headless runner. Configuration
- * comes only from a validated parent; the model gets list/read/search/edit/test.
+ * comes only from a validated parent; the model gets dedicated repository tools
+ * plus the Harness's confined PowerShell tool for Git/build/diagnostics.
  */
 
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { closeSync, fsyncSync, openSync, writeSync } from "node:fs";
 import {
@@ -24,9 +25,16 @@ import { SessionId } from "@deepseek-ai/dsh-session";
 import { defineTool } from "@deepseek-ai/dsh-tools";
 
 export const name = "ci-deepseek-production-runner";
-export const inject = ["agentDefaultModel", "agents", "sessions", "systemPrompt", "tools"];
+export const inject = [
+  "agentDefaultModel",
+  "agents",
+  "sessionPersistence",
+  "sessions",
+  "systemPrompt",
+  "tools",
+];
 
-const ALLOWED_TOOLS = Object.freeze(["list", "read", "search", "edit", "test"]);
+const ALLOWED_TOOLS = Object.freeze(["list", "read", "search", "edit", "pwsh", "test"]);
 const MAX_FILE_BYTES = 1_048_576;
 const MAX_EDIT_BYTES = 524_288;
 const MAX_MATCHES = 500;
@@ -327,14 +335,19 @@ function runCommand(command, cwd, timeoutMs, signal) {
   });
 }
 
-function prompt(objective, readable, mutable) {
+function prompt(objective, readable, mutable, pwshAllowed, diagnostics) {
   return [
     "Complete this coding objective in the isolated live-production stage.",
     `Objective: ${objective}`,
     `Readable paths: ${JSON.stringify(readable)}`,
     `Mutable paths: ${JSON.stringify(mutable)}`,
     "Start with list path '.' to see the repository root, then use list, read, and search to understand it before editing.",
+    pwshAllowed
+      ? "Prefer dedicated tools for files. Use confined pwsh only for Git inspection, repository-native builds, compilers, and diagnostics inside the staged workspace."
+      : "This focused task does not expose pwsh; use the dedicated scoped tools and the authoritative test tool.",
+    `Available diagnostic commands when relevant: ${diagnostics}.`,
     "Make every coordinated scoped edit needed to finish the objective.",
+    "This is an implementation run, not an audit. Once the named files and directly relevant code are understood, edit immediately; do not inspect unrelated tests, plans, or subsystems merely to increase certainty.",
     "You may run test once before editing to establish the real baseline. After diagnosis, act; do not keep rereading files whose relevant behavior is already known.",
     "After meaningful changes, run test again. If it fails, repair only from the new failure evidence; do not repeat an identical failed test without an intervening edit.",
     "Finish only after the latest edit has a passing test, then report the completed result concisely.",
@@ -346,7 +359,7 @@ function installTools(ctx, state) {
   ctx.systemPrompt.section({
     name: "ci:production-contract",
     order: 1,
-    text: "You are the primary local coding agent. Inspect the repository, make all coordinated scoped edits required by the objective, and use the real build or compiler result to finish. List/read/search/edit are stage-scoped; test runs the repository's selected real command. Never claim an unobserved result or repeat an identical failed action.",
+    text: "You are the primary local coding agent. Inspect the repository, make all coordinated scoped edits required by the objective, and use the real build or compiler result to finish. Prefer the dedicated stage-scoped list/read/search/edit tools. Confined pwsh is for Git inspection, repository-native builds, compilers, and diagnostics inside the staged workspace. Test runs the selected authoritative command. Never claim an unobserved result or repeat an identical failed action.",
   });
 
   ctx.tools.register(defineTool({
@@ -595,7 +608,7 @@ function installGuards(ctx, state) {
     const callId = String(exec.callId);
     const fact = callFacts.get(callId);
     let denial;
-    if (!ALLOWED_TOOLS.includes(exec.name)) denial = "tool is outside the four-tool allowlist";
+    if (!ALLOWED_TOOLS.includes(exec.name)) denial = "tool is outside the production allowlist";
     else if (state.toolCalls > state.maxToolCalls) denial = "tool-call budget exceeded";
     else if (state.callIds.has(callId)) denial = "duplicate tool call id";
     else if (fact?.parseError) denial = fact.parseError;
@@ -608,6 +621,8 @@ function installGuards(ctx, state) {
       if (typeof exec.arguments?.path !== "string" || !safelyAllowed(exec.arguments.path, state.mutable)) {
         denial ??= "edit path is outside mutable scope";
       }
+    } else if (exec.name === "pwsh") {
+      if (!state.pwshAllowed) denial ??= "pwsh is unavailable for focused or verifier-hidden tasks";
     } else if (exec.name === "list" || exec.name === "read") {
       const rootList = exec.name === "list" && exec.arguments?.path === ".";
       if (typeof exec.arguments?.path !== "string" || (!rootList && !safelyAllowed(exec.arguments.path, state.readable))) {
@@ -622,9 +637,11 @@ function installGuards(ctx, state) {
       if (state.testCalls > state.maxTestCalls) denial ??= "production test-call budget exceeded";
     }
 
-    const sideEffect = exec.name === "edit" || exec.name === "test";
+    const sideEffect = exec.name === "edit" || exec.name === "pwsh" || exec.name === "test";
+    const effectArguments = { ...exec.arguments };
+    if (exec.name === "pwsh") delete effectArguments.description;
     const effectId = sideEffect
-      ? `effect-${digest({ run: state.runId, name: exec.name, arguments: exec.arguments, editGeneration: state.editGeneration }).slice(0, 32)}`
+      ? `effect-${digest({ run: state.runId, name: exec.name, arguments: effectArguments, editGeneration: state.editGeneration }).slice(0, 32)}`
       : null;
     if (effectId !== null && state.effectIds.has(effectId)) denial = "duplicate side-effect identity";
     if (effectId !== null) state.effectIds.add(effectId);
@@ -645,17 +662,32 @@ function installGuards(ctx, state) {
   ctx.on("tools/result", (exec, result) => {
     const outcome = state.toolOutcomes.get(String(exec.callId));
     const testFailed = exec.name === "test" && outcome?.passed === false;
+    const pwsh = exec.name === "pwsh" && result?.value?.kind === "foreground"
+      ? result.value
+      : null;
+    const pwshPassed = pwsh === null
+      ? null
+      : pwsh.exitCode === 0
+        && pwsh.timedOut === false
+        && pwsh.aborted === false
+        && pwsh.sandbox?.denied !== true
+        && pwsh.sandbox?.runnerFailed !== true;
     emit({
       type: "tool_execution_end",
       toolCallId: String(exec.callId),
       toolName: exec.name,
-      isError: Boolean(result.isError) || testFailed,
+      isError: Boolean(result.isError) || testFailed || pwshPassed === false,
       result: {
         content: result.content,
         details: {
           path: typeof exec.arguments?.path === "string" ? exec.arguments.path : null,
-          exitCode: outcome?.exit_code ?? null,
-          passed: outcome?.passed ?? null,
+          exitCode: outcome?.exit_code ?? pwsh?.exitCode ?? null,
+          passed: outcome?.passed ?? pwshPassed,
+          timedOut: pwsh?.timedOut ?? null,
+          sandboxMode: pwsh?.sandbox?.mode ?? null,
+          sandboxDenied: pwsh?.sandbox?.denied ?? null,
+          sandboxEnforcement: pwsh?.sandbox?.enforcement ?? null,
+          sandboxRunnerFailed: pwsh?.sandbox?.runnerFailed ?? null,
         },
       },
     });
@@ -673,22 +705,46 @@ async function run(ctx, state) {
       throw new Error(`unexpected model tool surface: ${JSON.stringify(visible)}`);
     }
     const selection = ctx.agentDefaultModel.currentSelection();
+    const sessionId = SessionId(state.sessionId);
+    const persisted = await ctx.sessionPersistence.list();
+    if (persisted.some((header) => header.id === sessionId)) {
+      throw new Error(`current run session already exists: ${sessionId}`);
+    }
+    const prior = persisted
+      .filter((header) => header.id.startsWith(`${state.sessionFamily}-`))
+      .sort((left, right) => right.createdAt - left.createdAt
+        || String(right.id).localeCompare(String(left.id)))[0];
+    const priorInspection = prior === undefined
+      ? undefined
+      : await ctx.sessionPersistence.inspect(prior.id);
+    const agentOptions = {
+      provider: selection.provider,
+      model: selection.model,
+      maxTokens: state.maxOutputTokens,
+    };
+    const setup = (agentCtx) => {
+      installModelSelection(agentCtx, { current: selection, assembled: undefined });
+    };
     handle = await ctx.agents.create({
-      sessionId: SessionId(`ci-${randomUUID()}`),
-      meta: { cwd: state.stage },
-      agentOptions: {
-        provider: selection.provider,
-        model: selection.model,
-        maxTokens: state.maxOutputTokens,
-      },
-      setup: (agentCtx) => {
-        installModelSelection(agentCtx, { current: selection, assembled: undefined });
-      },
+      sessionId,
+      seed: priorInspection?.events,
+      meta: priorInspection === undefined
+        ? { cwd: state.stage }
+        : {
+            cwd: state.stage,
+            parentSession: priorInspection.meta.id,
+            seedLength: priorInspection.events.length,
+          },
+      agentOptions,
+      setup,
     });
     const { agent } = handle;
+    if (agent.session.header.cwd !== state.stage) {
+      throw new Error("fresh continuation session cwd does not match the current stage");
+    }
     await agent.whenIdle();
     agent.followup(createUserMessage({
-      content: [{ type: "text", text: prompt(state.objective, state.readable, state.mutable) }],
+      content: [{ type: "text", text: prompt(state.objective, state.readable, state.mutable, state.pwshAllowed, state.diagnostics) }],
       source: { kind: "user" },
     }));
     await agent.whenIdle();
@@ -720,6 +776,11 @@ async function run(ctx, state) {
       usage: state.usage,
       editSucceeded: state.editSucceeded,
       testSucceeded: state.testSucceeded,
+      sessionId: state.sessionId,
+      resumed: false,
+      continued: priorInspection !== undefined,
+      parentSessionId: priorInspection?.meta.id ?? null,
+      sessionCwd: agent.session.header.cwd,
     });
     await handle.dispose();
     handle = undefined;
@@ -733,6 +794,9 @@ async function run(ctx, state) {
         ? { name: error.name, message: error.message }
         : { name: "Error", message: String(error) },
     });
+    try {
+      if (handle !== undefined) await ctx.sessions.flush(handle.agent.session);
+    } catch {}
     try { await handle?.dispose(); } catch {}
     closeEventLedger();
     exit(1);
@@ -743,12 +807,16 @@ export function apply(ctx) {
   eventLedger = openSync(requiredEnv("CI_ADAPTER_EVENT_LEDGER"), "ax", 0o600);
   const state = {
     runId: requiredEnv("CI_ADAPTER_RUN_ID"),
+    sessionId: requiredEnv("CI_ADAPTER_SESSION_ID"),
+    sessionFamily: requiredEnv("CI_ADAPTER_SESSION_FAMILY"),
+    pwshAllowed: requiredEnv("CI_ADAPTER_PWSH_ALLOWED") === "1",
+    diagnostics: requiredEnv("CI_ADAPTER_DIAGNOSTICS"),
     stage: resolve(requiredEnv("CI_ADAPTER_STAGE")),
     objective: requiredEnv("CI_ADAPTER_OBJECTIVE"),
     readable: stringArray("CI_ADAPTER_READABLE_JSON"),
     mutable: stringArray("CI_ADAPTER_MUTABLE_JSON"),
     testCommand: commandArray("CI_ADAPTER_TEST_COMMAND_JSON"),
-    testTimeoutMs: positiveInteger("CI_ADAPTER_TEST_TIMEOUT_MS", 300_000, 300_000),
+    testTimeoutMs: positiveInteger("CI_ADAPTER_TEST_TIMEOUT_MS", 300_000, 1_800_000),
     maxTurns: positiveInteger("CI_ADAPTER_MAX_TURNS", 32, 64),
     maxToolCalls: positiveInteger("CI_ADAPTER_MAX_TOOL_CALLS", 96, 256),
     maxEditCalls: positiveInteger("CI_ADAPTER_MAX_EDIT_CALLS", 48, 256),

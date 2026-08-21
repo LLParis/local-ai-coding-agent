@@ -8,6 +8,7 @@ import io
 import json
 import os
 import platform
+import re
 import shutil
 import signal
 import socket
@@ -25,6 +26,19 @@ MANIFEST_SCHEMA = "coding-intelligence.mac-swift-transfer/v1"
 APPROVED_ROOT = Path("/private/tmp/coding-intelligence-swift-verifier")
 MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
 MAX_FILES = 4096
+XCODE_SCHEME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._-]{0,127}$")
+XCODE_SDKS = {
+    "appletvos",
+    "appletvsimulator",
+    "driverkit",
+    "iphoneos",
+    "iphonesimulator",
+    "macosx",
+    "watchos",
+    "watchsimulator",
+    "xros",
+    "xrsimulator",
+}
 
 
 class VerificationError(RuntimeError):
@@ -72,6 +86,120 @@ def _relative(value: object) -> str:
     if any(part in {"", "."} for part in path.parts):
         raise VerificationError("manifest path is not canonical")
     return path.as_posix()
+
+
+def _command(value: object) -> list[str]:
+    if (
+        not isinstance(value, list)
+        or not 2 <= len(value) <= 260
+        or any(not isinstance(arg, str) or not arg or len(arg) > 4096 for arg in value)
+        or any("\x00" in arg or "\n" in arg or "\r" in arg for arg in value)
+        or sum(len(arg.encode("utf-8")) + 1 for arg in value) > 64 * 1024
+    ):
+        raise VerificationError("remote command is not bounded argv")
+    mode = _command_mode_prefix(value)
+    if mode in {"swift-package-test", "swift-package-build"}:
+        expected = "test" if mode == "swift-package-test" else "build"
+        if value[:2] != ["swift", expected]:
+            raise VerificationError("remote Swift package command mode differs")
+        _swift_package_command(value)
+    elif mode == "xcode-shared-scheme-build":
+        _xcode_command(value)
+    elif mode == "swift-typecheck":
+        _swift_typecheck_command(value)
+    else:
+        raise VerificationError("remote command mode is unsupported")
+    return list(value)
+
+
+def _command_mode_prefix(value: list[str]) -> str:
+    if value[:2] == ["swift", "test"]:
+        return "swift-package-test"
+    if value[:2] == ["swift", "build"]:
+        return "swift-package-build"
+    if value and value[0] == "xcodebuild":
+        return "xcode-shared-scheme-build"
+    if value[:3] == ["xcrun", "swiftc", "-typecheck"]:
+        return "swift-typecheck"
+    raise VerificationError("remote command mode is unsupported")
+
+
+def _command_mode(value: object) -> str:
+    return _command_mode_prefix(_command(value))
+
+
+def _swift_package_command(value: list[str]) -> None:
+    allowed_flags = {
+        "--parallel",
+        "--no-parallel",
+        "--enable-code-coverage",
+        "--disable-code-coverage",
+        "--verbose",
+        "-v",
+    }
+    pair_flags = {"--configuration", "--filter", "--skip", "--package-path"}
+    index = 2
+    while index < len(value):
+        item = value[index]
+        if item in allowed_flags:
+            index += 1
+            continue
+        if item not in pair_flags or index + 1 >= len(value):
+            raise VerificationError("remote Swift package argument is unsupported")
+        argument = value[index + 1]
+        if item == "--configuration" and argument not in {"debug", "release"}:
+            raise VerificationError("remote Swift configuration differs")
+        if item == "--package-path" and argument != ".":
+            raise VerificationError("remote Swift package path differs")
+        if item in {"--filter", "--skip"} and (
+            value[1] == "build" or "/" in argument or "\\" in argument or ".." in argument
+        ):
+            raise VerificationError("remote Swift test filter differs")
+        index += 2
+
+
+def _xcode_command(value: list[str]) -> None:
+    if (
+        len(value) != 13
+        or value[0] != "xcodebuild"
+        or value[1] not in {"-workspace", "-project"}
+        or value[3] != "-scheme"
+        or value[5] != "-sdk"
+        or value[7:13]
+        != [
+            "-derivedDataPath",
+            ".ci-derived-data",
+            "-quiet",
+            "CODE_SIGNING_ALLOWED=NO",
+            "CODE_SIGNING_REQUIRED=NO",
+            "build",
+        ]
+    ):
+        raise VerificationError("remote xcodebuild command shape differs")
+    container = _relative(value[2])
+    suffix = ".xcworkspace" if value[1] == "-workspace" else ".xcodeproj"
+    if len(PurePosixPath(container).parts) != 1 or not container.endswith(suffix):
+        raise VerificationError("remote Xcode container differs")
+    if XCODE_SCHEME_RE.fullmatch(value[4]) is None or value[6] not in XCODE_SDKS:
+        raise VerificationError("remote Xcode scheme or SDK differs")
+
+
+def _swift_typecheck_command(value: list[str]) -> None:
+    if value[:3] != ["xcrun", "swiftc", "-typecheck"]:
+        raise VerificationError("remote swiftc typecheck prefix differs")
+    files = [_relative(item) for item in value[3:]]
+    if (
+        not files
+        or len(files) > 128
+        or files != sorted(files)
+        or len(files) != len(set(files))
+        or sum(len(item.encode("utf-8")) + 1 for item in files) > 32 * 1024
+        or any(
+            not item.endswith(".swift") or PurePosixPath(item).name.startswith("-")
+            for item in files
+        )
+    ):
+        raise VerificationError("remote swiftc source list differs")
 
 
 def _bounded_probe(argv: list[str]) -> tuple[int, bytes, bytes]:
@@ -406,6 +534,7 @@ def main() -> int:
         "stage_manifest_sha256": None,
         "source_snapshot_sha256": None,
         "task_sha256": None,
+        "command_mode": None,
         "identity": None,
         "test": None,
         "cleanup": None,
@@ -430,20 +559,15 @@ def main() -> int:
         report["stage_manifest_sha256"] = manifest["stage_manifest_sha256"]
         report["source_snapshot_sha256"] = manifest["source_snapshot_sha256"]
         report["task_sha256"] = manifest["task_sha256"]
+        report["command_mode"] = _command_mode(manifest["command"])
         expected_mac = manifest["expected_mac"]
         if not isinstance(expected_mac, dict):
             raise VerificationError("expected Mac identity must be one object")
         identity, swift_path = _identity(expected_mac)
         report["identity"] = identity
 
-        command = manifest["command"]
-        if (
-            not isinstance(command, list)
-            or len(command) < 2
-            or command[0:2] != ["swift", "test"]
-            or any(not isinstance(arg, str) or not arg or len(arg) > 4096 for arg in command)
-        ):
-            raise VerificationError("remote command is not an argv-safe swift test")
+        command_mode = _command_mode(manifest["command"])
+        command = _command(manifest["command"])
         limits = manifest["limits"]
         if not isinstance(limits, dict) or set(limits) != {
             "timeout_seconds",
@@ -476,8 +600,14 @@ def main() -> int:
             "LANG": "en_US.UTF-8",
             "LC_ALL": "en_US.UTF-8",
         }
+        if command_mode in {"swift-package-test", "swift-package-build"}:
+            execution_command = [swift_path, *command[1:]]
+        elif command_mode == "xcode-shared-scheme-build":
+            execution_command = ["/usr/bin/xcodebuild", *command[1:]]
+        else:
+            execution_command = ["/usr/bin/xcrun", *command[1:]]
         test = _run_bounded(
-            [swift_path, *command[1:]],
+            execution_command,
             cwd=owned_temp / "payload",
             environment=environment,
             timeout_seconds=timeout_seconds,
@@ -493,7 +623,7 @@ def main() -> int:
         ):
             report["status"] = "verified"
         else:
-            report["error"] = "Swift authoritative test did not pass within bounds"
+            report["error"] = "Apple authoritative verification did not pass within bounds"
     except Exception as exc:
         report["error"] = str(exc)[:2000]
     finally:

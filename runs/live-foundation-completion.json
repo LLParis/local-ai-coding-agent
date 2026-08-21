@@ -1,0 +1,192 @@
+{
+  "schema": "coding-intelligence-live-foundation/v1",
+  "status": "accepted",
+  "captured_at_utc": "2026-08-21T01:12:23.5571529Z",
+  "product": {
+    "everyday_command": "bin\\coding.cmd <repository> <objective>",
+    "default_model": "Qwen3.8-27B Q6",
+    "runtime_alias": "arm-qwen38-q6-native-262k",
+    "default_harness": "DeepSeek Harness rc.8 plus Coding Intelligence scoped plugin",
+    "advisory_verifier": "devstral-small-2:24b",
+    "pc_execution_edge": "EXCALIBUR",
+    "apple_execution_edge": "Londons-MacBook-Pro.local"
+  },
+  "live_runtime": {
+    "doctor_status": "ready",
+    "active_backend": "Qwen38Native",
+    "listener": "127.0.0.1:8818",
+    "listener_pid": 38960,
+    "wrapper_pid": 43976,
+    "exact_ownership": true,
+    "context_tokens": 262144,
+    "weights": "Q6_K",
+    "kv_cache": "q4_0",
+    "mtp": false,
+    "reasoning_effort": "medium",
+    "reasoning_budget": 16384,
+    "uac_prompt": false
+  },
+  "production_runs": {
+    "swift_apple": {
+      "run_id": "404f6f14-c535-4f5d-ae4d-541f98b7a536",
+      "status": "verified",
+      "route_id": "candidate-qwen38-deepseek-apple",
+      "execution_edge_id": "mac-apple",
+      "objective_sha256": "sha256:772626dd87603e195d158b6aeddeee8db5c3a7521d7a49045986c6649de2d5a6",
+      "changed_paths": [
+        "Sources/ContinuityFixture/BackendState.swift"
+      ],
+      "model_calls_total": 9,
+      "qwen_model_calls": 8,
+      "devstral_calls": 1,
+      "tool_calls": 10,
+      "repair_passes": 0,
+      "automatic_retries": 0,
+      "verification": {
+        "mode": "swift-package-test",
+        "command": [
+          "swift",
+          "test"
+        ],
+        "passed": true,
+        "exit_code": 0,
+        "tool_timeout_seconds": 1800,
+        "remote_timeout_seconds": 1770,
+        "result_sha256": "sha256:49b17b9be00bef80e996710dfcbdb7f28e4ad8d90328c4be581dec80e1226272",
+        "task_sha256": "sha256:eb045f66d74ff60f2ed900518a0a9a49e40a92ef8abb0ce6617ee8da069ceab7",
+        "source_snapshot_sha256": "sha256:5949aed0ab774185c57e2377d923d1d840917f94e0885580e5d4da11432020bd",
+        "source_workspace_mutated": false
+      },
+      "devstral": {
+        "status": "completed",
+        "verdict": "accepted",
+        "risks": []
+      },
+      "stage_only": true,
+      "source_applied": false,
+      "evidence_stage_cleaned_after_capture": true,
+      "residual_paths": [],
+      "memory_id": "episode:c50c1079-b3e2-5363-bc00-740cc4e7c2a1",
+      "terminal_event_id": "0118cde4-b09a-479c-b857-de8e356579c0",
+      "artifact_sha256": {
+        "result": "sha256:77ad3f0520ad28567cc2c5f0099a791e6b61cb60631d45ad9c03e0c5a0af104b",
+        "diff": "sha256:a4544cc94f24a968c3ee4c7f91053e3a17714e5d7f75c11f59cde646c3a39831",
+        "trajectory": "sha256:2620483d56df0ef7b3e2433fdbf5f6fa6b7bb3a0e818bd6d4302056865495d71",
+        "harness_result": "sha256:eb132b1bbf6e0bdf7e740ceac7eb455a7bf53f987b14b4bfd441e18e499f9239",
+        "memory_event_log": "sha256:6881d7b9691a5a319e68328fd2fd82bf47020da797c8fa9a67d51fd94316407c"
+      }
+    },
+    "pc_memory_apply": {
+      "run_id": "c72309f7-edc3-4fc9-9423-f2af7506e334",
+      "status": "verified",
+      "route_id": "candidate-qwen38-deepseek",
+      "execution_edge_id": "excalibur",
+      "objective_sha256": "sha256:2a66ac83aa797cd1329daff06fff1a9e0ae4d7c33bee3c763c52ffee503c242b",
+      "changed_paths": [
+        "README.md",
+        "docs/LIVE_COMPLETION_CONTRACT.md"
+      ],
+      "model_calls_total": 15,
+      "qwen_model_calls": 14,
+      "devstral_calls": 1,
+      "tool_calls": 16,
+      "repair_passes": 0,
+      "automatic_retries": 0,
+      "verification_passed": true,
+      "devstral": {
+        "status": "completed",
+        "verdict": "accepted",
+        "risks": []
+      },
+      "memory_retrieval": {
+        "included_memory_ids": [
+          "episode:1613ecb2-4830-5ec3-a679-7aba36b8c5b9",
+          "episode:b0680cde-1c2b-53d3-a2b4-3b088fae7c4f",
+          "episode:cce65fdb-9951-5cf5-9cad-ef2defc80ba3",
+          "episode:c56112ab-ecb2-5344-b5ad-47c5b65d2328"
+        ],
+        "memory_tokens": 1986,
+        "state_tokens": 477,
+        "total_tokens": 2463
+      },
+      "session_continuity": {
+        "continued": true,
+        "parent_session_id": "ci-4496bf0b-156b-5be2-9a8a-5c576f11fc58-e037d1fe-da95-4121-a9cc-e20bbcc51972",
+        "session_id": "ci-4496bf0b-156b-5be2-9a8a-5c576f11fc58-c72309f7-edc3-4fc9-9423-f2af7506e334",
+        "fresh_stage_cwd": true
+      },
+      "promotion": {
+        "status": "applied",
+        "transactional_backup": true,
+        "manifest_compared": true,
+        "source_manifest_sha256": "sha256:9f2feea98e89d87fb2ed3a4ae27b5d8a28faed20a0a35c96ea0f66293e4dc992"
+      },
+      "source_applied": true,
+      "stage_cleaned": true,
+      "residual_paths": [],
+      "memory": {
+        "original_memory_id": "episode:f0329e2b-4bf4-55f6-ae72-f1e46922ca46",
+        "reconciled_memory_id": "episode-reconciled:f0329e2b-4bf4-55f6-ae72-f1e46922ca46",
+        "cleanup_event_id": "5f9a0d39-9a4f-482e-95c3-2cc8d3ca019f",
+        "reconciliation_event_id": "735222cb-80e2-5613-8879-4178ab06246a",
+        "terminal_event_id": "6a288f09-a44c-4bef-9755-b0943426f5b2"
+      },
+      "artifact_sha256": {
+        "result": "sha256:793a30683ddb2603c1000f97e8d6e193f6cb1a7b33d3c03e6f925532104a4fb2",
+        "diff": "sha256:5692bf2fca222ef83ecec780e8864b1241d04eeaa206065acd433d6279eec35a",
+        "trajectory": "sha256:a62585fcccff466598d21e5a1ae06bd0fda1a1d314773e32b09568afdff9de17",
+        "harness_result": "sha256:5a3a6314221584d3b44ea672451fae77e82281381a8fc7fe4c76779a064442a8",
+        "memory_event_log": "sha256:e5461cb085620d9b19f69508634783749ff4504d890eac46a88b6e08ebe87874"
+      }
+    }
+  },
+  "observed_root_fixes": [
+    {
+      "failure": "The expanded Mac verifier exceeded the Windows command-line limit.",
+      "root_fix": "The exact hash-pinned verifier program is streamed before the archive on one SSH stdin instead of being embedded in argv."
+    },
+    {
+      "failure": "External staged Git was initialized as a normal repository but consumed as a bare Git directory.",
+      "root_fix": "The metadata root is initialized with git init --bare and an explicit core.worktree."
+    },
+    {
+      "failure": "Read-only Git loose objects blocked ordinary recursive removal after a successful apply.",
+      "root_fix": "Exact owned cleanup clears read-only attributes in its bounded callback, then removes the object once; the affected run was reconciled without another model call."
+    }
+  ],
+  "current_source_sha256": {
+    "adapters/protocol.py": "sha256:b5b4c14f54b3417a61e958ee0559a9d62e3b82738fa0f75a39861f63c627c0a3",
+    "adapters/runner.py": "sha256:be1f776973f4038e472b3400a14c0e0530df693b0524fb5c40121b7da59d1172",
+    "adapters/deepseek/adapter.py": "sha256:c9177b2729060812a08f28ee4ec1b58f277540b991d22719daa3e3d5d74ddc07",
+    "adapters/deepseek/bounded_profile.patch.yml": "sha256:774cdefaeaee8e1fb1cdde4d64296989f2a7acbb52214ba39060db8c09ffa7f3",
+    "adapters/deepseek/event_bridge.py": "sha256:794c63acf89205bb2b4eb924121a0c2e99e40414c0503ab65289609faf82b578",
+    "adapters/deepseek/scoped_plugin.mjs": "sha256:14cf3e13a5368068f1b48cc24b9359a884e631f5cc337be52596f28c30b2507a",
+    "bin/mac-swift-verifier.py": "sha256:76ba5b4210397b353f3d5dc2e339512e1236dae55605ca43e0dd9ce8f29741a4",
+    "mac/swift-verifier-remote.py": "sha256:7ce22777bcfc2386f03c9ee8189fea4a8cd0fb1891ad7edcb6cae452fc7a4680",
+    "src/agent_continuity/production_worker.py": "sha256:dbad512e4673b60fc0668e11a71ef38221e161d7875d1bb780f716504bb9d1bb",
+    "src/agent_continuity/production_memory.py": "sha256:40d18a536699dfe79347164fa52be83a6ccbf58dcd7eae1691175658915e6c33",
+    "src/agent_continuity/production_routing.py": "sha256:b5b7ea958a63377fcc5e1bf1ffee41d32954b8176ac04c50c3b334113a369768",
+    "src/agent_continuity/working_set.py": "sha256:baefc95c9a63dcf4039ed8eed613bd5974546490618312fcc9daa8c91213580a"
+  },
+  "lifecycle_cleanup": {
+    "active_production_children": 0,
+    "owned_workspace_directories": 0,
+    "owned_git_directories": 0,
+    "owned_promotion_backups": 0,
+    "warranted_processes": [
+      "Qwen38Native llama-server",
+      "Codex Mac app-server SSH proxy",
+      "two Stream Deck plugin Node processes"
+    ]
+  },
+  "truth_boundary": {
+    "swift_package_route": "live-proven",
+    "pc_memory_apply_route": "live-proven",
+    "swift_package_build_route": "source-supported",
+    "xcode_shared_scheme_build_route": "source-supported-not-live-proven",
+    "plain_swift_typecheck_route": "source-supported-not-live-proven",
+    "qwen_code_alternate": "installed-not-production-default",
+    "hosted_frontier_relative_quality": "not_measured",
+    "post_live_model_tournament": "not_run-and-not-launch-blocking"
+  }
+}

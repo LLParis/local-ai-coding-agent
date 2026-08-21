@@ -49,7 +49,7 @@
 - id: session-telemetry-otel
   disabled: true
 - id: shell-env
-  disabled: true
+  disabled: false
 - id: compaction-basic
   config:
     auto: true
@@ -71,7 +71,19 @@
 - id: tool-bash
   disabled: true
 - id: tool-pwsh
-  disabled: true
+  disabled: false
+  config:
+    enableRunInBackground: false
+- id: approval
+  config:
+    policy: never
+- id: permission
+  config:
+    defaultPreset: automated-workspace
+    presets:
+      automated-workspace:
+        sandbox: workspace-write
+        approval: never
 - id: tool-jobs
   disabled: true
 - id: tool-fs

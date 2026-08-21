@@ -2,7 +2,7 @@
   "schema_version": 1,
   "recorded_at": "2026-08-20T21:24:08.0012511Z",
   "component": "DeepSeek Harness full-strength production coding adapter",
-  "status": "production_live_real_model_edit_promoted_with_evaluator_correction",
+  "status": "production_live_integrated_route_memory_session_pwsh_verifier_apply",
   "truth_boundary": {
     "deepseek_process_executed": true,
     "fake_loopback_provider_executed": true,
@@ -32,6 +32,7 @@
       "read",
       "search",
       "edit",
+      "pwsh",
       "test"
     ],
     "normalized_events": [
@@ -44,7 +45,8 @@
     "terminal_additions": [
       "live_event_evidence",
       "runtime_identity",
-      "plugin_run_id"
+      "plugin_run_id",
+      "session_continuity"
     ]
   },
   "observed_runtime_outcomes": {
@@ -133,6 +135,55 @@
     "output_ceiling_tokens": 16384,
     "basis": "The real focused run produced correct edits but spent two oversized 13K-16K reasoning passes; current DeepSeek/Qwen3.8 community reports independently favor low effort for coding agency."
   },
+  "integrated_live_run": {
+    "recorded_at": "2026-08-21T00:14:01.626989Z",
+    "production_run_id": "e037d1fe-da95-4121-a9cc-e20bbcc51972",
+    "deepseek_run_id": "59b5ef54-e5c3-4f3a-804c-bc24bea27ba4",
+    "selected_route_id": "candidate-qwen38-deepseek",
+    "model_alias": "arm-qwen38-q6-native-262k",
+    "task_key": "research-map",
+    "continued": true,
+    "parent_session_id": "ci-4496bf0b-156b-5be2-9a8a-5c576f11fc58-4690f516-f4b8-4f0b-9ef4-941454a93161",
+    "fresh_stage_cwd_matched": true,
+    "model_calls": 7,
+    "devstral_calls": 1,
+    "tool_calls": 8,
+    "tool_counts": {
+      "read": 2,
+      "edit": 3,
+      "pwsh": 1,
+      "test": 2
+    },
+    "reported_token_usage": {
+      "input": 163306,
+      "output": 5093,
+      "total": 168399
+    },
+    "automatic_retries": 0,
+    "repair_passes": 0,
+    "source_preserved_during_model_run": true,
+    "verification_passed": true,
+    "devstral_status": "completed",
+    "applied": true,
+    "backend_restored": "Qwen38Native",
+    "memory_terminal": "task/completed",
+    "workspace_episode_committed": true,
+    "pwsh": {
+      "exit_code": 0,
+      "sandbox_mode": "workspace-write",
+      "sandbox_enforcement": "partial",
+      "sandbox_denied": false
+    },
+    "changed_paths": [
+      "docs/LIVE_COMPLETION_CONTRACT.md"
+    ],
+    "diff_sha256": "sha256:cd30f27396f6cf0c1311e0c9fbb081c0d5fa5edb6029bfe3541c4263f7b8d75f",
+    "duration_seconds": 112.138,
+    "cleanup_reconciled": true,
+    "cleanup_reconciliation_event_id": "556b66a4-35ed-4149-9412-756e57acbf45",
+    "root_cleanup_fix": "staged Git metadata moved outside the sandboxed workspace",
+    "result_sha256": "sha256:103bab3ce8b83b5dd0e0d2831a412bbe9a02b5af08b55698c99be28f32a3394a"
+  },
   "focused_verification": {
     "command": "py -3 -m unittest tests.test_deepseek_adapter -v",
     "tests": 9,
@@ -152,13 +203,15 @@
   "artifacts": {
     "adapters/deepseek/__init__.py": "71d2f086ec105479277a2ff22c6bda314d160d74b1befb033253d7a10b7e9f8e",
     "adapters/deepseek/__main__.py": "4ca6979e9d11b98a0714d07533191e3ecf65bc331a210255abb6dfa4b3b40fbb",
-    "adapters/deepseek/adapter.py": "f6b92b73bcb13371190c9649cea875d514e13460da549de3d05ea4d900958ffa",
-    "adapters/deepseek/bounded_profile.patch.yml": "f4025380c415b0a932e6d4efcfed4e6b1060bc4007c0c8b7cb1dabc9370b51aa",
-    "adapters/deepseek/event_bridge.py": "30eb3b55959ed5db0cdf1747541460954455c0b1bae8f2c5b87c5f6275103b9f",
-    "adapters/deepseek/scoped_plugin.mjs": "d720e90e903b54b73ef2636f3f9299f0ef5acdf0c908fcd503539cb953452c6e",
-    "adapters/protocol.py": "52cf5e02ce54c3fac12dce5f4951628bd456abae05a07f28fab0de64ed025539",
-    "adapters/runner.py": "97610cf5be6f37d91c7fa6df1dba57b02462e4a518e303eb9fc0cdd7fcc5f693",
-    "src/agent_continuity/production_worker.py": "3fa4c9e39ff3eb938f0bbbb672333c6d361a063b03c078e60c3fa13cf378ea29",
+    "adapters/deepseek/adapter.py": "bfdf0843a226040379b84496b3de569ff137c62aabe80d9bb0f2d101525adba5",
+    "adapters/deepseek/bounded_profile.patch.yml": "774cdefaeaee8e1fb1cdde4d64296989f2a7acbb52214ba39060db8c09ffa7f3",
+    "adapters/deepseek/event_bridge.py": "794c63acf89205bb2b4eb924121a0c2e99e40414c0503ab65289609faf82b578",
+    "adapters/deepseek/scoped_plugin.mjs": "e419f3671467125bfe7c9117907b2d8857d788a8576362689ac96f328ac1bdcd",
+    "adapters/protocol.py": "ce08b6e2de3d29443544c701baa75e665534cb46b12278547d102b28aa40d22b",
+    "adapters/runner.py": "f17faf9c99723173ac67a2c5b886b2df85c97d77109879d7e8c23a8032a98952",
+    "src/agent_continuity/production_worker.py": "f84960f2477ee34781fecab66035c4995bb11644ae921849cc6ac686612deb7e",
+    "src/agent_continuity/production_memory.py": "ca7e0f140e74b192625bf06de66e5329d96c76d18349e5de996766a181420d61",
+    "src/agent_continuity/production_routing.py": "9ddb418a25e68d1f5d460622efad76bf4b53a06af32070edf4f3a3f198e02c34",
     "bin/coding.cmd": "88cefb8dc9d7802e9978bfb131f7da5b4507100df2bbc38a710a15fe9efba445",
     "tests/test_deepseek_adapter.py": "8d6a0229d551ef60b7b8b3a55732e39391db99351f9257702f53d92ff56714a0",
     "tests/test_harness_adapters.py": "f165e2e9fa11c72c3ae8fe0b565f9b2595e9e776197cb62459e3eff1e841f373"

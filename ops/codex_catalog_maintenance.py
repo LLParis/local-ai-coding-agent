@@ -181,8 +181,13 @@ def find_codex_bin(home: Path, codex_home: Path) -> Path:
     raise MaintenanceError("no executable standalone Codex CLI was found")
 
 
-def open_read_only(db_path: Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(f"{db_path.as_uri()}?mode=ro", uri=True, timeout=5.0)
+def open_query_only(db_path: Path) -> sqlite3.Connection:
+    # A live WAL database may legitimately have no -wal/-shm files between
+    # writers.  SQLite then needs write-capable VFS access to create those
+    # transient sidecars; immutable=1 would be incorrect because Codex can
+    # update this database concurrently.  mode=rw still refuses a missing
+    # database, while query_only prevents this connection from changing it.
+    connection = sqlite3.connect(f"{db_path.as_uri()}?mode=rw", uri=True, timeout=5.0)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA query_only=ON")
     columns = {row[1] for row in connection.execute("PRAGMA table_info(threads)")}
@@ -332,7 +337,7 @@ def archive_one(codex_bin: Path, thread_id: str) -> tuple[dict[str, Any], bool]:
 
 
 def verify_archived(db_path: Path, thread_id: str) -> tuple[bool, dict[str, Any]]:
-    with closing(open_read_only(db_path)) as connection:
+    with closing(open_query_only(db_path)) as connection:
         row = connection.execute(
             "SELECT archived, archived_at, rollout_path FROM threads WHERE id = ?", (thread_id,)
         ).fetchone()
@@ -389,7 +394,7 @@ def run_maintenance(
         "skipped": {},
         "failure": None,
     }
-    with closing(open_read_only(db_path)) as connection:
+    with closing(open_query_only(db_path)) as connection:
         report["counts_before"] = counts(connection)
         rows = candidate_rows(connection, cutoff)
         for row in rows:
@@ -466,7 +471,7 @@ def run_maintenance(
             )
             break
 
-    with closing(open_read_only(db_path)) as connection:
+    with closing(open_query_only(db_path)) as connection:
         report["counts_after"] = counts(connection)
     report["completed_at"] = int(time.time())
     report["elapsed_seconds"] = round(time.monotonic() - started, 3)
@@ -617,7 +622,7 @@ def self_check(codex_home: Path, codex_bin: Path, db_path: Path) -> dict[str, An
         raise MaintenanceError(f"Codex symlink is broken: {codex_bin}")
     if not codex_bin.exists() or not os.access(codex_bin, os.X_OK):
         raise MaintenanceError(f"Codex executable is unavailable: {codex_bin}")
-    with closing(open_read_only(db_path)) as connection:
+    with closing(open_query_only(db_path)) as connection:
         current_counts = counts(connection)
     version = subprocess.run(
         (str(codex_bin), "--version"),
@@ -631,7 +636,7 @@ def self_check(codex_home: Path, codex_bin: Path, db_path: Path) -> dict[str, An
         "status": "ok",
         "codex_home": str(codex_home),
         "state_db": str(db_path),
-        "state_db_access": "mode=ro, query_only=ON",
+        "state_db_access": "mode=rw, query_only=ON",
         "codex": version,
         "codex_path": str(codex_bin),
         "counts": current_counts,
@@ -673,7 +678,7 @@ def main() -> int:
                 print(json.dumps(self_check(codex_home, codex_bin, db_path), sort_keys=True))
                 return 0
             if args.probe_only:
-                with closing(open_read_only(db_path)) as connection:
+                with closing(open_query_only(db_path)) as connection:
                     active = counts(connection)
                 report = {
                     "schema": SCHEMA,
